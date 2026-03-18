@@ -1,0 +1,16 @@
+# Build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+*.tmp
