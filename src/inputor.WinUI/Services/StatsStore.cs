@@ -13,6 +13,7 @@ public sealed class StatsStore : IDisposable
     private readonly string _statsPath;
     private readonly Dictionary<string, AppStat> _stats;
     private readonly List<DailyTotalEntry> _dailyHistory;
+    private readonly List<DailyAppTotalEntry> _dailyAppHistory;
     private readonly List<RecentActivityEntry> _recentActivity = [];
     private readonly List<DebugEventEntry> _debugEvents = [];
     private DateOnly _today;
@@ -28,7 +29,7 @@ public sealed class StatsStore : IDisposable
     public StatsStore(string dataDirectory)
     {
         _statsPath = Path.Combine(dataDirectory, "stats.json");
-        (_today, _stats, _dailyHistory) = Load();
+        (_today, _stats, _dailyHistory, _dailyAppHistory) = Load();
         _sessionStartedAt = DateTime.Now;
     }
 
@@ -214,6 +215,7 @@ public sealed class StatsStore : IDisposable
                 ShowAdminReminder = _showAdminReminder,
                 IsDebugCaptureEnabled = _isDebugCaptureEnabled,
                 DailyHistory = BuildDailyHistoryLocked(),
+                DailyAppHistory = BuildDailyAppHistoryLocked(),
                 AppStats = _stats.Values
                     .OrderByDescending(item => item.TodayCount)
                     .ThenBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
@@ -264,11 +266,11 @@ public sealed class StatsStore : IDisposable
         }
     }
 
-    private (DateOnly Today, Dictionary<string, AppStat> Stats, List<DailyTotalEntry> DailyHistory) Load()
+    private (DateOnly Today, Dictionary<string, AppStat> Stats, List<DailyTotalEntry> DailyHistory, List<DailyAppTotalEntry> DailyAppHistory) Load()
     {
         if (!File.Exists(_statsPath))
         {
-            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), []);
+            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), [], []);
         }
 
         try
@@ -277,7 +279,7 @@ public sealed class StatsStore : IDisposable
             var persisted = JsonSerializer.Deserialize<PersistedStats>(json);
             if (persisted is null)
             {
-                return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), []);
+                return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), [], []);
             }
 
             var stats = persisted.AppStats
@@ -287,6 +289,11 @@ public sealed class StatsStore : IDisposable
                 .OrderBy(item => item.Date)
                 .TakeLast(MaxDailyHistoryEntries)
                 .ToList();
+            var dailyAppHistory = (persisted.DailyAppHistory ?? [])
+                .Where(item => item.TotalCount >= 0 && !string.IsNullOrWhiteSpace(item.AppName))
+                .OrderBy(item => item.Date)
+                .ThenBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
             var today = persisted.Today == default
                 ? DateOnly.FromDateTime(DateTime.Now)
                 : persisted.Today;
@@ -294,6 +301,7 @@ public sealed class StatsStore : IDisposable
             if (today != DateOnly.FromDateTime(DateTime.Now))
             {
                 AppendDailyHistory(dailyHistory, today, stats.Values.Sum(item => item.TodayCount));
+                AppendDailyAppHistory(dailyAppHistory, today, stats.Values);
                 foreach (var stat in stats.Values)
                 {
                     stat.TodayCount = 0;
@@ -302,11 +310,11 @@ public sealed class StatsStore : IDisposable
                 today = DateOnly.FromDateTime(DateTime.Now);
             }
 
-            return (today, stats, dailyHistory);
+            return (today, stats, dailyHistory, dailyAppHistory);
         }
         catch
         {
-            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), []);
+            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), [], []);
         }
     }
 
@@ -319,6 +327,7 @@ public sealed class StatsStore : IDisposable
         }
 
         AppendDailyHistory(_dailyHistory, _today, _stats.Values.Sum(item => item.TodayCount));
+        AppendDailyAppHistory(_dailyAppHistory, _today, _stats.Values);
         _today = actualToday;
         foreach (var stat in _stats.Values)
         {
@@ -334,6 +343,7 @@ public sealed class StatsStore : IDisposable
         {
             Today = _today,
             DailyHistory = _dailyHistory.ToList(),
+            DailyAppHistory = _dailyAppHistory.ToList(),
             AppStats = _stats.Values.OrderBy(item => item.AppName, StringComparer.OrdinalIgnoreCase).ToList()
         };
         var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
@@ -346,6 +356,16 @@ public sealed class StatsStore : IDisposable
             .OrderBy(item => item.Date)
             .ToList();
         AppendDailyHistory(history, _today, _stats.Values.Sum(item => item.TodayCount));
+        return history;
+    }
+
+    private IReadOnlyList<DailyAppTotalEntry> BuildDailyAppHistoryLocked()
+    {
+        var history = _dailyAppHistory
+            .OrderBy(item => item.Date)
+            .ThenBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        AppendDailyAppHistory(history, _today, _stats.Values);
         return history;
     }
 
@@ -374,10 +394,35 @@ public sealed class StatsStore : IDisposable
         }
     }
 
+    private static void AppendDailyAppHistory(List<DailyAppTotalEntry> history, DateOnly date, IEnumerable<AppStat> stats)
+    {
+        history.RemoveAll(item => item.Date == date);
+
+        foreach (var stat in stats.Where(item => item.TodayCount > 0))
+        {
+            history.Add(new DailyAppTotalEntry
+            {
+                Date = date,
+                AppName = stat.AppName,
+                TotalCount = stat.TodayCount
+            });
+        }
+
+        history.Sort((left, right) =>
+        {
+            var byDate = left.Date.CompareTo(right.Date);
+            return byDate != 0 ? byDate : StringComparer.OrdinalIgnoreCase.Compare(left.AppName, right.AppName);
+        });
+
+        var cutoff = date.AddDays(-(MaxDailyHistoryEntries - 1));
+        history.RemoveAll(item => item.Date < cutoff);
+    }
+
     private sealed class PersistedStats
     {
         public DateOnly Today { get; init; }
         public List<DailyTotalEntry>? DailyHistory { get; init; }
+        public List<DailyAppTotalEntry>? DailyAppHistory { get; init; }
         public List<AppStat> AppStats { get; init; } = [];
     }
 }

@@ -11,12 +11,15 @@ namespace Inputor.WinUI;
 
 public sealed class DebugPage : UserControl
 {
+    private readonly HashSet<string> _expandedEventKeys = [];
     private readonly Button _captureButton;
     private readonly Button _clearButton;
     private readonly ComboBox _filterComboBox;
     private readonly TextBlock _summaryTextBlock;
     private readonly Grid _summaryPanel;
     private readonly StackPanel _eventsPanel;
+    private DashboardSnapshot? _pendingSnapshot;
+    private int _interactionDepth;
 
     public DebugPage()
     {
@@ -64,12 +67,25 @@ public sealed class DebugPage : UserControl
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = BuildContent()
         };
+
+        Unloaded += (_, _) => ResetInteractionState();
     }
 
     public void Refresh(DashboardSnapshot snapshot)
     {
         _captureButton.Content = snapshot.IsDebugCaptureEnabled ? AppStrings.Get("Debug.Button.PauseCapture") : AppStrings.Get("Debug.Button.StartCapture");
         _clearButton.IsEnabled = snapshot.DebugEvents.Count > 0;
+
+        if (ShouldDeferRefresh())
+        {
+            _pendingSnapshot = snapshot;
+            if (snapshot.IsDebugCaptureEnabled)
+            {
+                _summaryTextBlock.Text = AppStrings.Get("Debug.Summary.InspectionFrozen");
+            }
+
+            return;
+        }
 
         _summaryPanel.Children.Clear();
         _eventsPanel.Children.Clear();
@@ -92,6 +108,12 @@ public sealed class DebugPage : UserControl
         }
 
         RenderEvents(snapshot);
+    }
+
+    public void ResetInteractionState()
+    {
+        _interactionDepth = 0;
+        ApplyPendingRefresh();
     }
 
     private void RenderEvents(DashboardSnapshot snapshot)
@@ -122,7 +144,23 @@ public sealed class DebugPage : UserControl
 
         foreach (var entry in filteredEvents)
         {
-            _eventsPanel.Children.Add(CreateEventCard(entry));
+            var eventKey = BuildEventKey(entry);
+            _eventsPanel.Children.Add(CreateEventCard(entry, _expandedEventKeys.Contains(eventKey), expanded =>
+            {
+                if (expanded)
+                {
+                    _expandedEventKeys.Add(eventKey);
+                }
+                else
+                {
+                    _expandedEventKeys.Remove(eventKey);
+                }
+
+                if (!ShouldDeferRefresh())
+                {
+                    ApplyPendingRefresh();
+                }
+            }));
         }
     }
 
@@ -187,7 +225,7 @@ public sealed class DebugPage : UserControl
         _summaryPanel.Children.Add(chip);
     }
 
-    private static Border CreateEventCard(DebugEventEntry entry)
+    private Border CreateEventCard(DebugEventEntry entry, bool isExpanded, Action<bool> onExpandedChanged)
     {
         var content = new StackPanel { Spacing = 12 };
 
@@ -226,12 +264,12 @@ public sealed class DebugPage : UserControl
 
         var toggleButton = new Button
         {
-            Content = AppStrings.Get("Debug.Button.ShowDetails"),
+            Content = isExpanded ? AppStrings.Get("Debug.Button.HideDetails") : AppStrings.Get("Debug.Button.ShowDetails"),
             HorizontalAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(12, 6, 12, 6)
         };
 
-        var detailsPanel = new StackPanel { Spacing = 8, Visibility = Visibility.Collapsed };
+        var detailsPanel = new StackPanel { Spacing = 8, Visibility = isExpanded ? Visibility.Visible : Visibility.Collapsed };
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.Status"), entry.StatusMessage));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.Delta"), AppStrings.Format("Debug.DeltaLine", entry.Delta)));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.InsertedSegmentLength"), entry.InsertedSegmentLength.ToString()));
@@ -243,11 +281,51 @@ public sealed class DebugPage : UserControl
             var isOpen = detailsPanel.Visibility == Visibility.Visible;
             detailsPanel.Visibility = isOpen ? Visibility.Collapsed : Visibility.Visible;
             toggleButton.Content = isOpen ? AppStrings.Get("Debug.Button.ShowDetails") : AppStrings.Get("Debug.Button.HideDetails");
+            onExpandedChanged(!isOpen);
         };
 
         content.Children.Add(toggleButton);
         content.Children.Add(detailsPanel);
-        return CreateCard(content);
+        var card = CreateCard(content);
+        card.PointerEntered += (_, _) => BeginInteraction();
+        card.PointerExited += (_, _) => EndInteraction();
+        return card;
+    }
+
+    private bool ShouldDeferRefresh()
+    {
+        return _interactionDepth > 0 && _expandedEventKeys.Count > 0;
+    }
+
+    private void BeginInteraction()
+    {
+        _interactionDepth++;
+    }
+
+    private void EndInteraction()
+    {
+        if (_interactionDepth == 0)
+        {
+            return;
+        }
+
+        _interactionDepth--;
+        if (!ShouldDeferRefresh())
+        {
+            ApplyPendingRefresh();
+        }
+    }
+
+    private void ApplyPendingRefresh()
+    {
+        if (_pendingSnapshot is null)
+        {
+            return;
+        }
+
+        var snapshot = _pendingSnapshot;
+        _pendingSnapshot = null;
+        Refresh(snapshot);
     }
 
     private static string BuildPrimarySummary(DebugEventEntry entry)
@@ -316,6 +394,11 @@ public sealed class DebugPage : UserControl
             TextWrapping = TextWrapping.Wrap,
             Opacity = 0.78
         });
+    }
+
+    private static string BuildEventKey(DebugEventEntry entry)
+    {
+        return string.Join('|', entry.Timestamp.Ticks, entry.AppName, entry.StatusMessage, entry.Delta, entry.ControlTypeName);
     }
 
     private static Border CreateCard(UIElement child, Brush? background = null, Thickness? padding = null)

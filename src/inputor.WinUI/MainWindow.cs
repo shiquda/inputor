@@ -312,6 +312,16 @@ public sealed class MainWindow : Window
 
     private void SwitchPage(string selectedTag)
     {
+        if (selectedTag != "Statistics")
+        {
+            _statisticsPage.ResetInteractionState();
+        }
+
+        if (selectedTag != "Debug")
+        {
+            _debugPage.ResetInteractionState();
+        }
+
         _overviewPage.Visibility = selectedTag == "Overview" ? Visibility.Visible : Visibility.Collapsed;
         _statisticsPage.Visibility = selectedTag == "Statistics" ? Visibility.Visible : Visibility.Collapsed;
         _appsPage.Visibility = selectedTag == "Apps" ? Visibility.Visible : Visibility.Collapsed;
