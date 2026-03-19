@@ -5,10 +5,14 @@ namespace Inputor.App.Services;
 
 public sealed class StatsStore : IDisposable
 {
+    private const int MaxRecentActivityEntries = 8;
+
     private readonly object _syncRoot = new();
     private readonly string _statsPath;
     private readonly Dictionary<string, AppStat> _stats;
+    private readonly List<RecentActivityEntry> _recentActivity = [];
     private DateOnly _today;
+    private DateTime _sessionStartedAt;
     private string _statusMessage = "Monitoring has not started yet.";
     private string _currentAppName = "Idle";
     private bool _isCurrentTargetSupported;
@@ -19,6 +23,7 @@ public sealed class StatsStore : IDisposable
     {
         _statsPath = Path.Combine(dataDirectory, "stats.json");
         (_today, _stats) = Load();
+        _sessionStartedAt = DateTime.Now;
     }
 
     public event EventHandler? Changed;
@@ -58,7 +63,18 @@ public sealed class StatsStore : IDisposable
             }
 
             stat.TodayCount += delta;
+            stat.SessionCount += delta;
             stat.TotalCount += delta;
+            _recentActivity.Insert(0, new RecentActivityEntry
+            {
+                AppName = appName,
+                Delta = delta,
+                Timestamp = DateTime.Now
+            });
+            if (_recentActivity.Count > MaxRecentActivityEntries)
+            {
+                _recentActivity.RemoveRange(MaxRecentActivityEntries, _recentActivity.Count - MaxRecentActivityEntries);
+            }
             PersistLocked();
         }
 
@@ -98,6 +114,21 @@ public sealed class StatsStore : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    public void ResetSession()
+    {
+        lock (_syncRoot)
+        {
+            _sessionStartedAt = DateTime.Now;
+            _recentActivity.Clear();
+            foreach (var stat in _stats.Values)
+            {
+                stat.SessionCount = 0;
+            }
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     public DashboardSnapshot GetSnapshot()
     {
         lock (_syncRoot)
@@ -106,6 +137,7 @@ public sealed class StatsStore : IDisposable
             return new DashboardSnapshot
             {
                 Today = _today,
+                SessionStartedAt = _sessionStartedAt,
                 StatusMessage = _statusMessage,
                 CurrentAppName = _currentAppName,
                 IsCurrentTargetSupported = _isCurrentTargetSupported,
@@ -118,7 +150,16 @@ public sealed class StatsStore : IDisposable
                     {
                         AppName = item.AppName,
                         TodayCount = item.TodayCount,
+                        SessionCount = item.SessionCount,
                         TotalCount = item.TotalCount
+                    })
+                    .ToList(),
+                RecentActivity = _recentActivity
+                    .Select(item => new RecentActivityEntry
+                    {
+                        AppName = item.AppName,
+                        Delta = item.Delta,
+                        Timestamp = item.Timestamp
                     })
                     .ToList()
             };

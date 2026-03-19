@@ -9,7 +9,7 @@ public sealed class CompositionAwareDeltaTracker
     private string _lastRawText = string.Empty;
     private int _lastCommittedCount;
 
-    public DeltaResult ProcessSnapshot(string snapshotKey, string rawText, DateTime utcNow)
+    public DeltaResult ProcessSnapshot(string snapshotKey, string rawText, DateTime utcNow, bool isNativeImeInputMode)
     {
         if (_lastSnapshotKey != snapshotKey)
         {
@@ -25,7 +25,7 @@ public sealed class CompositionAwareDeltaTracker
             return compositionCommitResult;
         }
 
-        UpdatePendingSegment(rawText, utcNow);
+        UpdatePendingSegment(rawText, utcNow, isNativeImeInputMode);
 
         var effectiveCommittedCount = CharacterCountService.CountSupportedCharacters(rawText)
             - (_pendingSegment?.LetterCount ?? 0);
@@ -76,13 +76,14 @@ public sealed class CompositionAwareDeltaTracker
         _lastCommittedCount = CharacterCountService.CountSupportedCharacters(rawText);
     }
 
-    private void UpdatePendingSegment(string currentRawText, DateTime utcNow)
+    private void UpdatePendingSegment(string currentRawText, DateTime utcNow, bool isNativeImeInputMode)
     {
         if (_pendingSegment is not null)
         {
             if (currentRawText == _pendingSegment.RawText)
             {
-                if (utcNow - _pendingSegment.FirstSeenUtc >= PendingConfirmationDelay)
+                if (!isNativeImeInputMode
+                    && utcNow - _pendingSegment.FirstSeenUtc >= PendingConfirmationDelay)
                 {
                     _pendingSegment = null;
                 }

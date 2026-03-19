@@ -2,7 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
-using Avalonia.Themes.Fluent;
+using Avalonia.Threading;
+using FluentAvalonia.Styling;
 using Inputor.App.Models;
 using Inputor.App.Services;
 using Inputor.App.Views;
@@ -11,6 +12,11 @@ namespace Inputor.App;
 
 public sealed class App : Application
 {
+    private AppSettings? _settings;
+    private AppSettingsService? _settingsService;
+    private StatsStore? _statsStore;
+    private CsvExportService? _exporter;
+    private AutoStartService? _autoStartService;
     private MonitoringService? _monitoringService;
     private MainWindow? _mainWindow;
     private SettingsWindow? _settingsWindow;
@@ -19,7 +25,7 @@ public sealed class App : Application
 
     public override void Initialize()
     {
-        Styles.Add(new FluentTheme());
+        Styles.Add(new FluentAvaloniaTheme());
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -31,47 +37,49 @@ public sealed class App : Application
                 "inputor");
             Directory.CreateDirectory(dataDirectory);
 
-            var settingsService = new AppSettingsService(dataDirectory);
-            var settings = settingsService.Load();
-            var statsStore = new StatsStore(dataDirectory);
-            var exporter = new CsvExportService();
-            var autoStartService = new AutoStartService();
-            autoStartService.Apply(settings.StartWithWindows);
+            _settingsService = new AppSettingsService(dataDirectory);
+            _settings = _settingsService.Load();
+            _statsStore = new StatsStore(dataDirectory);
+            _exporter = new CsvExportService();
+            _autoStartService = new AutoStartService();
+            _autoStartService.Apply(_settings.StartWithWindows);
 
-            _mainWindow = new MainWindow(statsStore, settings, exporter, ShowSettingsWindow)
+            _mainWindow = new MainWindow(_statsStore, _settings, _exporter, ShowSettingsWindow, TogglePauseMonitoring, ResetSession, ExcludeCurrentApp)
             {
                 Icon = LoadIcon(),
                 Title = "inputor"
             };
-            _mainWindow.RequestExit += (_, _) => ExitApplication(desktop);
             _mainWindow.Closing += OnMainWindowClosing;
 
-            _settingsWindow = new SettingsWindow(settings)
+            _settingsWindow = new SettingsWindow(_settings, _statsStore)
             {
                 Icon = LoadIcon(),
                 Title = "inputor Settings"
             };
             _settingsWindow.SettingsSaved += (_, updatedSettings) =>
             {
-                settingsService.Save(updatedSettings);
-                autoStartService.Apply(updatedSettings.StartWithWindows);
-                statsStore.SetStatus(
+                _settingsService?.Save(updatedSettings);
+                _autoStartService?.Apply(updatedSettings.StartWithWindows);
+                _statsStore?.SetStatus(
                     "Settings updated.",
-                    statsStore.CurrentAppName,
-                    statsStore.IsCurrentTargetSupported);
+                    _statsStore.CurrentAppName,
+                    _statsStore.IsCurrentTargetSupported);
+                UpdateTrayToolTip();
             };
 
-            _trayIcon = CreateTrayIcon(desktop, exporter, statsStore);
+            _trayIcon = CreateTrayIcon(desktop);
+            _statsStore.Changed += (_, _) => Dispatcher.UIThread.Post(UpdateTrayToolTip);
+            UpdateTrayToolTip();
 
             desktop.MainWindow = _mainWindow;
             desktop.Exit += (_, _) =>
             {
                 _trayIcon?.Dispose();
                 _monitoringService?.Dispose();
-                statsStore.Dispose();
+                _statsStore?.Dispose();
             };
 
-            _monitoringService = new MonitoringService(statsStore, settings);
+            _monitoringService = new MonitoringService(_statsStore, _settings);
             _monitoringService.Start();
         }
 
@@ -119,16 +127,25 @@ public sealed class App : Application
         desktop.Shutdown();
     }
 
-    private TrayIcon CreateTrayIcon(
-        IClassicDesktopStyleApplicationLifetime desktop,
-        CsvExportService exporter,
-        StatsStore statsStore)
+    private TrayIcon CreateTrayIcon(IClassicDesktopStyleApplicationLifetime desktop)
     {
         var menu = new NativeMenu();
 
         var showItem = new NativeMenuItem("Show Dashboard");
         showItem.Click += (_, _) => ShowDashboardWindow();
         menu.Add(showItem);
+
+        var pauseItem = new NativeMenuItem("Pause/Resume Monitoring");
+        pauseItem.Click += (_, _) => TogglePauseMonitoring();
+        menu.Add(pauseItem);
+
+        var resetSessionItem = new NativeMenuItem("Reset Session");
+        resetSessionItem.Click += (_, _) => ResetSession();
+        menu.Add(resetSessionItem);
+
+        var excludeCurrentItem = new NativeMenuItem("Exclude Current App");
+        excludeCurrentItem.Click += (_, _) => ExcludeCurrentApp();
+        menu.Add(excludeCurrentItem);
 
         var settingsItem = new NativeMenuItem("Settings");
         settingsItem.Click += (_, _) => ShowSettingsWindow();
@@ -137,8 +154,13 @@ public sealed class App : Application
         var exportItem = new NativeMenuItem("Export Today CSV");
         exportItem.Click += (_, _) =>
         {
-            var path = exporter.ExportToday(statsStore.GetSnapshot());
-            statsStore.SetStatus($"Exported CSV to {path}", statsStore.CurrentAppName, statsStore.IsCurrentTargetSupported);
+            if (_exporter is null || _statsStore is null)
+            {
+                return;
+            }
+
+            var path = _exporter.ExportToday(_statsStore.GetSnapshot());
+            _statsStore.SetStatus($"Exported CSV to {path}", _statsStore.CurrentAppName, _statsStore.IsCurrentTargetSupported);
             ShowDashboardWindow();
         };
         menu.Add(exportItem);
@@ -159,6 +181,69 @@ public sealed class App : Application
 
         trayIcon.Clicked += (_, _) => ShowDashboardWindow();
         return trayIcon;
+    }
+
+    private void TogglePauseMonitoring()
+    {
+        _monitoringService?.TogglePause();
+        UpdateTrayToolTip();
+    }
+
+    private void ResetSession()
+    {
+        if (_statsStore is null)
+        {
+            return;
+        }
+
+        _statsStore.ResetSession();
+        _statsStore.SetStatus("Session counters reset.", _statsStore.CurrentAppName, _statsStore.IsCurrentTargetSupported);
+        UpdateTrayToolTip();
+    }
+
+    private void ExcludeCurrentApp()
+    {
+        if (_settings is null || _settingsService is null || _statsStore is null)
+        {
+            return;
+        }
+
+        var processName = _statsStore.CurrentAppName;
+        if (!CanExclude(processName))
+        {
+            _statsStore.SetStatus("No active app is available for exclusion right now.", processName, false);
+            return;
+        }
+
+        if (!_settings.AddExcludedApp(processName))
+        {
+            _statsStore.SetStatus($"{processName} is already excluded.", processName, false);
+            return;
+        }
+
+        _settingsService.Save(_settings);
+        _settingsWindow?.ReloadFromSettings();
+        _statsStore.SetStatus($"Added {processName} to excluded apps.", processName, false);
+    }
+
+    private void UpdateTrayToolTip()
+    {
+        if (_trayIcon is null || _statsStore is null)
+        {
+            return;
+        }
+
+        var snapshot = _statsStore.GetSnapshot();
+        var stateText = snapshot.IsPaused ? "Paused" : snapshot.CurrentAppName;
+        _trayIcon.ToolTipText = $"inputor | Today {snapshot.TotalToday:N0} | Session {snapshot.TotalSession:N0} | {stateText}";
+    }
+
+    private static bool CanExclude(string processName)
+    {
+        return !string.IsNullOrWhiteSpace(processName)
+            && !string.Equals(processName, "Idle", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(processName, "Unavailable", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(processName, "inputor.App", StringComparison.OrdinalIgnoreCase);
     }
 
     private WindowIcon LoadIcon()

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>inputor.App</AssemblyName>
@@ -17,6 +17,7 @@
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="FlaUI.Core" Version="5.0.0" />
     <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+    <PackageReference Include="FluentAvaloniaUI" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup>

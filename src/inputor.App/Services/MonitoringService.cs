@@ -147,7 +147,8 @@ public sealed class MonitoringService : IDisposable
         }
 
         var snapshotKey = BuildSnapshotKey(processName, focusedElement);
-        var result = _deltaTracker.ProcessSnapshot(snapshotKey, text, DateTime.UtcNow);
+        var isNativeImeInputMode = IsNativeChineseImeInputMode(foregroundWindow);
+        var result = _deltaTracker.ProcessSnapshot(snapshotKey, text, DateTime.UtcNow, isNativeImeInputMode);
         var clipboardText = result.Delta > 0 ? _clipboardTextService.TryGetText() : null;
         var controlTypeName = focusedElement.Properties.ControlType.ValueOrDefault.ToString();
 
@@ -216,6 +217,49 @@ public sealed class MonitoringService : IDisposable
         }
     }
 
+    private static bool IsNativeChineseImeInputMode(IntPtr foregroundWindow)
+    {
+        const int ChinesePrimaryLanguageId = 0x04;
+        const int PrimaryLanguageMask = 0x03ff;
+        const int ImeCmodeNative = 0x0001;
+
+        try
+        {
+            var windowThreadId = GetWindowThreadProcessId(foregroundWindow, out _);
+            var keyboardLayout = GetKeyboardLayout(windowThreadId).ToInt64();
+            var languageId = unchecked((ushort)(keyboardLayout & 0xffff));
+            if ((languageId & PrimaryLanguageMask) != ChinesePrimaryLanguageId)
+            {
+                return false;
+            }
+
+            var inputContext = ImmGetContext(foregroundWindow);
+            if (inputContext == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ImmGetOpenStatus(inputContext))
+                {
+                    return false;
+                }
+
+                return ImmGetConversionStatus(inputContext, out var conversion, out _)
+                    && (conversion & ImeCmodeNative) != 0;
+            }
+            finally
+            {
+                _ = ImmReleaseContext(foregroundWindow, inputContext);
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private void Sleep()
     {
         _cts.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(500));
@@ -225,5 +269,20 @@ public sealed class MonitoringService : IDisposable
     private static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll")]
+    private static extern IntPtr GetKeyboardLayout(uint idThread);
+
+    [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+    [DllImport("imm32.dll")]
+    private static extern IntPtr ImmGetContext(IntPtr hWnd);
+
+    [DllImport("imm32.dll")]
+    private static extern bool ImmGetConversionStatus(IntPtr hIMC, out int conversion, out int sentence);
+
+    [DllImport("imm32.dll")]
+    private static extern bool ImmGetOpenStatus(IntPtr hIMC);
+
+    [DllImport("imm32.dll")]
+    private static extern bool ImmReleaseContext(IntPtr hWnd, IntPtr hIMC);
 }

@@ -1,18 +1,42 @@
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
+using System.Threading;
 using Inputor.App.Services;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 
-namespace Inputor.App;
+namespace Inputor.WinUI;
 
 internal static class Program
 {
     [STAThread]
     public static void Main(string[] args)
     {
+        if (TryHandleCli(args))
+        {
+            return;
+        }
+
+        WinRT.ComWrappersSupport.InitializeComWrappers();
+        try
+        {
+            Application.Start(_initParams =>
+            {
+                var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
+                SynchronizationContext.SetSynchronizationContext(context);
+                var app = new App();
+            });
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    private static bool TryHandleCli(string[] args)
+    {
         if (args.Length >= 2 && args[0] == "--count-sample")
         {
             Console.WriteLine(CharacterCountService.CountSupportedCharacters(args[1]));
-            return;
+            return true;
         }
 
         if (args.Length >= 2 && args[0] == "--simulate-sequence")
@@ -27,18 +51,18 @@ internal static class Program
                 now = now.AddMilliseconds(500);
             }
 
-            return;
+            return true;
         }
 
         if (args.Length >= 4 && args[0] == "--simulate-paste")
         {
             var tracker = new CompositionAwareDeltaTracker();
             var now = DateTime.UtcNow;
-            tracker.ProcessSnapshot("sample", args[1], now, false);
+            _ = tracker.ProcessSnapshot("sample", args[1], now, false);
             var result = tracker.ProcessSnapshot("sample", args[2], now.AddMilliseconds(500), false);
             var isPaste = PasteDetectionService.LooksLikePaste(result.InsertedTextSegment, args[3]);
             Console.WriteLine($"delta={result.Delta}, pending={result.IsPendingComposition}, inserted={result.InsertedTextSegment}, paste={isPaste}");
-            return;
+            return true;
         }
 
         if (args.Length >= 5 && args[0] == "--simulate-bulk")
@@ -48,13 +72,9 @@ internal static class Program
             var controlTypeName = args[3];
             var isPaste = bool.Parse(args[4]);
             Console.WriteLine(BulkLoadDetectionService.LooksLikeBulkContentLoad(delta, inserted, controlTypeName, isPaste));
-            return;
+            return true;
         }
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, Avalonia.Controls.ShutdownMode.OnExplicitShutdown);
+        return false;
     }
-
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
-            .UsePlatformDetect();
 }

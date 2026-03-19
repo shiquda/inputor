@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseWinUI>true</UseWinUI>
+    <UseWindowsForms>true</UseWindowsForms>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RootNamespace>Inputor.WinUI</RootNamespace>
+    <AssemblyName>inputor.App</AssemblyName>
+    <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <StartupObject>Inputor.WinUI.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+    <PackageReference Include="FlaUI.Core" Version="5.0.0" />
+    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\inputor.App\Models\AppSettings.cs" Link="Models\AppSettings.cs" />
+    <Compile Include="..\inputor.App\Models\AppStat.cs" Link="Models\AppStat.cs" />
+    <Compile Include="..\inputor.App\Models\DashboardSnapshot.cs" Link="Models\DashboardSnapshot.cs" />
+    <Compile Include="..\inputor.App\Models\RecentActivityEntry.cs" Link="Models\RecentActivityEntry.cs" />
+    <Compile Include="..\inputor.App\Services\AppSettingsService.cs" Link="Services\AppSettingsService.cs" />
+    <Compile Include="..\inputor.App\Services\AutoStartService.cs" Link="Services\AutoStartService.cs" />
+    <Compile Include="..\inputor.App\Services\BulkLoadDetectionService.cs" Link="Services\BulkLoadDetectionService.cs" />
+    <Compile Include="..\inputor.App\Services\CharacterCountService.cs" Link="Services\CharacterCountService.cs" />
+    <Compile Include="..\inputor.App\Services\ClipboardTextService.cs" Link="Services\ClipboardTextService.cs" />
+    <Compile Include="..\inputor.App\Services\CompositionAwareDeltaTracker.cs" Link="Services\CompositionAwareDeltaTracker.cs" />
+    <Compile Include="..\inputor.App\Services\CsvExportService.cs" Link="Services\CsvExportService.cs" />
+    <Compile Include="..\inputor.App\Services\MonitoringService.cs" Link="Services\MonitoringService.cs" />
+    <Compile Include="..\inputor.App\Services\PasteDetectionService.cs" Link="Services\PasteDetectionService.cs" />
+    <Compile Include="..\inputor.App\Services\StatsStore.cs" Link="Services\StatsStore.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\inputor.App\Assets\inputor.ico" Link="Assets\inputor.ico" />
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+</Project>
