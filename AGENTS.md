@@ -1,310 +1,167 @@
-# AGENTS.md - Development Guide for AI Coding Agents
+# AGENTS.md - inputor agent guide
+This file is for coding agents working in `E:\repo\Others\inputor`.
+Prefer the source tree over older docs when they disagree; `README.md` is currently stale in a few places.
 
-This guide provides essential information for AI agents working on the `inputor` codebase.
+## Project snapshot
+- Product: Windows-first desktop app for privacy-safe Chinese and English input statistics.
+- Current UI stack: WinUI 3 on .NET 8, not Avalonia.
+- Monitoring stack: FlaUI UIA3 over Windows UI Automation.
+- Persistence: local JSON files under `%LocalAppData%\inputor`.
+- Export: CSV files under `%Documents%\inputor-exports`.
+- Privacy rule: never persist raw captured text; only counts, metadata, and derived debug fields.
 
-## Project Overview
+## Repository layout
+- `inputor.sln` - single-solution entry point.
+- `src/inputor.WinUI/` - only active app project.
+- `src/inputor.WinUI/Program.cs` - process entry point and CLI test harness.
+- `src/inputor.WinUI/App.cs` - app bootstrap, service wiring, lifecycle, tray coordination.
+- `src/inputor.WinUI/MainWindow.cs` - main dashboard shell with navigation and page switching.
+- `src/inputor.WinUI/StatisticsPage.cs` - trend, heatmap, and distribution UI.
+- `src/inputor.WinUI/DebugPage.cs` - debug capture UI and event inspection.
+- `src/inputor.WinUI/SettingsPage.cs` - settings, export, and data-management UI.
+- `src/inputor.WinUI/NotifyIconService.cs` - tray icon integration through Windows Forms.
+- `src/inputor.WinUI/TrayMenuWindow.cs` - custom tray popup window.
+- `src/inputor.WinUI/Services/` - business logic and OS integration.
+- `src/inputor.WinUI/Models/` - POCO-style state and snapshot models.
 
-`inputor` is a Windows-first MVP for privacy-safe Chinese and English input statistics tracking.
+## Architecture notes
+- The project name is `inputor.WinUI`, but the assembly name stays `inputor.App` for compatibility.
+- Namespaces are split intentionally: UI/root files use `Inputor.WinUI`, models use `Inputor.App.Models`, and services use `Inputor.App.Services`.
+- There is no DI container. `App` constructs and owns the service graph directly.
+- There is no ViewModel layer today. UI is built in C# code-behind, not XAML-heavy MVVM.
+- `MainWindow` hosts a `NavigationView` with Overview, Statistics, Apps, Debug, and Settings surfaces.
+- `StatsStore` is the shared state hub. UI and tray subscribe to its `Changed` event.
+- `MonitoringService` runs on its own STA worker thread and polls the foreground control through UIA.
+- Character counting flows through `CompositionAwareDeltaTracker`, paste detection, and bulk-load filtering before counts are recorded.
+- `StartupDiagnostics` writes startup and crash clues to `%LocalAppData%\inputor\startup.log`.
 
-**Tech Stack:**
-- .NET 8.0 (Windows-specific)
-- Avalonia 11.3.12 (cross-platform UI framework)
-- FlaUI 5.0.0 (Windows UI Automation)
-- CommunityToolkit.Mvvm 8.4.0
-- CsvHelper 33.1.0
+## Build, run, and verification commands
+Use these from the repository root.
 
-**Project Structure:**
-- `src/inputor.App/` - Main Avalonia desktop application
-- `src/inputor.Spike/` - Original console spike (historical reference)
-
----
-
-## Build, Test, and Run Commands
+### Restore
+```bash
+dotnet restore inputor.sln
+```
 
 ### Build
 ```bash
 dotnet build inputor.sln
 ```
 
-### Run the Application
-```bash
-dotnet run --project src/inputor.App/inputor.App.csproj
-```
-
-### Clean Build
+### Clean build
 ```bash
 dotnet clean inputor.sln
 dotnet build inputor.sln
 ```
 
-### Restore Dependencies
+### Run the desktop app
 ```bash
-dotnet restore inputor.sln
+dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj
 ```
 
-### CLI Testing Utilities
+## Test and lint reality
+- There is no dedicated test project in this repository today.
+- There is no lint command or StyleCop configuration in this repository today.
+- There is no supported `dotnet test` target, so single-test execution is not available.
+- If a task asks for "run a single test", state that no automated test suite exists yet and use the CLI probes below or a manual smoke test instead.
 
-The app includes built-in CLI commands for testing specific functionality:
-
-**Test character counting:**
+## Built-in CLI probes
+- Count supported characters:
 ```bash
-dotnet run --project src/inputor.App/inputor.App.csproj -- --count-sample "Hello世界"
+dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj -- --count-sample "Hello世界"
 ```
-
-**Test composition-aware delta tracking:**
+- Simulate IME composition-aware deltas:
 ```bash
-dotnet run --project src/inputor.App/inputor.App.csproj -- --simulate-sequence "你|你好|你好世|你好世界"
+dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj -- --simulate-sequence "你|你好|你好世|你好世界"
 ```
-
-**Test paste detection:**
+- Simulate paste detection:
 ```bash
-dotnet run --project src/inputor.App/inputor.App.csproj -- --simulate-paste "Hello" "Hello World" "World"
+dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj -- --simulate-paste "Hello" "Hello World" "World"
+```
+- Simulate bulk-load filtering:
+```bash
+dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj -- --simulate-bulk 12 "Hello world" "Edit" false
 ```
 
-### Verification Checklist
-
-Before considering work complete:
-1. Run `dotnet build inputor.sln` - must succeed with no errors
-2. Launch `src/inputor.App` and verify it runs for at least 5 seconds without crashing
-3. Check that tray icon appears and dashboard opens
-
----
-
-## Code Style Guidelines
-
-### Namespace and File Organization
-
-- **File-scoped namespaces** (C# 10+): Use `namespace Inputor.App.Services;` at the top
-- **One class per file**: File name matches the class name exactly
-- **Namespace structure**: `Inputor.App.<Folder>` (e.g., `Inputor.App.Models`, `Inputor.App.Services`)
-
-### Naming Conventions
-
-- **Classes**: PascalCase, descriptive nouns (e.g., `MonitoringService`, `AppSettings`)
-- **Interfaces**: PascalCase with `I` prefix (e.g., `IDisposable`)
-- **Methods**: PascalCase, verb phrases (e.g., `RecordDelta`, `TryReadText`)
-- **Properties**: PascalCase (e.g., `CurrentAppName`, `IsPaused`)
-- **Private fields**: camelCase with `_` prefix (e.g., `_statsStore`, `_isPaused`)
-- **Local variables**: camelCase (e.g., `processName`, `focusedElement`)
-- **Constants**: PascalCase (no SCREAMING_CASE)
-
-### Type System
-
-- **Nullable reference types enabled**: `<Nullable>enable</Nullable>` in .csproj
-- Use `?` for nullable types explicitly (e.g., `string?`, `AutomationElement?`)
-- Use `is null` / `is not null` for null checks (modern C# pattern)
-- Prefer `sealed` classes when inheritance is not needed
-- Use `static` for utility classes (e.g., `CharacterCountService`)
-
-### Imports and Usings
-
-- **Implicit usings enabled**: `<ImplicitUsings>enable</ImplicitUsings>` in .csproj
-- Common namespaces (System, System.Collections.Generic, System.Linq, etc.) are auto-imported
-- Explicit usings for:
-  - Third-party libraries (Avalonia, FlaUI, CsvHelper)
-  - Project namespaces (Inputor.App.Models, Inputor.App.Services)
-- Order: System namespaces first, then third-party, then project namespaces
-- No unused usings
-
-### Error Handling
-
-- **Try-catch for external operations**: File I/O, process access, UI Automation calls
-- **Return null or empty for failures**: Prefer `string.Empty` over throwing in utility methods
-- **Catch specific exceptions when possible**, but generic `catch` is acceptable for monitoring loops
-- **Never swallow exceptions silently**: Log or set status messages
-- Example pattern from `MonitoringService`:
-  ```csharp
-  try
-  {
-      return Process.GetProcessById((int)processId).ProcessName;
-  }
-  catch
-  {
-      return string.Empty;
-  }
-  ```
-
-### Patterns and Idioms
-
-**Locking for thread safety:**
-```csharp
-private readonly object _syncRoot = new();
-
-public void RecordDelta(string appName, int delta)
-{
-    lock (_syncRoot)
-    {
-        // Critical section
-    }
-}
-```
-
-**Disposal pattern:**
-```csharp
-public sealed class MonitoringService : IDisposable
-{
-    private readonly CancellationTokenSource _cts = new();
-    
-    public void Dispose()
-    {
-        _cts.Cancel();
-        _workerThread?.Join(TimeSpan.FromSeconds(2));
-        _cts.Dispose();
-    }
-}
-```
-
-**String comparisons:**
-- Use `StringComparison.OrdinalIgnoreCase` for case-insensitive comparisons
-- Use `StringComparison.Ordinal` for case-sensitive comparisons
-- Example: `string.Equals(part, processName, StringComparison.OrdinalIgnoreCase)`
-
-**Null-conditional and null-coalescing:**
-- Use `?.` for safe navigation: `element.Properties.Name.ValueOrDefault ?? string.Empty`
-- Use `??` for default values
-- Use `is null` / `is not null` for checks
-
----
-
-## Architecture and Design Principles
-
-### Service Layer
-
-All business logic lives in `Services/`:
-- `MonitoringService` - Core UIA polling and text snapshot tracking
-- `StatsStore` - Thread-safe statistics storage and persistence
-- `CharacterCountService` - Chinese/English character detection (static utility)
-- `CompositionAwareDeltaTracker` - IME composition handling
-- `PasteDetectionService` - Clipboard paste detection
-- `CsvExportService` - Export to CSV
-- `AutoStartService` - Windows startup integration
-- `AppSettingsService` - Settings persistence
-
-### Models
-
-Simple POCOs in `Models/`:
-- `AppSettings` - User preferences
-- `AppStat` - Per-app statistics
-- `DashboardSnapshot` - UI state snapshot
-
-### Views
-
-Avalonia UI in `Views/`:
-- `MainWindow` - Dashboard and tray icon
-- `SettingsWindow` - Settings dialog
-
-### Privacy and Security
-
-**CRITICAL**: This app is privacy-focused. Never:
-- Store raw text content (only counts and deltas)
-- Log sensitive information
-- Transmit data over network
-- Access password fields (check `IsPassword` property)
-
-### Threading Model
-
-- **Main thread**: Avalonia UI (STA)
-- **Background thread**: `MonitoringService.WorkerLoop()` (STA for COM interop with UIA)
-- **Synchronization**: Use `lock (_syncRoot)` for shared state in `StatsStore`
-- **Cancellation**: Use `CancellationTokenSource` for graceful shutdown
-
----
-
-## Common Tasks
-
-### Adding a New Service
-
-1. Create `Services/YourService.cs`
-2. Use namespace `Inputor.App.Services;`
-3. Make it `sealed` unless inheritance is needed
-4. Implement `IDisposable` if it holds resources
-5. Register in `App.cs` or `Program.cs` if needed
-
-### Modifying Character Counting Logic
-
-Edit `CharacterCountService.cs`:
-- `IsChineseRune()` - Unicode ranges for Chinese characters
-- `IsEnglishLetter()` - A-Z, a-z detection
-- `CountSupportedCharacters()` - Combined count
-
-Test with CLI: `dotnet run --project src/inputor.App/inputor.App.csproj -- --count-sample "测试text"`
-
-### Adding Settings
-
-1. Add property to `Models/AppSettings.cs`
-2. Update `AppSettingsService.cs` for persistence
-3. Add UI control in `Views/SettingsWindow.cs`
-4. Use the setting in relevant service
-
----
-
-## Testing and Verification
-
-### Manual Testing Checklist
-
-- [ ] Build succeeds: `dotnet build inputor.sln`
-- [ ] App launches without errors
-- [ ] Tray icon appears in system tray
-- [ ] Dashboard opens and shows "Monitoring has not started yet" or current status
-- [ ] Type in external app (e.g., Notepad) and verify counts increment
-- [ ] Settings dialog opens and saves preferences
-- [ ] CSV export creates file in Documents/inputor-exports
-- [ ] App exits cleanly via tray menu
-
-### Known Limitations (Do Not "Fix")
-
-These are documented MVP constraints, not bugs:
-- Elevated windows cannot be monitored (Windows security)
-- Password fields are intentionally skipped
-- Some custom editors may not expose UIA text patterns
-- Paste detection is heuristic-based (may have false positives/negatives)
-
----
-
-## Important Notes for AI Agents
-
-1. **Windows-only**: This is a Windows-specific app. Do not suggest cross-platform alternatives for UIA or P/Invoke.
-
-2. **No unit tests yet**: The project uses manual smoke testing. Do not add test projects unless explicitly requested.
-
-3. **Minimal dependencies**: Avoid adding new NuGet packages unless absolutely necessary.
-
-4. **Privacy first**: Never log or store raw text content. Only counts and metadata.
-
-5. **Thread safety**: `StatsStore` is accessed from both UI and background threads. Always use `lock (_syncRoot)`.
-
-6. **Avalonia patterns**: Follow Avalonia conventions for UI code (not WPF or WinForms).
-
-7. **FlaUI patterns**: Use `element.Patterns.Text` and `element.Patterns.Value` for text extraction.
-
-8. **IME awareness**: The `CompositionAwareDeltaTracker` handles Chinese IME composition. Do not bypass it.
-
----
-
-## Troubleshooting
-
-**Build fails with "SDK not found":**
-- Ensure .NET 8.0 SDK is installed: `dotnet --version`
-
-**App crashes on startup:**
-- Check Windows version (requires Windows 10+)
-- Verify FlaUI.UIA3 can initialize (requires UIAutomationCore.dll)
-
-**Monitoring not working:**
-- Run as administrator for elevated windows (optional)
-- Check if target app exposes UIA text patterns
-- Verify app is not in excluded list (Settings)
-
-**Counts seem wrong:**
-- Test with CLI: `--count-sample` and `--simulate-sequence`
-- Check `CharacterCountService` Unicode ranges
-- Verify paste detection is not excluding legitimate typing
-
----
-
-## References
-
-- [Avalonia Documentation](https://docs.avaloniaui.net/)
-- [FlaUI Documentation](https://github.com/FlaUI/FlaUI)
-- [.NET 8.0 Documentation](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8)
-- [Windows UI Automation](https://learn.microsoft.com/en-us/windows/win32/winauto/entry-uiauto-win32)
+## Manual smoke test checklist
+Run this before calling substantial app changes done.
+1. `dotnet build inputor.sln` succeeds.
+2. Launch the app and keep it open for at least 5 seconds.
+3. Confirm the tray icon appears.
+4. Confirm the main window opens and navigation works.
+5. Type in a supported external app such as Notepad and verify counts change.
+6. Open Settings and verify save/export actions still work.
+7. Exit through the tray/menu path and confirm clean shutdown.
+
+## Code style expectations
+
+### File organization
+- Keep one top-level class per file.
+- Match file names to class names exactly.
+- Use file-scoped namespaces.
+- Put reusable business logic in `Services/` and data contracts in `Models/`.
+- Keep WinUI page and window composition close to the owning UI file unless a helper is clearly reusable.
+
+### Naming
+- Classes, methods, properties, enums: PascalCase.
+- Private fields: `_camelCase`.
+- Locals and parameters: `camelCase`.
+- Interfaces: `I` prefix.
+- Constants: PascalCase, not screaming snake case.
+
+### Imports and usings
+- `ImplicitUsings` is enabled; do not add redundant basic framework usings.
+- Order usings as: System, third-party, project namespaces.
+- Remove unused usings.
+- Use aliases only when type collisions are real, such as WinForms tray types.
+
+### Types and nullability
+- Nullable reference types are enabled; express optional values explicitly with `?`.
+- Prefer `is null` and `is not null` checks.
+- Prefer concrete return types over `object`.
+- Do not suppress type issues with `as any`, `#pragma`, or ignore-style workarounds.
+- Prefer `sealed` for classes that are not designed for inheritance.
+
+### Formatting and structure
+- Follow the existing C# formatting style in nearby files.
+- Prefer early returns for guard clauses.
+- Keep methods focused; extract helpers when a block becomes hard to scan.
+- Avoid comment noise; add short comments only when behavior is non-obvious.
+
+### Error handling
+- Wrap OS, file system, registry, clipboard, and UI Automation calls in defensive error handling.
+- Prefer returning a safe fallback or status update for expected environment failures.
+- Do not swallow failures silently; log through `StartupDiagnostics` or update `StatsStore` status when appropriate.
+- Generic `catch` is acceptable in monitoring loops when the fallback behavior is deliberate and visible.
+
+### Threading and state
+- `StatsStore` is shared mutable state; preserve its locking discipline with `lock (_syncRoot)`.
+- Do not update WinUI controls from the monitoring thread; marshal back with `DispatcherQueue`.
+- Keep the monitoring worker STA-compatible; do not remove apartment-state setup from `MonitoringService`.
+- Be careful with event subscriptions; unsubscribe on window/service disposal paths.
+
+## Domain-specific guardrails
+- Never persist raw text content to disk, logs, exports, telemetry, or debug artifacts.
+- Password fields must stay excluded.
+- Elevated windows and unsupported controls are expected limitations, not automatic bugs.
+- Do not bypass `CompositionAwareDeltaTracker`, paste detection, or bulk-load filtering when changing counting logic.
+- `AppSettings.PrivacyMode` exists in the model; check real usage before assuming it is wired to UI behavior.
+- Because the assembly name is `inputor.App`, process-name checks may still use `inputor.App` instead of `inputor.WinUI`.
+
+## Working rules for agents
+- Prefer small, focused edits over broad refactors.
+- Avoid new NuGet dependencies unless the task clearly requires them.
+- If you touch monitoring or persistence logic, run at least one CLI probe plus the build.
+- If you touch WinUI interaction flow, do the manual smoke test as well.
+- Do not "fix" documented MVP limitations unless the user explicitly asks.
+
+## Repository-specific rule files
+- Existing repository guide: `AGENTS.md` at the repo root.
+- No `.cursorrules` file was found.
+- No `.cursor/rules/` directory was found.
+- No `.github/copilot-instructions.md` file was found.
+
+## External references
+- WinUI 3 / Windows App SDK docs: `Microsoft.WindowsAppSDK` APIs used by `App.cs` and `MainWindow.cs`.
+- FlaUI docs: useful for `MonitoringService` text and control access patterns.
+- Windows UI Automation docs: useful when changing control inspection behavior.
