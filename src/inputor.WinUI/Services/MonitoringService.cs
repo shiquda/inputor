@@ -17,6 +17,7 @@ public sealed class MonitoringService : IDisposable
     private readonly CancellationTokenSource _cts = new();
     private Thread? _workerThread;
     private bool _isPaused;
+    private bool _hasLoggedFirstPoll;
 
     public MonitoringService(StatsStore statsStore, AppSettings settings)
     {
@@ -27,6 +28,8 @@ public sealed class MonitoringService : IDisposable
 
     public bool IsPaused => _isPaused;
 
+    public bool IsStarted => _workerThread is not null;
+
     public void Start()
     {
         if (_workerThread is not null)
@@ -34,6 +37,7 @@ public sealed class MonitoringService : IDisposable
             return;
         }
 
+        global::Inputor.WinUI.StartupDiagnostics.Log("MonitoringService.Start invoked.");
         _workerThread = new Thread(WorkerLoop)
         {
             IsBackground = true,
@@ -41,13 +45,14 @@ public sealed class MonitoringService : IDisposable
         };
         _workerThread.SetApartmentState(ApartmentState.STA);
         _workerThread.Start();
+        global::Inputor.WinUI.StartupDiagnostics.Log("MonitoringService worker thread started.");
     }
 
     public void TogglePause()
     {
         _isPaused = !_isPaused;
         _statsStore.SetPaused(_isPaused);
-        _statsStore.SetStatus(_isPaused ? "Monitoring paused." : "Monitoring resumed.", _statsStore.CurrentAppName, _statsStore.IsCurrentTargetSupported);
+        _statsStore.SetStatus(StatusText.MonitoringPauseChanged(_isPaused), _statsStore.CurrentAppName, _statsStore.IsCurrentTargetSupported, _statsStore.CurrentProcessName);
     }
 
     public void Dispose()
@@ -59,7 +64,10 @@ public sealed class MonitoringService : IDisposable
 
     private void WorkerLoop()
     {
+        global::Inputor.WinUI.StartupDiagnostics.Log("MonitoringService.WorkerLoop entered.");
+        global::Inputor.WinUI.StartupDiagnostics.Log("MonitoringService about to create UIA3Automation.");
         using var automation = new UIA3Automation();
+        global::Inputor.WinUI.StartupDiagnostics.Log("MonitoringService created UIA3Automation successfully.");
 
         while (!_cts.IsCancellationRequested)
         {
@@ -75,9 +83,10 @@ public sealed class MonitoringService : IDisposable
             }
             catch (Exception ex)
             {
-                var statusMessage = $"Monitoring error: {ex.Message}";
-                _statsStore.SetStatus(statusMessage, "Unavailable", false);
-                RecordDebugEvent("Unavailable", statusMessage, string.Empty, 0, null, false, false, false, false);
+                var statusMessage = StatusText.MonitoringError(ex.Message);
+                var displayName = StatusText.UnavailableDisplayName();
+                _statsStore.SetStatus(statusMessage, displayName, false);
+                RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
                 _deltaTracker.Reset();
             }
 
@@ -87,40 +96,47 @@ public sealed class MonitoringService : IDisposable
 
     private void PollForeground(UIA3Automation automation)
     {
+        LogFirstPoll("PollForeground entered.");
         var foregroundWindow = GetForegroundWindow();
+        LogFirstPoll($"GetForegroundWindow returned {(foregroundWindow == IntPtr.Zero ? "zero" : foregroundWindow.ToString())}.");
         if (foregroundWindow == IntPtr.Zero)
         {
-            const string statusMessage = "No foreground window.";
-            _statsStore.SetStatus(statusMessage, "Idle", false);
-            RecordDebugEvent("Idle", statusMessage, string.Empty, 0, null, false, false, false, false);
+            var statusMessage = StatusText.NoForegroundWindow();
+            var displayName = StatusText.IdleDisplayName();
+            _statsStore.SetStatus(statusMessage, displayName, false);
+            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         _ = GetWindowThreadProcessId(foregroundWindow, out var processId);
+        LogFirstPoll($"GetWindowThreadProcessId returned {processId}.");
         if (processId == 0)
         {
-            const string statusMessage = "Unable to resolve the active process.";
-            _statsStore.SetStatus(statusMessage, "Unavailable", false);
-            RecordDebugEvent("Unavailable", statusMessage, string.Empty, 0, null, false, false, false, false);
+            var statusMessage = StatusText.UnableToResolveActiveProcess();
+            var displayName = StatusText.UnavailableDisplayName();
+            _statsStore.SetStatus(statusMessage, displayName, false);
+            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         var processName = GetProcessName(processId);
+        LogFirstPoll($"Resolved process name '{processName}'.");
         if (string.IsNullOrWhiteSpace(processName))
         {
-            const string statusMessage = "Unable to resolve the active process name.";
-            _statsStore.SetStatus(statusMessage, "Unavailable", false);
-            RecordDebugEvent("Unavailable", statusMessage, string.Empty, 0, null, false, false, false, false);
+            var statusMessage = StatusText.UnableToResolveActiveProcessName();
+            var displayName = StatusText.UnavailableDisplayName();
+            _statsStore.SetStatus(statusMessage, displayName, false);
+            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         if (_settings.IsExcluded(processName))
         {
-            var statusMessage = $"{processName} is excluded.";
-            _statsStore.SetStatus(statusMessage, processName, false);
+            var statusMessage = StatusText.ProcessExcluded(processName);
+            _statsStore.SetStatus(statusMessage, processName, false, processName);
             RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
@@ -128,18 +144,19 @@ public sealed class MonitoringService : IDisposable
 
         if (string.Equals(processName, "inputor.App", StringComparison.OrdinalIgnoreCase))
         {
-            const string statusMessage = "inputor window is active; monitoring external apps only.";
-            _statsStore.SetStatus(statusMessage, processName, false);
+            var statusMessage = StatusText.SelfWindowActive();
+            _statsStore.SetStatus(statusMessage, processName, false, processName);
             RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         var focusedElement = automation.FocusedElement();
+        LogFirstPoll($"FocusedElement is {(focusedElement is null ? "null" : "present")}.");
         if (focusedElement is null)
         {
-            var statusMessage = $"{processName}: no focused element.";
-            _statsStore.SetStatus(statusMessage, processName, false);
+            var statusMessage = StatusText.NoFocusedElement(processName);
+            _statsStore.SetStatus(statusMessage, processName, false, processName);
             RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
@@ -147,18 +164,19 @@ public sealed class MonitoringService : IDisposable
 
         if (focusedElement.Properties.IsPassword.ValueOrDefault)
         {
-            var statusMessage = $"{processName}: password field skipped.";
-            _statsStore.SetStatus(statusMessage, processName, false);
+            var statusMessage = StatusText.PasswordFieldSkipped(processName);
+            _statsStore.SetStatus(statusMessage, processName, false, processName);
             RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         var text = TryReadText(focusedElement);
+        LogFirstPoll($"TryReadText returned {(text is null ? "null" : $"length {text.Length}")}.");
         if (text is null)
         {
-            var statusMessage = $"{processName}: focused control does not expose readable text.";
-            _statsStore.SetStatus(statusMessage, processName, false);
+            var statusMessage = StatusText.FocusedControlUnreadable(processName);
+            _statsStore.SetStatus(statusMessage, processName, false, processName);
             RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
@@ -167,43 +185,62 @@ public sealed class MonitoringService : IDisposable
         var snapshotKey = BuildSnapshotKey(processName, focusedElement);
         var isNativeImeInputMode = IsNativeChineseImeInputMode(foregroundWindow);
         var result = _deltaTracker.ProcessSnapshot(snapshotKey, text, DateTime.UtcNow, isNativeImeInputMode);
+        LogFirstPoll($"Delta tracker produced delta {result.Delta}, pending={result.IsPendingComposition}.");
         var clipboardText = result.Delta > 0 ? _clipboardTextService.TryGetText() : null;
         var controlTypeName = focusedElement.Properties.ControlType.ValueOrDefault.ToString();
+        LogFirstPoll($"ControlType '{controlTypeName}'.");
 
         if (result.Delta > 0)
         {
             var isPaste = PasteDetectionService.LooksLikePaste(result.InsertedTextSegment, clipboardText);
             if (isPaste)
             {
-                var statusMessage = $"Monitoring {processName}; pasted text excluded by default.";
-                _statsStore.SetStatus(statusMessage, processName, true);
+                var statusMessage = StatusText.PasteExcluded(processName);
+                _statsStore.SetStatus(statusMessage, processName, true, processName);
                 RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, true, false, isNativeImeInputMode);
             }
             else if (BulkLoadDetectionService.LooksLikeBulkContentLoad(result.Delta, result.InsertedTextSegment, controlTypeName, isPaste))
             {
-                var statusMessage = $"Monitoring {processName}; ignored suspicious bulk content refresh.";
-                _statsStore.SetStatus(statusMessage, processName, true);
+                var statusMessage = StatusText.BulkRefreshIgnored(processName);
+                _statsStore.SetStatus(statusMessage, processName, true, processName);
                 RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, false, true, isNativeImeInputMode);
             }
             else
             {
                 _statsStore.RecordDelta(processName, result.Delta);
-                var statusMessage = $"Recorded +{result.Delta} supported characters in {processName}.";
-                _statsStore.SetStatus(statusMessage, processName, true);
+                var statusMessage = StatusText.RecordedSupportedCharacters(result.Delta, processName);
+                _statsStore.SetStatus(statusMessage, processName, true, processName);
                 RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, false, false, isNativeImeInputMode);
             }
         }
         else if (result.IsPendingComposition)
         {
-            var statusMessage = $"Monitoring {processName}; waiting for composition confirmation.";
-            _statsStore.SetStatus(statusMessage, processName, true);
+            var statusMessage = StatusText.WaitingForComposition(processName);
+            _statsStore.SetStatus(statusMessage, processName, true, processName);
             RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, true, false, false, isNativeImeInputMode);
         }
         else
         {
-            var statusMessage = $"Monitoring {processName}; no positive delta detected.";
-            _statsStore.SetStatus(statusMessage, processName, true);
+            var statusMessage = StatusText.NoPositiveDelta(processName);
+            _statsStore.SetStatus(statusMessage, processName, true, processName);
             RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, false, false, false, isNativeImeInputMode);
+        }
+    }
+
+    private void LogFirstPoll(string message)
+    {
+        if (_hasLoggedFirstPoll)
+        {
+            return;
+        }
+
+        global::Inputor.WinUI.StartupDiagnostics.Log($"First poll: {message}");
+        if (message.Contains("ControlType", StringComparison.Ordinal)
+            || message.Contains("Delta tracker", StringComparison.Ordinal)
+            || message.Contains("TryReadText", StringComparison.Ordinal)
+            || message.Contains("FocusedElement", StringComparison.Ordinal))
+        {
+            _hasLoggedFirstPoll = true;
         }
     }
 
@@ -218,6 +255,11 @@ public sealed class MonitoringService : IDisposable
         bool isBulkContentLoad,
         bool isNativeImeInputMode)
     {
+        if (!_settings.DebugCaptureEnabled)
+        {
+            return;
+        }
+
         var segment = insertedTextSegment ?? string.Empty;
         _statsStore.AddDebugEvent(new DebugEventEntry
         {

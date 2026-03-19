@@ -13,10 +13,14 @@ public sealed class App : Application, IXamlMetadataProvider
 {
     private readonly string _dataDirectory;
     private bool _exitRequested;
+    private bool _shutdownCompleted;
+    private NotifyIconService? _notifyIconService;
+    private TrayMenuWindow? _trayMenuWindow;
     private XamlControlsXamlMetaDataProvider? _metadataProvider;
 
     public App()
     {
+        StartupDiagnostics.Log("App constructor entered.");
         _dataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "inputor");
@@ -24,11 +28,18 @@ public sealed class App : Application, IXamlMetadataProvider
 
         SettingsService = new AppSettingsService(_dataDirectory);
         Settings = SettingsService.Load();
+        AppStrings.Initialize(AppContext.BaseDirectory, Settings.Language);
         StatsStore = new StatsStore(_dataDirectory);
         Exporter = new CsvExportService();
         AutoStartService = new AutoStartService();
         AutoStartService.Apply(Settings.StartWithWindows);
         MonitoringService = new MonitoringService(StatsStore, Settings);
+        StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+        UnhandledException += (_, args) =>
+        {
+            StartupDiagnostics.Log($"App.UnhandledException: {args.Exception}");
+        };
+        StartupDiagnostics.Log("App constructor completed.");
     }
 
     public static new App Current => (App)Application.Current;
@@ -47,29 +58,41 @@ public sealed class App : Application, IXamlMetadataProvider
 
     public MainWindow? MainWindow { get; private set; }
 
-    public SettingsWindow? SettingsWindow { get; private set; }
-
-    private NotifyIconService? _notifyIconService;
-
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        StartupDiagnostics.Log("App.OnLaunched entered.");
         XamlControlsXamlMetaDataProvider.Initialize();
         _metadataProvider ??= new XamlControlsXamlMetaDataProvider();
         Resources ??= new ResourceDictionary();
         Resources.MergedDictionaries.Add(new XamlControlsResources());
 
         MainWindow = new MainWindow();
+        StartupDiagnostics.Log("MainWindow created.");
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "inputor.ico");
+        WindowHelpers.SetWindowIcon(MainWindow, iconPath);
+        StartupDiagnostics.Log($"Window icon path {(File.Exists(iconPath) ? "applied" : "missing")}: {iconPath}");
         MainWindow.Activate();
-        WindowHelpers.RegisterHideOnClose(MainWindow, () => !_exitRequested);
+        StartupDiagnostics.Log("MainWindow activated.");
+        MainWindow.Closed += MainWindow_Closed;
 
-        SettingsWindow = new SettingsWindow();
-        WindowHelpers.RegisterHideOnClose(SettingsWindow, () => !_exitRequested);
-        WindowHelpers.HideWindow(SettingsWindow);
-
-        _notifyIconService = new NotifyIconService();
+        try
+        {
+            _notifyIconService = new NotifyIconService();
+            StartupDiagnostics.Log("NotifyIconService initialized successfully.");
+            WindowHelpers.RegisterHideOnClose(MainWindow, () => !_exitRequested && _notifyIconService is not null);
+            StartupDiagnostics.Log("Hide-on-close registered because tray is available.");
+        }
+        catch (Exception exception)
+        {
+            _notifyIconService = null;
+            StartupDiagnostics.Log($"NotifyIconService initialization failed: {exception}");
+        }
 
         MonitoringService.Start();
+        StartupDiagnostics.Log("MonitoringService auto-start re-enabled after refresh crash fix.");
+        StatsStore.SetStatus(StatusText.MonitoringStarted(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
         base.OnLaunched(args);
+        StartupDiagnostics.Log("App.OnLaunched completed.");
     }
 
     public void ShowMainWindow()
@@ -79,18 +102,40 @@ public sealed class App : Application, IXamlMetadataProvider
             return;
         }
 
+        _trayMenuWindow?.HideMenu();
         WindowHelpers.ShowWindow(MainWindow);
     }
 
-    public void ShowSettingsWindow()
+    public void ShowSettingsPage()
     {
-        if (SettingsWindow is null)
+        if (MainWindow is null)
         {
             return;
         }
 
-        SettingsWindow.ReloadFromSettings();
-        WindowHelpers.ShowWindow(SettingsWindow);
+        _trayMenuWindow?.HideMenu();
+        WindowHelpers.ShowWindow(MainWindow);
+        MainWindow.ShowSettingsPage();
+    }
+
+    public void ShowTrayMenu(int cursorX, int cursorY)
+    {
+        StartupDiagnostics.Log($"ShowTrayMenu requested at {cursorX},{cursorY}.");
+        _trayMenuWindow ??= new TrayMenuWindow();
+        _trayMenuWindow.ShowAtCursor(cursorX, cursorY);
+    }
+
+    public void HideTrayMenu()
+    {
+        _trayMenuWindow?.HideMenu();
+    }
+
+    internal void OnTrayMenuClosed(TrayMenuWindow trayMenuWindow)
+    {
+        if (ReferenceEquals(_trayMenuWindow, trayMenuWindow))
+        {
+            _trayMenuWindow = null;
+        }
     }
 
     public void TogglePauseMonitoring()
@@ -98,36 +143,48 @@ public sealed class App : Application, IXamlMetadataProvider
         MonitoringService.TogglePause();
     }
 
+    public void StartMonitoring()
+    {
+        if (MonitoringService.IsStarted)
+        {
+            return;
+        }
+
+        MonitoringService.Start();
+        StatsStore.SetStatus(StatusText.MonitoringStarted(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+    }
+
     public void ResetSession()
     {
         StatsStore.ResetSession();
-        StatsStore.SetStatus("Session counters reset.", StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported);
+        StatsStore.SetStatus(StatusText.SessionCountersReset(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
     }
 
     public void ExcludeCurrentApp()
     {
-        var processName = StatsStore.CurrentAppName;
+        var processName = StatsStore.CurrentProcessName;
         if (!CanExclude(processName))
         {
-            StatsStore.SetStatus("No active app is available for exclusion right now.", processName, false);
+            StatsStore.SetStatus(StatusText.NoActiveAppAvailable(), StatsStore.CurrentAppName, false, StatsStore.CurrentProcessName);
             return;
         }
 
-        if (!Settings.AddExcludedApp(processName))
+        var nonNullProcessName = processName!;
+        if (!Settings.AddExcludedApp(nonNullProcessName))
         {
-            StatsStore.SetStatus($"{processName} is already excluded.", processName, false);
+            StatsStore.SetStatus(StatusText.ProcessAlreadyExcluded(nonNullProcessName), nonNullProcessName, false, nonNullProcessName);
             return;
         }
 
         SettingsService.Save(Settings);
-        SettingsWindow?.ReloadFromSettings();
-        StatsStore.SetStatus($"Added {processName} to excluded apps.", processName, false);
+        MainWindow?.ShowSettingsPage();
+        StatsStore.SetStatus(StatusText.AddedExcludedApp(nonNullProcessName), nonNullProcessName, false, nonNullProcessName);
     }
 
     public void ExportToday()
     {
         var path = Exporter.ExportToday(StatsStore.GetSnapshot());
-        StatsStore.SetStatus($"Exported CSV to {path}", StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported);
+        StatsStore.SetStatus(StatusText.ExportedCsv(path), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
     }
 
     public void SaveSettings()
@@ -136,21 +193,60 @@ public sealed class App : Application, IXamlMetadataProvider
         AutoStartService.Apply(Settings.StartWithWindows);
     }
 
+    public void SetDebugCaptureEnabled(bool isEnabled)
+    {
+        Settings.DebugCaptureEnabled = isEnabled;
+        SaveSettings();
+        StatsStore.SetDebugCaptureEnabled(isEnabled);
+        StatsStore.SetStatus(
+            StatusText.DebugCaptureChanged(isEnabled),
+            StatsStore.CurrentAppName,
+            StatsStore.IsCurrentTargetSupported,
+            StatsStore.CurrentProcessName);
+    }
+
+    public void ClearDebugEvents()
+    {
+        StatsStore.ClearDebugEvents();
+        StatsStore.SetStatus(StatusText.DebugEventsCleared(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+    }
+
     public void ExitApplication()
     {
+        StartupDiagnostics.Log("ExitApplication called.");
         _exitRequested = true;
-        _notifyIconService?.Dispose();
-        MonitoringService.Dispose();
-        StatsStore.Dispose();
-        SettingsWindow?.Close();
+        _trayMenuWindow?.CloseForExit();
+        _trayMenuWindow = null;
+        PerformShutdownCleanup();
         MainWindow?.Close();
     }
 
-    private static bool CanExclude(string processName)
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        StartupDiagnostics.Log("MainWindow.Closed fired.");
+        if (_notifyIconService is null)
+        {
+            PerformShutdownCleanup();
+        }
+    }
+
+    private void PerformShutdownCleanup()
+    {
+        if (_shutdownCompleted)
+        {
+            return;
+        }
+
+        _shutdownCompleted = true;
+        _notifyIconService?.Dispose();
+        _notifyIconService = null;
+        MonitoringService.Dispose();
+        StatsStore.Dispose();
+    }
+
+    private static bool CanExclude(string? processName)
     {
         return !string.IsNullOrWhiteSpace(processName)
-            && !string.Equals(processName, "Idle", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(processName, "Unavailable", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(processName, "inputor.App", StringComparison.OrdinalIgnoreCase);
     }
 

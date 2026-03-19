@@ -17,6 +17,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <RootNamespace>Inputor.WinUI</RootNamespace>
     <AssemblyName>inputor.App</AssemblyName>
+    <ApplicationIcon>Assets\inputor.ico</ApplicationIcon>
     <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <StartupObject>Inputor.WinUI.Program</StartupObject>
   </PropertyGroup>
@@ -36,24 +37,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\inputor.App\Models\AppSettings.cs" Link="Models\AppSettings.cs" />
-    <Compile Include="..\inputor.App\Models\AppStat.cs" Link="Models\AppStat.cs" />
-    <Compile Include="..\inputor.App\Models\DashboardSnapshot.cs" Link="Models\DashboardSnapshot.cs" />
-    <Compile Include="..\inputor.App\Models\RecentActivityEntry.cs" Link="Models\RecentActivityEntry.cs" />
-    <Compile Include="..\inputor.App\Services\AppSettingsService.cs" Link="Services\AppSettingsService.cs" />
-    <Compile Include="..\inputor.App\Services\AutoStartService.cs" Link="Services\AutoStartService.cs" />
-    <Compile Include="..\inputor.App\Services\BulkLoadDetectionService.cs" Link="Services\BulkLoadDetectionService.cs" />
-    <Compile Include="..\inputor.App\Services\CharacterCountService.cs" Link="Services\CharacterCountService.cs" />
-    <Compile Include="..\inputor.App\Services\ClipboardTextService.cs" Link="Services\ClipboardTextService.cs" />
-    <Compile Include="..\inputor.App\Services\CompositionAwareDeltaTracker.cs" Link="Services\CompositionAwareDeltaTracker.cs" />
-    <Compile Include="..\inputor.App\Services\CsvExportService.cs" Link="Services\CsvExportService.cs" />
-    <Compile Include="..\inputor.App\Services\MonitoringService.cs" Link="Services\MonitoringService.cs" />
-    <Compile Include="..\inputor.App\Services\PasteDetectionService.cs" Link="Services\PasteDetectionService.cs" />
-    <Compile Include="..\inputor.App\Services\StatsStore.cs" Link="Services\StatsStore.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="..\inputor.App\Assets\inputor.ico" Link="Assets\inputor.ico" />
+    <Content Include="Assets\inputor.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Strings\**\*.resw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 

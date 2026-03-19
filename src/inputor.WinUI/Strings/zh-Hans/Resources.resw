@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="App.Name" xml:space="preserve"><value>inputor</value></data>
+  <data name="App.Tagline" xml:space="preserve"><value>私密输入洞察</value></data>
+  <data name="Language.FollowSystem" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Language.English" xml:space="preserve"><value>English</value></data>
+  <data name="Language.SimplifiedChinese" xml:space="preserve"><value>简体中文</value></data>
+  <data name="Common.On" xml:space="preserve"><value>开</value></data>
+  <data name="Common.Off" xml:space="preserve"><value>关</value></data>
+  <data name="Common.Today" xml:space="preserve"><value>今日</value></data>
+  <data name="Common.Session" xml:space="preserve"><value>本次会话</value></data>
+  <data name="Common.AllTime" xml:space="preserve"><value>累计</value></data>
+  <data name="Common.Name" xml:space="preserve"><value>名称</value></data>
+  <data name="Common.Paused" xml:space="preserve"><value>已暂停</value></data>
+  <data name="Target.Supported" xml:space="preserve"><value>支持</value></data>
+  <data name="Target.Unsupported" xml:space="preserve"><value>不支持</value></data>
+  <data name="Target.Idle" xml:space="preserve"><value>空闲</value></data>
+  <data name="Target.Unavailable" xml:space="preserve"><value>不可用</value></data>
+  <data name="Main.Navigation.Overview" xml:space="preserve"><value>概览</value></data>
+  <data name="Main.Navigation.Statistics" xml:space="preserve"><value>统计</value></data>
+  <data name="Main.Navigation.Apps" xml:space="preserve"><value>应用</value></data>
+  <data name="Main.Navigation.Debug" xml:space="preserve"><value>调试</value></data>
+  <data name="Main.Navigation.Settings" xml:space="preserve"><value>设置</value></data>
+  <data name="Main.Button.StartMonitoring" xml:space="preserve"><value>开始监控</value></data>
+  <data name="Main.Button.ResumeMonitoring" xml:space="preserve"><value>继续监控</value></data>
+  <data name="Main.Button.PauseMonitoring" xml:space="preserve"><value>暂停监控</value></data>
+  <data name="Main.Button.ExcludeCurrentApp" xml:space="preserve"><value>排除当前应用</value></data>
+  <data name="Main.Button.ViewAllApps" xml:space="preserve"><value>查看全部应用</value></data>
+  <data name="Main.Button.OpenStatistics" xml:space="preserve"><value>打开统计</value></data>
+  <data name="Main.Button.OpenSettings" xml:space="preserve"><value>打开设置</value></data>
+  <data name="Main.Button.OpenDebug" xml:space="preserve"><value>打开调试</value></data>
+  <data name="Main.Placeholder.SearchApps" xml:space="preserve"><value>搜索应用</value></data>
+  <data name="Main.Pane.LiveStatus" xml:space="preserve"><value>实时状态</value></data>
+  <data name="Main.Section.TodayTitle" xml:space="preserve"><value>今日概览</value></data>
+  <data name="Main.Section.TodaySubtitle" xml:space="preserve"><value>快速查看当前输入统计总览。</value></data>
+  <data name="Main.Section.FocusTitle" xml:space="preserve"><value>焦点与状态</value></data>
+  <data name="Main.Section.FocusSubtitle" xml:space="preserve"><value>跟踪当前目标和监控状态。</value></data>
+  <data name="Main.Section.WorkflowTitle" xml:space="preserve"><value>工作流</value></data>
+  <data name="Main.Section.WorkflowSubtitle" xml:space="preserve"><value>常用操作、近期活动与调试快捷入口。</value></data>
+  <data name="Main.Card.CurrentTarget" xml:space="preserve"><value>当前目标</value></data>
+  <data name="Main.Card.Status" xml:space="preserve"><value>状态</value></data>
+  <data name="Main.Card.QuickActions" xml:space="preserve"><value>快捷操作</value></data>
+  <data name="Main.Card.RecentActivity" xml:space="preserve"><value>近期活动</value></data>
+  <data name="Main.Card.TopAppsToday" xml:space="preserve"><value>今日热门应用</value></data>
+  <data name="Main.Card.AdminReminder" xml:space="preserve"><value>管理员提醒</value></data>
+  <data name="Main.Apps.Title" xml:space="preserve"><value>应用</value></data>
+  <data name="Main.CurrentTargetLine" xml:space="preserve"><value>{0} • {1}</value></data>
+  <data name="Main.Pane.Watching" xml:space="preserve"><value>正在监控 {0}</value></data>
+  <data name="Main.AdminReminder.Enabled" xml:space="preserve"><value>提权窗口和受保护界面仍可能无法通过 UIA 被监控。</value></data>
+  <data name="Main.AdminReminder.Disabled" xml:space="preserve"><value>管理员提醒已关闭。</value></data>
+  <data name="Main.RecentActivity.Empty" xml:space="preserve"><value>本次会话还没有记录到输入。</value></data>
+  <data name="Main.RecentActivity.Row" xml:space="preserve"><value>+{0} • {1:HH:mm:ss}</value></data>
+  <data name="Main.TopApps.Row" xml:space="preserve"><value>{0:N0} 今日 • {1:0.#}%</value></data>
+  <data name="Main.TopApps.Empty" xml:space="preserve"><value>还没有活动记录。</value></data>
+  <data name="Main.Apps.NoMatch" xml:space="preserve"><value>没有应用匹配当前筛选条件。</value></data>
+  <data name="Main.Apps.Summary" xml:space="preserve"><value>{0} 个分组应用 • 今日 {1:N0} • 会话 {2:N0} • 累计 {3:N0}</value></data>
+  <data name="Main.Apps.Row" xml:space="preserve"><value>今日 {0:N0} • 会话 {1:N0} • 累计 {2:N0} • {3:0.#}%</value></data>
+  <data name="Main.Apps.GroupedFrom" xml:space="preserve"><value>分组来源：{0}</value></data>
+  <data name="Settings.Title" xml:space="preserve"><value>设置</value></data>
+  <data name="Settings.Subtitle" xml:space="preserve"><value>在这里统一管理启动项、隐私默认值、导出、排除项和本地数据控制。</value></data>
+  <data name="Settings.HeaderNote" xml:space="preserve"><value>当前目标：{0} • 今日 {1:N0} • 会话 {2:N0}</value></data>
+  <data name="Settings.RestartNotice" xml:space="preserve"><value>语言更改会在下次重启应用后生效。</value></data>
+  <data name="Settings.Section.PreferencesTitle" xml:space="preserve"><value>偏好设置</value></data>
+  <data name="Settings.Section.PreferencesSubtitle" xml:space="preserve"><value>调整核心行为和日常默认选项。</value></data>
+  <data name="Settings.Section.ExportTitle" xml:space="preserve"><value>导出</value></data>
+  <data name="Settings.Section.ExportSubtitle" xml:space="preserve"><value>当你需要共享记录时，导出当前统计为 CSV 快照。</value></data>
+  <data name="Settings.Section.PrivacyTitle" xml:space="preserve"><value>隐私</value></data>
+  <data name="Settings.Section.PrivacySubtitle" xml:space="preserve"><value>说明 inputor 会保存什么，以及它刻意忽略什么。</value></data>
+  <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>数据管理</value></data>
+  <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>仅当你确定要永久移除本地统计数据时再使用。</value></data>
+  <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>开机启动</value></data>
+  <data name="Settings.Label.ShowAdminReminder" xml:space="preserve"><value>显示管理员限制提醒</value></data>
+  <data name="Settings.Label.Language" xml:space="preserve"><value>语言</value></data>
+  <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
+  <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>
+  <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>使用逗号分隔进程名。快捷操作也可以将当前应用加入排除列表。</value></data>
+  <data name="Settings.Export.Description" xml:space="preserve"><value>导出会把 CSV 文件写入本地文档导出目录，并确保原始文本不会出现在文件里。</value></data>
+  <data name="Settings.Button.ExportTodayCsv" xml:space="preserve"><value>导出今日 CSV</value></data>
+  <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor 始终保持隐私保护开启：它只在本地保存计数、进程名和日期分桶。</value></data>
+  <data name="Settings.Privacy.Item2" xml:space="preserve"><value>原始文本只会暂存在内存里用于快照对比，不会写盘也不会导出。</value></data>
+  <data name="Settings.Privacy.Item3" xml:space="preserve"><value>密码框、不受支持的控件和受保护窗口会按设计保持排除。</value></data>
+  <data name="Settings.Data.Item1" xml:space="preserve"><value>这会清除当前设备上保存的今日、会话和累计的各应用统计。</value></data>
+  <data name="Settings.Data.Item2" xml:space="preserve"><value>此操作不会修改隐私设置或排除应用偏好。</value></data>
+  <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>我已了解这会永久清除所有已保存的统计数据。</value></data>
+  <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>清除已保存统计</value></data>
+  <data name="Settings.Button.Save" xml:space="preserve"><value>保存设置</value></data>
+  <data name="Statistics.Title" xml:space="preserve"><value>统计</value></data>
+  <data name="Statistics.Subtitle" xml:space="preserve"><value>不离开主窗口，也能查看长期输入趋势、每日稳定性和应用占比。</value></data>
+  <data name="Statistics.Summary.Empty" xml:space="preserve"><value>当 inputor 记录到多天活动后，这里就会开始显示统计内容。</value></data>
+  <data name="Statistics.Summary.Overview" xml:space="preserve"><value>展示最近 {0} 天的活动。今天是 {1:N0}，记录最高的一天是 {2:MM-dd}，共 {3:N0}。</value></data>
+  <data name="Statistics.Section.TrendTitle" xml:space="preserve"><value>趋势</value></data>
+  <data name="Statistics.Section.TrendSubtitle" xml:space="preserve"><value>查看最近两周每日受支持字符的变化。</value></data>
+  <data name="Statistics.Section.HeatmapTitle" xml:space="preserve"><value>每日热力图</value></data>
+  <data name="Statistics.Section.HeatmapSubtitle" xml:space="preserve"><value>用紧凑网格展示最近 13 周的活跃度。</value></data>
+  <data name="Statistics.Section.DistributionTitle" xml:space="preserve"><value>应用分布</value></data>
+  <data name="Statistics.Section.DistributionSubtitle" xml:space="preserve"><value>看看当前输入量主要集中在哪些应用里。</value></data>
+  <data name="Statistics.Trend.Empty" xml:space="preserve"><value>还没有每日历史记录。</value></data>
+  <data name="Statistics.Trend.Caption" xml:space="preserve"><value>最近 {0} 天峰值：{1:N0} 个受支持字符。</value></data>
+  <data name="Statistics.Heatmap.Empty" xml:space="preserve"><value>还没有每日历史记录。</value></data>
+  <data name="Statistics.Heatmap.Tooltip" xml:space="preserve"><value>{0:yyyy-MM-dd}：{1:N0}</value></data>
+  <data name="Statistics.Heatmap.Caption" xml:space="preserve"><value>颜色越深表示当天输入越多。历史起始于 {0:yyyy-MM-dd}。</value></data>
+  <data name="Statistics.Distribution.Empty" xml:space="preserve"><value>还没有应用分布可展示，因为尚未记录任何受支持字符。</value></data>
+  <data name="Statistics.Distribution.EmptyCaption" xml:space="preserve"><value>一旦有活动，这里会显示最主要的应用占比。</value></data>
+  <data name="Statistics.Distribution.Row" xml:space="preserve"><value>{0:N0} • {1:P0}</value></data>
+  <data name="Statistics.Distribution.Today" xml:space="preserve"><value>当前分布基于今日计数。</value></data>
+  <data name="Statistics.Distribution.AllTimeFallback" xml:space="preserve"><value>今天还没有记录到活动，因此分布回退到累计总量。</value></data>
+  <data name="Debug.Title" xml:space="preserve"><value>调试</value></data>
+  <data name="Debug.Subtitle" xml:space="preserve"><value>把这里当成专注的诊断页面：默认保持关闭，需要时临时开启，然后只查看你关心的记录。</value></data>
+  <data name="Debug.Toggle.Header" xml:space="preserve"><value>调试捕获</value></data>
+  <data name="Debug.Filter.AllEvents" xml:space="preserve"><value>全部事件</value></data>
+  <data name="Debug.Filter.CounterOnly" xml:space="preserve"><value>仅计数增加</value></data>
+  <data name="Debug.Filter.PendingOnly" xml:space="preserve"><value>仅待确认合成</value></data>
+  <data name="Debug.Filter.FilteredOnly" xml:space="preserve"><value>仅过滤事件</value></data>
+  <data name="Debug.Button.ClearRecords" xml:space="preserve"><value>清除记录</value></data>
+  <data name="Debug.Button.StartCapture" xml:space="preserve"><value>开始捕获</value></data>
+  <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>暂停捕获</value></data>
+  <data name="Debug.Summary.Disabled" xml:space="preserve"><value>调试捕获默认关闭。仅在你需要排查为什么计数被记录或未记录时再开启。</value></data>
+  <data name="Debug.Summary.Paused" xml:space="preserve"><value>调试捕获已暂停。只有在你想检查为什么某次输入被记录或跳过时，再开始捕获。</value></data>
+  <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>调试捕获已关闭</value></data>
+  <data name="Debug.Card.DisabledBody" xml:space="preserve"><value>启用后，这个页面会先展示紧凑摘要；然后你可以展开单条记录查看完整诊断细节。</value></data>
+  <data name="Debug.Card.PausedTitle" xml:space="preserve"><value>捕获已暂停</value></data>
+  <data name="Debug.Card.PausedEmptyBody" xml:space="preserve"><value>当前没有缓存任何调试记录。只有在你想临时收集诊断信息时再开始捕获。</value></data>
+  <data name="Debug.Card.PausedBufferedBody" xml:space="preserve"><value>现有记录会被保留。你现在可以查看它们，之后再恢复捕获，或者在完成后清除记录。</value></data>
+  <data name="Debug.Summary.Enabled" xml:space="preserve"><value>调试捕获已开启。当前显示最近 {0} 条事件的紧凑摘要；你可以展开任意记录查看详情。</value></data>
+  <data name="Debug.Summary.Filtered" xml:space="preserve"><value>调试捕获已开启。当前筛选保留了 {0}/{1} 条最近事件。</value></data>
+  <data name="Debug.Summary.PausedBuffered" xml:space="preserve"><value>捕获已暂停 • 当前缓存 {0} 条记录</value></data>
+  <data name="Debug.Summary.PausedFiltered" xml:space="preserve"><value>捕获已暂停 • 当前显示 {0}/{1} 条缓存记录</value></data>
+  <data name="Debug.Chip.Visible" xml:space="preserve"><value>可见</value></data>
+  <data name="Debug.Chip.CounterIncreased" xml:space="preserve"><value>计数增加</value></data>
+  <data name="Debug.Chip.FilteredOut" xml:space="preserve"><value>被过滤</value></data>
+  <data name="Debug.Chip.PendingComposition" xml:space="preserve"><value>待确认合成</value></data>
+  <data name="Debug.Card.NoMatchTitle" xml:space="preserve"><value>没有匹配事件</value></data>
+  <data name="Debug.Card.NoMatchBody" xml:space="preserve"><value>当前筛选条件下没有匹配记录。</value></data>
+  <data name="Debug.Badge.Counter" xml:space="preserve"><value>+计数</value></data>
+  <data name="Debug.Badge.NoCount" xml:space="preserve"><value>未计数</value></data>
+  <data name="Debug.Button.ShowDetails" xml:space="preserve"><value>显示详情</value></data>
+  <data name="Debug.Button.HideDetails" xml:space="preserve"><value>隐藏详情</value></data>
+  <data name="Debug.Label.Status" xml:space="preserve"><value>状态</value></data>
+  <data name="Debug.Label.Delta" xml:space="preserve"><value>增量</value></data>
+  <data name="Debug.Label.InsertedSegmentLength" xml:space="preserve"><value>插入片段长度</value></data>
+  <data name="Debug.Label.CharacterMix" xml:space="preserve"><value>字符构成</value></data>
+  <data name="Debug.Label.Flags" xml:space="preserve"><value>标记</value></data>
+  <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} 个受支持字符</value></data>
+  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>中文 {0} • 英文 {1} • 受支持 {2}</value></data>
+  <data name="Debug.EventSummary" xml:space="preserve"><value>{0:HH:mm:ss} • {1} • {2}</value></data>
+  <data name="Debug.Primary.CounterIncreased" xml:space="preserve"><value>计数增加了 {0} 个受支持字符。</value></data>
+  <data name="Debug.Primary.PasteFiltered" xml:space="preserve"><value>检测到了类似粘贴的输入，因此没有计入统计。</value></data>
+  <data name="Debug.Primary.BulkFiltered" xml:space="preserve"><value>可疑的大块内容刷新已被忽略。</value></data>
+  <data name="Debug.Primary.Pending" xml:space="preserve"><value>正在等待输入法合成确认后再计数。</value></data>
+  <data name="Debug.Primary.NoIncrease" xml:space="preserve"><value>没有记录到受支持字符的正向增长。</value></data>
+  <data name="Debug.Flag.PendingComposition" xml:space="preserve"><value>待确认合成</value></data>
+  <data name="Debug.Flag.PasteFiltered" xml:space="preserve"><value>粘贴已过滤</value></data>
+  <data name="Debug.Flag.BulkFiltered" xml:space="preserve"><value>大块刷新已过滤</value></data>
+  <data name="Debug.Flag.NativeImeMode" xml:space="preserve"><value>原生输入法模式</value></data>
+  <data name="Debug.Flag.SupportedTarget" xml:space="preserve"><value>支持的目标</value></data>
+  <data name="Debug.Flag.UnsupportedTarget" xml:space="preserve"><value>不支持的目标</value></data>
+  <data name="Tray.MenuTitle" xml:space="preserve"><value>inputor 托盘菜单</value></data>
+  <data name="Tray.ShowDashboard" xml:space="preserve"><value>显示仪表盘</value></data>
+  <data name="Tray.OpenSettings" xml:space="preserve"><value>打开设置</value></data>
+  <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>排除当前应用</value></data>
+  <data name="Tray.ExitInputor" xml:space="preserve"><value>退出 inputor</value></data>
+  <data name="NotifyIcon.Tooltip" xml:space="preserve"><value>{0} | 今 {1:N0} | 会 {2:N0} | {3}</value></data>
+  <data name="Status.MonitoringNotStartedYet" xml:space="preserve"><value>监控尚未开始。</value></data>
+  <data name="Status.MonitoringStarted" xml:space="preserve"><value>监控已开始。</value></data>
+  <data name="Status.SessionCountersReset" xml:space="preserve"><value>会话计数已重置。</value></data>
+  <data name="Status.NoActiveAppAvailable" xml:space="preserve"><value>当前没有可加入排除列表的活动应用。</value></data>
+  <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} 已经在排除列表中。</value></data>
+  <data name="Status.AddedExcludedApp" xml:space="preserve"><value>已将 {0} 加入排除列表。</value></data>
+  <data name="Status.ExportedCsv" xml:space="preserve"><value>已将 CSV 导出到 {0}</value></data>
+  <data name="Status.SettingsUpdated" xml:space="preserve"><value>设置已更新。</value></data>
+  <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>已清除已保存统计。</value></data>
+  <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>调试捕获已开启。</value></data>
+  <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>调试捕获已关闭。</value></data>
+  <data name="Status.DebugEventsCleared" xml:space="preserve"><value>调试事件已清除。</value></data>
+  <data name="Status.LanguageChangeRequiresRestart" xml:space="preserve"><value>语言更改会在重启 inputor 后生效。</value></data>
+  <data name="Status.MonitoringPaused" xml:space="preserve"><value>监控已暂停。</value></data>
+  <data name="Status.MonitoringResumed" xml:space="preserve"><value>监控已恢复。</value></data>
+  <data name="Status.MonitoringError" xml:space="preserve"><value>监控错误：{0}</value></data>
+  <data name="Status.NoForegroundWindow" xml:space="preserve"><value>没有前台窗口。</value></data>
+  <data name="Status.UnableToResolveActiveProcess" xml:space="preserve"><value>无法解析当前活动进程。</value></data>
+  <data name="Status.UnableToResolveActiveProcessName" xml:space="preserve"><value>无法解析当前活动进程名称。</value></data>
+  <data name="Status.ProcessExcluded" xml:space="preserve"><value>{0} 已被排除。</value></data>
+  <data name="Status.SelfWindowActive" xml:space="preserve"><value>当前焦点在 inputor 窗口，只监控外部应用。</value></data>
+  <data name="Status.NoFocusedElement" xml:space="preserve"><value>{0}：没有焦点元素。</value></data>
+  <data name="Status.PasswordFieldSkipped" xml:space="preserve"><value>{0}：已跳过密码字段。</value></data>
+  <data name="Status.FocusedControlUnreadable" xml:space="preserve"><value>{0}：当前控件不提供可读文本。</value></data>
+  <data name="Status.PasteExcluded" xml:space="preserve"><value>正在监控 {0}；默认排除粘贴文本。</value></data>
+  <data name="Status.BulkRefreshIgnored" xml:space="preserve"><value>正在监控 {0}；已忽略可疑的大块内容刷新。</value></data>
+  <data name="Status.RecordedSupportedCharacters" xml:space="preserve"><value>已在 {1} 中记录 +{0} 个受支持字符。</value></data>
+  <data name="Status.WaitingForComposition" xml:space="preserve"><value>正在监控 {0}；等待输入法合成确认。</value></data>
+  <data name="Status.NoPositiveDelta" xml:space="preserve"><value>正在监控 {0}；未检测到正向增量。</value></data>
+  <data name="AppPresentation.UnknownApp" xml:space="preserve"><value>未知应用</value></data>
+  <data name="AppPresentation.GoogleChrome" xml:space="preserve"><value>Google Chrome</value></data>
+  <data name="AppPresentation.MicrosoftEdge" xml:space="preserve"><value>Microsoft Edge</value></data>
+  <data name="AppPresentation.MozillaFirefox" xml:space="preserve"><value>Mozilla Firefox</value></data>
+  <data name="AppPresentation.Brave" xml:space="preserve"><value>Brave</value></data>
+  <data name="AppPresentation.Notepad" xml:space="preserve"><value>记事本</value></data>
+  <data name="AppPresentation.NotepadPlusPlus" xml:space="preserve"><value>Notepad++</value></data>
+  <data name="AppPresentation.VisualStudioCode" xml:space="preserve"><value>Visual Studio Code</value></data>
+  <data name="AppPresentation.VisualStudio" xml:space="preserve"><value>Visual Studio</value></data>
+  <data name="AppPresentation.JetBrainsRider" xml:space="preserve"><value>JetBrains Rider</value></data>
+  <data name="AppPresentation.IntelliJIdea" xml:space="preserve"><value>IntelliJ IDEA</value></data>
+  <data name="AppPresentation.WeChat" xml:space="preserve"><value>微信</value></data>
+  <data name="AppPresentation.QQ" xml:space="preserve"><value>QQ</value></data>
+  <data name="AppPresentation.Telegram" xml:space="preserve"><value>Telegram</value></data>
+  <data name="AppPresentation.Slack" xml:space="preserve"><value>Slack</value></data>
+  <data name="AppPresentation.MicrosoftTeams" xml:space="preserve"><value>Microsoft Teams</value></data>
+  <data name="AppPresentation.Spotify" xml:space="preserve"><value>Spotify</value></data>
+  <data name="AppPresentation.MediaPlayer" xml:space="preserve"><value>媒体播放器</value></data>
+  <data name="AppPresentation.ObsStudio" xml:space="preserve"><value>OBS Studio</value></data>
+  <data name="AppPresentation.MicrosoftWord" xml:space="preserve"><value>Microsoft Word</value></data>
+  <data name="AppPresentation.MicrosoftExcel" xml:space="preserve"><value>Microsoft Excel</value></data>
+  <data name="AppPresentation.MicrosoftPowerPoint" xml:space="preserve"><value>Microsoft PowerPoint</value></data>
+</root>

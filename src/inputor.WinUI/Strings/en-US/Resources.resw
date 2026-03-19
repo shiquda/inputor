@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="App.Name" xml:space="preserve"><value>inputor</value></data>
+  <data name="App.Tagline" xml:space="preserve"><value>Private typing insights</value></data>
+  <data name="Language.FollowSystem" xml:space="preserve"><value>Follow system</value></data>
+  <data name="Language.English" xml:space="preserve"><value>English</value></data>
+  <data name="Language.SimplifiedChinese" xml:space="preserve"><value>Simplified Chinese</value></data>
+  <data name="Common.On" xml:space="preserve"><value>On</value></data>
+  <data name="Common.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Common.Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Common.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Common.AllTime" xml:space="preserve"><value>All time</value></data>
+  <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Common.Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="Target.Supported" xml:space="preserve"><value>Supported</value></data>
+  <data name="Target.Unsupported" xml:space="preserve"><value>Unsupported</value></data>
+  <data name="Target.Idle" xml:space="preserve"><value>Idle</value></data>
+  <data name="Target.Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Main.Navigation.Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Main.Navigation.Statistics" xml:space="preserve"><value>Statistics</value></data>
+  <data name="Main.Navigation.Apps" xml:space="preserve"><value>Apps</value></data>
+  <data name="Main.Navigation.Debug" xml:space="preserve"><value>Debug</value></data>
+  <data name="Main.Navigation.Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Main.Button.StartMonitoring" xml:space="preserve"><value>Start monitoring</value></data>
+  <data name="Main.Button.ResumeMonitoring" xml:space="preserve"><value>Resume monitoring</value></data>
+  <data name="Main.Button.PauseMonitoring" xml:space="preserve"><value>Pause monitoring</value></data>
+  <data name="Main.Button.ExcludeCurrentApp" xml:space="preserve"><value>Exclude current app</value></data>
+  <data name="Main.Button.ViewAllApps" xml:space="preserve"><value>View all apps</value></data>
+  <data name="Main.Button.OpenStatistics" xml:space="preserve"><value>Open statistics</value></data>
+  <data name="Main.Button.OpenSettings" xml:space="preserve"><value>Open settings</value></data>
+  <data name="Main.Button.OpenDebug" xml:space="preserve"><value>Open debug</value></data>
+  <data name="Main.Placeholder.SearchApps" xml:space="preserve"><value>Search apps</value></data>
+  <data name="Main.Pane.LiveStatus" xml:space="preserve"><value>Live status</value></data>
+  <data name="Main.Section.TodayTitle" xml:space="preserve"><value>Today at a glance</value></data>
+  <data name="Main.Section.TodaySubtitle" xml:space="preserve"><value>A quick snapshot of your current typing totals.</value></data>
+  <data name="Main.Section.FocusTitle" xml:space="preserve"><value>Focus and status</value></data>
+  <data name="Main.Section.FocusSubtitle" xml:space="preserve"><value>Track the active target and current monitoring state.</value></data>
+  <data name="Main.Section.WorkflowTitle" xml:space="preserve"><value>Workflow</value></data>
+  <data name="Main.Section.WorkflowSubtitle" xml:space="preserve"><value>Quick actions, recent patterns, and shortcuts for diagnostics.</value></data>
+  <data name="Main.Card.CurrentTarget" xml:space="preserve"><value>Current target</value></data>
+  <data name="Main.Card.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Main.Card.QuickActions" xml:space="preserve"><value>Quick actions</value></data>
+  <data name="Main.Card.RecentActivity" xml:space="preserve"><value>Recent activity</value></data>
+  <data name="Main.Card.TopAppsToday" xml:space="preserve"><value>Top apps today</value></data>
+  <data name="Main.Card.AdminReminder" xml:space="preserve"><value>Admin reminder</value></data>
+  <data name="Main.Apps.Title" xml:space="preserve"><value>Apps</value></data>
+  <data name="Main.CurrentTargetLine" xml:space="preserve"><value>{0} • {1}</value></data>
+  <data name="Main.Pane.Watching" xml:space="preserve"><value>Watching {0}</value></data>
+  <data name="Main.AdminReminder.Enabled" xml:space="preserve"><value>Elevated windows and protected surfaces can still be unavailable to UIA monitoring.</value></data>
+  <data name="Main.AdminReminder.Disabled" xml:space="preserve"><value>Admin reminder is turned off.</value></data>
+  <data name="Main.RecentActivity.Empty" xml:space="preserve"><value>No recorded input yet in this session.</value></data>
+  <data name="Main.RecentActivity.Row" xml:space="preserve"><value>+{0} • {1:HH:mm:ss}</value></data>
+  <data name="Main.TopApps.Row" xml:space="preserve"><value>{0:N0} today • {1:0.#}%</value></data>
+  <data name="Main.TopApps.Empty" xml:space="preserve"><value>No activity yet.</value></data>
+  <data name="Main.Apps.NoMatch" xml:space="preserve"><value>No apps match the current filter.</value></data>
+  <data name="Main.Apps.Summary" xml:space="preserve"><value>{0} grouped apps • {1:N0} today • {2:N0} session • {3:N0} total</value></data>
+  <data name="Main.Apps.Row" xml:space="preserve"><value>{0:N0} today • {1:N0} session • {2:N0} total • {3:0.#}%</value></data>
+  <data name="Main.Apps.GroupedFrom" xml:space="preserve"><value>Grouped from {0}</value></data>
+  <data name="Settings.Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings.Subtitle" xml:space="preserve"><value>Manage startup, privacy defaults, exports, exclusions, and local data controls in one place.</value></data>
+  <data name="Settings.HeaderNote" xml:space="preserve"><value>Current target: {0} • Today {1:N0} • Session {2:N0}</value></data>
+  <data name="Settings.RestartNotice" xml:space="preserve"><value>Language changes apply after the next app restart.</value></data>
+  <data name="Settings.Section.PreferencesTitle" xml:space="preserve"><value>Preferences</value></data>
+  <data name="Settings.Section.PreferencesSubtitle" xml:space="preserve"><value>Core app behavior and day-to-day defaults.</value></data>
+  <data name="Settings.Section.ExportTitle" xml:space="preserve"><value>Export</value></data>
+  <data name="Settings.Section.ExportSubtitle" xml:space="preserve"><value>Generate a CSV snapshot from the current totals when you need a shareable record.</value></data>
+  <data name="Settings.Section.PrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
+  <data name="Settings.Section.PrivacySubtitle" xml:space="preserve"><value>What inputor stores and what it intentionally ignores.</value></data>
+  <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>Data management</value></data>
+  <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>Use this only when you want to permanently remove stored local statistics.</value></data>
+  <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="Settings.Label.ShowAdminReminder" xml:space="preserve"><value>Show admin limitation reminder</value></data>
+  <data name="Settings.Label.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
+  <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>
+  <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>Use comma-separated process names. Quick actions can add the current app for you.</value></data>
+  <data name="Settings.Export.Description" xml:space="preserve"><value>Export writes a CSV file into your local documents export folder and keeps raw text out of the file.</value></data>
+  <data name="Settings.Button.ExportTodayCsv" xml:space="preserve"><value>Export today CSV</value></data>
+  <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor always keeps privacy protections on: it stores counts, process names, and date buckets locally.</value></data>
+  <data name="Settings.Privacy.Item2" xml:space="preserve"><value>Raw text only exists in memory for snapshot diffing and is never written to disk or exported.</value></data>
+  <data name="Settings.Privacy.Item3" xml:space="preserve"><value>Password fields, unsupported controls, and protected windows remain excluded by design.</value></data>
+  <data name="Settings.Data.Item1" xml:space="preserve"><value>This clears today, session, and all-time per-app counts stored on this device.</value></data>
+  <data name="Settings.Data.Item2" xml:space="preserve"><value>The action does not change privacy settings or excluded-app preferences.</value></data>
+  <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>I understand this permanently clears all stored statistics.</value></data>
+  <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>Clear stored statistics</value></data>
+  <data name="Settings.Button.Save" xml:space="preserve"><value>Save settings</value></data>
+  <data name="Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
+  <data name="Statistics.Subtitle" xml:space="preserve"><value>Read long-term typing momentum, daily consistency, and app share without leaving the main window.</value></data>
+  <data name="Statistics.Summary.Empty" xml:space="preserve"><value>Statistics will start filling in after inputor records activity across multiple days.</value></data>
+  <data name="Statistics.Summary.Overview" xml:space="preserve"><value>Showing the last {0} days of activity. Today is {1:N0}, and the busiest recorded day is {2:MM-dd} with {3:N0}.</value></data>
+  <data name="Statistics.Section.TrendTitle" xml:space="preserve"><value>Trend</value></data>
+  <data name="Statistics.Section.TrendSubtitle" xml:space="preserve"><value>A day-by-day view of the last two weeks of recorded supported characters.</value></data>
+  <data name="Statistics.Section.HeatmapTitle" xml:space="preserve"><value>Daily heatmap</value></data>
+  <data name="Statistics.Section.HeatmapSubtitle" xml:space="preserve"><value>A compact grid showing the intensity of the last 13 weeks.</value></data>
+  <data name="Statistics.Section.DistributionTitle" xml:space="preserve"><value>App distribution</value></data>
+  <data name="Statistics.Section.DistributionSubtitle" xml:space="preserve"><value>See where the current typing volume is concentrated right now.</value></data>
+  <data name="Statistics.Trend.Empty" xml:space="preserve"><value>No daily history yet.</value></data>
+  <data name="Statistics.Trend.Caption" xml:space="preserve"><value>Peak over the last {0} days: {1:N0} supported characters.</value></data>
+  <data name="Statistics.Heatmap.Empty" xml:space="preserve"><value>No daily history yet.</value></data>
+  <data name="Statistics.Heatmap.Tooltip" xml:space="preserve"><value>{0:yyyy-MM-dd}: {1:N0}</value></data>
+  <data name="Statistics.Heatmap.Caption" xml:space="preserve"><value>Darker cells represent stronger days. History begins on {0:yyyy-MM-dd}.</value></data>
+  <data name="Statistics.Distribution.Empty" xml:space="preserve"><value>No app distribution is available yet because no supported characters have been recorded.</value></data>
+  <data name="Statistics.Distribution.EmptyCaption" xml:space="preserve"><value>Once activity exists, this view will show the strongest app share.</value></data>
+  <data name="Statistics.Distribution.Row" xml:space="preserve"><value>{0:N0} • {1:P0}</value></data>
+  <data name="Statistics.Distribution.Today" xml:space="preserve"><value>Distribution currently reflects today's counts.</value></data>
+  <data name="Statistics.Distribution.AllTimeFallback" xml:space="preserve"><value>No activity has been recorded today, so distribution falls back to all-time totals.</value></data>
+  <data name="Debug.Title" xml:space="preserve"><value>Debug</value></data>
+  <data name="Debug.Subtitle" xml:space="preserve"><value>Use this page as a focused diagnostic surface: keep capture off by default, switch it on temporarily, then inspect only the records you care about.</value></data>
+  <data name="Debug.Toggle.Header" xml:space="preserve"><value>Debug capture</value></data>
+  <data name="Debug.Filter.AllEvents" xml:space="preserve"><value>All events</value></data>
+  <data name="Debug.Filter.CounterOnly" xml:space="preserve"><value>Counter increased only</value></data>
+  <data name="Debug.Filter.PendingOnly" xml:space="preserve"><value>Pending composition only</value></data>
+  <data name="Debug.Filter.FilteredOnly" xml:space="preserve"><value>Filtered events only</value></data>
+  <data name="Debug.Button.ClearRecords" xml:space="preserve"><value>Clear records</value></data>
+  <data name="Debug.Button.StartCapture" xml:space="preserve"><value>Start capture</value></data>
+  <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>Pause capture</value></data>
+  <data name="Debug.Summary.Disabled" xml:space="preserve"><value>Debug capture is off by default. Turn it on only when you need to inspect why a count was or was not recorded.</value></data>
+  <data name="Debug.Summary.Paused" xml:space="preserve"><value>Debug capture is paused. Start capture only when you want to inspect why a count was recorded or skipped.</value></data>
+  <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>Debug capture is off</value></data>
+  <data name="Debug.Card.DisabledBody" xml:space="preserve"><value>When enabled, this page will show a compact summary first. You can then expand individual records for the full diagnostic details.</value></data>
+  <data name="Debug.Card.PausedTitle" xml:space="preserve"><value>Capture is paused</value></data>
+  <data name="Debug.Card.PausedEmptyBody" xml:space="preserve"><value>No debug records are buffered right now. Start capture when you want to collect temporary diagnostics.</value></data>
+  <data name="Debug.Card.PausedBufferedBody" xml:space="preserve"><value>Existing records are preserved. You can review them now, resume capture later, or clear them when you are done.</value></data>
+  <data name="Debug.Summary.Enabled" xml:space="preserve"><value>Debug capture is on. Showing {0} recent events with compact summaries first; open any record for details.</value></data>
+  <data name="Debug.Summary.Filtered" xml:space="preserve"><value>Debug capture is on. Filter keeps {0} of {1} recent events visible.</value></data>
+  <data name="Debug.Summary.PausedBuffered" xml:space="preserve"><value>Capture paused • {0} buffered record(s)</value></data>
+  <data name="Debug.Summary.PausedFiltered" xml:space="preserve"><value>Capture paused • showing {0} of {1} buffered record(s)</value></data>
+  <data name="Debug.Chip.Visible" xml:space="preserve"><value>Visible</value></data>
+  <data name="Debug.Chip.CounterIncreased" xml:space="preserve"><value>Counter increased</value></data>
+  <data name="Debug.Chip.FilteredOut" xml:space="preserve"><value>Filtered out</value></data>
+  <data name="Debug.Chip.PendingComposition" xml:space="preserve"><value>Pending composition</value></data>
+  <data name="Debug.Card.NoMatchTitle" xml:space="preserve"><value>No matching events</value></data>
+  <data name="Debug.Card.NoMatchBody" xml:space="preserve"><value>No records match the current filter.</value></data>
+  <data name="Debug.Badge.Counter" xml:space="preserve"><value>+Counter</value></data>
+  <data name="Debug.Badge.NoCount" xml:space="preserve"><value>No count</value></data>
+  <data name="Debug.Button.ShowDetails" xml:space="preserve"><value>Show details</value></data>
+  <data name="Debug.Button.HideDetails" xml:space="preserve"><value>Hide details</value></data>
+  <data name="Debug.Label.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Debug.Label.Delta" xml:space="preserve"><value>Delta</value></data>
+  <data name="Debug.Label.InsertedSegmentLength" xml:space="preserve"><value>Inserted segment length</value></data>
+  <data name="Debug.Label.CharacterMix" xml:space="preserve"><value>Character mix</value></data>
+  <data name="Debug.Label.Flags" xml:space="preserve"><value>Flags</value></data>
+  <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} supported chars</value></data>
+  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>Chinese {0} • English {1} • Supported {2}</value></data>
+  <data name="Debug.EventSummary" xml:space="preserve"><value>{0:HH:mm:ss} • {1} • {2}</value></data>
+  <data name="Debug.Primary.CounterIncreased" xml:space="preserve"><value>Counter increased by {0} supported characters.</value></data>
+  <data name="Debug.Primary.PasteFiltered" xml:space="preserve"><value>Paste-like input was detected and excluded from counting.</value></data>
+  <data name="Debug.Primary.BulkFiltered" xml:space="preserve"><value>Suspicious bulk content refresh was ignored.</value></data>
+  <data name="Debug.Primary.Pending" xml:space="preserve"><value>Waiting for composition confirmation before counting.</value></data>
+  <data name="Debug.Primary.NoIncrease" xml:space="preserve"><value>No supported counter increase was recorded.</value></data>
+  <data name="Debug.Flag.PendingComposition" xml:space="preserve"><value>Pending composition</value></data>
+  <data name="Debug.Flag.PasteFiltered" xml:space="preserve"><value>Paste filtered</value></data>
+  <data name="Debug.Flag.BulkFiltered" xml:space="preserve"><value>Bulk refresh filtered</value></data>
+  <data name="Debug.Flag.NativeImeMode" xml:space="preserve"><value>Native IME mode</value></data>
+  <data name="Debug.Flag.SupportedTarget" xml:space="preserve"><value>Supported target</value></data>
+  <data name="Debug.Flag.UnsupportedTarget" xml:space="preserve"><value>Unsupported target</value></data>
+  <data name="Tray.MenuTitle" xml:space="preserve"><value>inputor tray menu</value></data>
+  <data name="Tray.ShowDashboard" xml:space="preserve"><value>Show dashboard</value></data>
+  <data name="Tray.OpenSettings" xml:space="preserve"><value>Open settings</value></data>
+  <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>Exclude current app</value></data>
+  <data name="Tray.ExitInputor" xml:space="preserve"><value>Exit inputor</value></data>
+  <data name="NotifyIcon.Tooltip" xml:space="preserve"><value>{0} | T {1:N0} | S {2:N0} | {3}</value></data>
+  <data name="Status.MonitoringNotStartedYet" xml:space="preserve"><value>Monitoring has not started yet.</value></data>
+  <data name="Status.MonitoringStarted" xml:space="preserve"><value>Monitoring started.</value></data>
+  <data name="Status.SessionCountersReset" xml:space="preserve"><value>Session counters reset.</value></data>
+  <data name="Status.NoActiveAppAvailable" xml:space="preserve"><value>No active app is available for exclusion right now.</value></data>
+  <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} is already excluded.</value></data>
+  <data name="Status.AddedExcludedApp" xml:space="preserve"><value>Added {0} to excluded apps.</value></data>
+  <data name="Status.ExportedCsv" xml:space="preserve"><value>Exported CSV to {0}</value></data>
+  <data name="Status.SettingsUpdated" xml:space="preserve"><value>Settings updated.</value></data>
+  <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>Stored statistics cleared.</value></data>
+  <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>Debug capture enabled.</value></data>
+  <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>Debug capture disabled.</value></data>
+  <data name="Status.DebugEventsCleared" xml:space="preserve"><value>Debug events cleared.</value></data>
+  <data name="Status.LanguageChangeRequiresRestart" xml:space="preserve"><value>Language changes will apply after restarting inputor.</value></data>
+  <data name="Status.MonitoringPaused" xml:space="preserve"><value>Monitoring paused.</value></data>
+  <data name="Status.MonitoringResumed" xml:space="preserve"><value>Monitoring resumed.</value></data>
+  <data name="Status.MonitoringError" xml:space="preserve"><value>Monitoring error: {0}</value></data>
+  <data name="Status.NoForegroundWindow" xml:space="preserve"><value>No foreground window.</value></data>
+  <data name="Status.UnableToResolveActiveProcess" xml:space="preserve"><value>Unable to resolve the active process.</value></data>
+  <data name="Status.UnableToResolveActiveProcessName" xml:space="preserve"><value>Unable to resolve the active process name.</value></data>
+  <data name="Status.ProcessExcluded" xml:space="preserve"><value>{0} is excluded.</value></data>
+  <data name="Status.SelfWindowActive" xml:space="preserve"><value>inputor window is active; monitoring external apps only.</value></data>
+  <data name="Status.NoFocusedElement" xml:space="preserve"><value>{0}: no focused element.</value></data>
+  <data name="Status.PasswordFieldSkipped" xml:space="preserve"><value>{0}: password field skipped.</value></data>
+  <data name="Status.FocusedControlUnreadable" xml:space="preserve"><value>{0}: focused control does not expose readable text.</value></data>
+  <data name="Status.PasteExcluded" xml:space="preserve"><value>Monitoring {0}; pasted text excluded by default.</value></data>
+  <data name="Status.BulkRefreshIgnored" xml:space="preserve"><value>Monitoring {0}; ignored suspicious bulk content refresh.</value></data>
+  <data name="Status.RecordedSupportedCharacters" xml:space="preserve"><value>Recorded +{0} supported characters in {1}.</value></data>
+  <data name="Status.WaitingForComposition" xml:space="preserve"><value>Monitoring {0}; waiting for composition confirmation.</value></data>
+  <data name="Status.NoPositiveDelta" xml:space="preserve"><value>Monitoring {0}; no positive delta detected.</value></data>
+  <data name="AppPresentation.UnknownApp" xml:space="preserve"><value>Unknown app</value></data>
+  <data name="AppPresentation.GoogleChrome" xml:space="preserve"><value>Google Chrome</value></data>
+  <data name="AppPresentation.MicrosoftEdge" xml:space="preserve"><value>Microsoft Edge</value></data>
+  <data name="AppPresentation.MozillaFirefox" xml:space="preserve"><value>Mozilla Firefox</value></data>
+  <data name="AppPresentation.Brave" xml:space="preserve"><value>Brave</value></data>
+  <data name="AppPresentation.Notepad" xml:space="preserve"><value>Notepad</value></data>
+  <data name="AppPresentation.NotepadPlusPlus" xml:space="preserve"><value>Notepad++</value></data>
+  <data name="AppPresentation.VisualStudioCode" xml:space="preserve"><value>Visual Studio Code</value></data>
+  <data name="AppPresentation.VisualStudio" xml:space="preserve"><value>Visual Studio</value></data>
+  <data name="AppPresentation.JetBrainsRider" xml:space="preserve"><value>JetBrains Rider</value></data>
+  <data name="AppPresentation.IntelliJIdea" xml:space="preserve"><value>IntelliJ IDEA</value></data>
+  <data name="AppPresentation.WeChat" xml:space="preserve"><value>WeChat</value></data>
+  <data name="AppPresentation.QQ" xml:space="preserve"><value>QQ</value></data>
+  <data name="AppPresentation.Telegram" xml:space="preserve"><value>Telegram</value></data>
+  <data name="AppPresentation.Slack" xml:space="preserve"><value>Slack</value></data>
+  <data name="AppPresentation.MicrosoftTeams" xml:space="preserve"><value>Microsoft Teams</value></data>
+  <data name="AppPresentation.Spotify" xml:space="preserve"><value>Spotify</value></data>
+  <data name="AppPresentation.MediaPlayer" xml:space="preserve"><value>Media Player</value></data>
+  <data name="AppPresentation.ObsStudio" xml:space="preserve"><value>OBS Studio</value></data>
+  <data name="AppPresentation.MicrosoftWord" xml:space="preserve"><value>Microsoft Word</value></data>
+  <data name="AppPresentation.MicrosoftExcel" xml:space="preserve"><value>Microsoft Excel</value></data>
+  <data name="AppPresentation.MicrosoftPowerPoint" xml:space="preserve"><value>Microsoft PowerPoint</value></data>
+</root>

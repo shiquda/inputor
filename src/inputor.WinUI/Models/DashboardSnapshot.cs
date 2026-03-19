@@ -9,7 +9,9 @@ public sealed class DashboardSnapshot
     public required bool IsCurrentTargetSupported { get; init; }
     public required bool IsPaused { get; init; }
     public required bool ShowAdminReminder { get; init; }
+    public required bool IsDebugCaptureEnabled { get; init; }
     public required IReadOnlyList<AppStat> AppStats { get; init; }
+    public required IReadOnlyList<DailyTotalEntry> DailyHistory { get; init; }
     public required IReadOnlyList<RecentActivityEntry> RecentActivity { get; init; }
     public required IReadOnlyList<DebugEventEntry> DebugEvents { get; init; }
     public int TotalToday => AppStats.Sum(item => item.TodayCount);

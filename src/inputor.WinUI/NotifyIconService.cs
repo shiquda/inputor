@@ -1,58 +1,110 @@
 using System;
 using System.Drawing;
 using System.IO;
+using Microsoft.UI.Dispatching;
+using Control = System.Windows.Forms.Control;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
-using ToolStripMenuItem = System.Windows.Forms.ToolStripMenuItem;
-using ContextMenuStrip = System.Windows.Forms.ContextMenuStrip;
-using ToolStripSeparator = System.Windows.Forms.ToolStripSeparator;
+using MouseButtons = System.Windows.Forms.MouseButtons;
+using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
 
 namespace Inputor.WinUI;
 
 internal sealed class NotifyIconService : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
-    private readonly ToolStripMenuItem _pauseItem;
+    private readonly DispatcherQueue _dispatcherQueue;
+    private bool _isDisposed;
 
     public NotifyIconService()
     {
-        _pauseItem = new ToolStripMenuItem("Pause Monitoring", null, (_, _) => App.Current.TogglePauseMonitoring());
-
-        var contextMenu = new ContextMenuStrip();
-        contextMenu.Items.Add(new ToolStripMenuItem("Show Dashboard", null, (_, _) => App.Current.ShowMainWindow()));
-        contextMenu.Items.Add(new ToolStripMenuItem("Settings", null, (_, _) => App.Current.ShowSettingsWindow()));
-        contextMenu.Items.Add(new ToolStripMenuItem("Export Today CSV", null, (_, _) => App.Current.ExportToday()));
-        contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(_pauseItem);
-        contextMenu.Items.Add(new ToolStripMenuItem("Reset Session", null, (_, _) => App.Current.ResetSession()));
-        contextMenu.Items.Add(new ToolStripMenuItem("Exclude Current App", null, (_, _) => App.Current.ExcludeCurrentApp()));
-        contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(new ToolStripMenuItem("Exit", null, (_, _) => App.Current.ExitApplication()));
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "inputor.ico");
         _notifyIcon = new NotifyIcon
         {
             Icon = File.Exists(iconPath) ? new Icon(iconPath) : SystemIcons.Application,
-            Text = "inputor",
-            Visible = true,
-            ContextMenuStrip = contextMenu
+            Text = AppStrings.Get("App.Name"),
+            Visible = true
         };
         _notifyIcon.DoubleClick += (_, _) => App.Current.ShowMainWindow();
+        _notifyIcon.MouseUp += NotifyIcon_MouseUp;
 
-        App.Current.StatsStore.Changed += (_, _) => UpdateState();
+        App.Current.StatsStore.Changed += StatsStore_Changed;
         UpdateState();
     }
 
     public void Dispose()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        App.Current.StatsStore.Changed -= StatsStore_Changed;
+        _notifyIcon.MouseUp -= NotifyIcon_MouseUp;
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
     }
 
+    private void StatsStore_Changed(object? sender, EventArgs e)
+    {
+        QueueUpdateState();
+    }
+
     private void UpdateState()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         var snapshot = App.Current.StatsStore.GetSnapshot();
-        _notifyIcon.Text = TrimToolTip($"inputor | Today {snapshot.TotalToday:N0} | Session {snapshot.TotalSession:N0} | {(snapshot.IsPaused ? "Paused" : snapshot.CurrentAppName)}");
-        _pauseItem.Text = snapshot.IsPaused ? "Resume Monitoring" : "Pause Monitoring";
+        _notifyIcon.Text = TrimToolTip(AppStrings.Format(
+            "NotifyIcon.Tooltip",
+            AppStrings.Get("App.Name"),
+            snapshot.TotalToday,
+            snapshot.TotalSession,
+            snapshot.IsPaused ? AppStrings.Get("Common.Paused") : snapshot.CurrentAppName));
+    }
+
+    private void NotifyIcon_MouseUp(object? sender, MouseEventArgs e)
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        StartupDiagnostics.Log($"NotifyIcon mouse up: {e.Button}");
+
+        if (e.Button == MouseButtons.Right)
+        {
+            App.Current.ShowTrayMenu(Control.MousePosition.X, Control.MousePosition.Y);
+        }
+    }
+
+    private void QueueUpdateState()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        if (_dispatcherQueue.HasThreadAccess)
+        {
+            UpdateState();
+            return;
+        }
+
+        _dispatcherQueue.TryEnqueue(() =>
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            UpdateState();
+        });
     }
 
     private static string TrimToolTip(string value)

@@ -7,26 +7,44 @@ namespace Inputor.WinUI;
 
 internal static class Program
 {
+    private static App? _app;
+
     [STAThread]
     public static void Main(string[] args)
     {
+        StartupDiagnostics.Log("Program.Main entered.");
+        AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
+        {
+            StartupDiagnostics.Log($"AppDomain.CurrentDomain.UnhandledException: {eventArgs.ExceptionObject}");
+        };
+        TaskScheduler.UnobservedTaskException += (_, eventArgs) =>
+        {
+            StartupDiagnostics.Log($"TaskScheduler.UnobservedTaskException: {eventArgs.Exception}");
+        };
+
         if (TryHandleCli(args))
         {
+            StartupDiagnostics.Log("CLI mode handled, exiting Program.Main.");
             return;
         }
 
         WinRT.ComWrappersSupport.InitializeComWrappers();
+        StartupDiagnostics.Log("COM wrappers initialized.");
         try
         {
             Application.Start(_initParams =>
             {
+                StartupDiagnostics.Log("Application.Start callback entered.");
                 var context = new DispatcherQueueSynchronizationContext(DispatcherQueue.GetForCurrentThread());
                 SynchronizationContext.SetSynchronizationContext(context);
-                var app = new App();
+                _app = new App();
+                StartupDiagnostics.Log("App instance created and stored.");
             });
+            StartupDiagnostics.Log("Application.Start returned.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            StartupDiagnostics.Log($"Program.Main catch: {ex}");
             throw;
         }
     }

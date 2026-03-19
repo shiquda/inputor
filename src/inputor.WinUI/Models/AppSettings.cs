@@ -2,9 +2,13 @@ namespace Inputor.App.Models;
 
 public sealed class AppSettings
 {
+    private static readonly string[] AlwaysExcludedApps = ["inputor.app", "betterlyrics.winui3"];
+
     public bool StartWithWindows { get; set; }
     public bool ShowAdminReminder { get; set; } = true;
     public bool PrivacyMode { get; set; } = true;
+    public bool DebugCaptureEnabled { get; set; }
+    public string Language { get; set; } = string.Empty;
     public string ExcludedApps { get; set; } = "inputor.app";
 
     public bool IsExcluded(string processName)
@@ -14,8 +18,8 @@ public sealed class AppSettings
 
     public IReadOnlyList<string> GetExcludedApps()
     {
-        return ExcludedApps
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        return AlwaysExcludedApps
+            .Concat(ExcludedApps.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }

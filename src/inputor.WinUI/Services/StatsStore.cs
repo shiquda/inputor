@@ -7,24 +7,28 @@ public sealed class StatsStore : IDisposable
 {
     private const int MaxRecentActivityEntries = 8;
     private const int MaxDebugEventEntries = 40;
+    private const int MaxDailyHistoryEntries = 90;
 
     private readonly object _syncRoot = new();
     private readonly string _statsPath;
     private readonly Dictionary<string, AppStat> _stats;
+    private readonly List<DailyTotalEntry> _dailyHistory;
     private readonly List<RecentActivityEntry> _recentActivity = [];
     private readonly List<DebugEventEntry> _debugEvents = [];
     private DateOnly _today;
     private DateTime _sessionStartedAt;
-    private string _statusMessage = "Monitoring has not started yet.";
-    private string _currentAppName = "Idle";
+    private string _statusMessage = StatusText.MonitoringNotStartedYet();
+    private string _currentAppName = StatusText.IdleDisplayName();
+    private string? _currentProcessName;
     private bool _isCurrentTargetSupported;
     private bool _isPaused;
     private bool _showAdminReminder = true;
+    private bool _isDebugCaptureEnabled;
 
     public StatsStore(string dataDirectory)
     {
         _statsPath = Path.Combine(dataDirectory, "stats.json");
-        (_today, _stats) = Load();
+        (_today, _stats, _dailyHistory) = Load();
         _sessionStartedAt = DateTime.Now;
     }
 
@@ -48,6 +52,17 @@ public sealed class StatsStore : IDisposable
             lock (_syncRoot)
             {
                 return _isCurrentTargetSupported;
+            }
+        }
+    }
+
+    public string? CurrentProcessName
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _currentProcessName;
             }
         }
     }
@@ -83,13 +98,14 @@ public sealed class StatsStore : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public void SetStatus(string statusMessage, string currentAppName, bool isCurrentTargetSupported)
+    public void SetStatus(string statusMessage, string currentAppName, bool isCurrentTargetSupported, string? currentProcessName = null)
     {
         lock (_syncRoot)
         {
             ResetTodayIfNeededLocked();
             _statusMessage = statusMessage;
             _currentAppName = currentAppName;
+            _currentProcessName = currentProcessName;
             _isCurrentTargetSupported = isCurrentTargetSupported;
         }
 
@@ -105,6 +121,26 @@ public sealed class StatsStore : IDisposable
             {
                 _debugEvents.RemoveRange(MaxDebugEventEntries, _debugEvents.Count - MaxDebugEventEntries);
             }
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SetDebugCaptureEnabled(bool isEnabled)
+    {
+        lock (_syncRoot)
+        {
+            _isDebugCaptureEnabled = isEnabled;
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClearDebugEvents()
+    {
+        lock (_syncRoot)
+        {
+            _debugEvents.Clear();
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
@@ -153,6 +189,7 @@ public sealed class StatsStore : IDisposable
             _today = DateOnly.FromDateTime(DateTime.Now);
             _sessionStartedAt = DateTime.Now;
             _stats.Clear();
+            _dailyHistory.Clear();
             _recentActivity.Clear();
             _debugEvents.Clear();
             PersistLocked();
@@ -175,6 +212,8 @@ public sealed class StatsStore : IDisposable
                 IsCurrentTargetSupported = _isCurrentTargetSupported,
                 IsPaused = _isPaused,
                 ShowAdminReminder = _showAdminReminder,
+                IsDebugCaptureEnabled = _isDebugCaptureEnabled,
+                DailyHistory = BuildDailyHistoryLocked(),
                 AppStats = _stats.Values
                     .OrderByDescending(item => item.TodayCount)
                     .ThenBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
@@ -225,11 +264,11 @@ public sealed class StatsStore : IDisposable
         }
     }
 
-    private (DateOnly Today, Dictionary<string, AppStat> Stats) Load()
+    private (DateOnly Today, Dictionary<string, AppStat> Stats, List<DailyTotalEntry> DailyHistory) Load()
     {
         if (!File.Exists(_statsPath))
         {
-            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase));
+            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), []);
         }
 
         try
@@ -238,17 +277,23 @@ public sealed class StatsStore : IDisposable
             var persisted = JsonSerializer.Deserialize<PersistedStats>(json);
             if (persisted is null)
             {
-                return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase));
+                return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), []);
             }
 
             var stats = persisted.AppStats
                 .ToDictionary(item => item.AppName, StringComparer.OrdinalIgnoreCase);
+            var dailyHistory = (persisted.DailyHistory ?? [])
+                .Where(item => item.TotalCount >= 0)
+                .OrderBy(item => item.Date)
+                .TakeLast(MaxDailyHistoryEntries)
+                .ToList();
             var today = persisted.Today == default
                 ? DateOnly.FromDateTime(DateTime.Now)
                 : persisted.Today;
 
             if (today != DateOnly.FromDateTime(DateTime.Now))
             {
+                AppendDailyHistory(dailyHistory, today, stats.Values.Sum(item => item.TodayCount));
                 foreach (var stat in stats.Values)
                 {
                     stat.TodayCount = 0;
@@ -257,11 +302,11 @@ public sealed class StatsStore : IDisposable
                 today = DateOnly.FromDateTime(DateTime.Now);
             }
 
-            return (today, stats);
+            return (today, stats, dailyHistory);
         }
         catch
         {
-            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase));
+            return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), []);
         }
     }
 
@@ -273,6 +318,7 @@ public sealed class StatsStore : IDisposable
             return;
         }
 
+        AppendDailyHistory(_dailyHistory, _today, _stats.Values.Sum(item => item.TodayCount));
         _today = actualToday;
         foreach (var stat in _stats.Values)
         {
@@ -287,15 +333,51 @@ public sealed class StatsStore : IDisposable
         var payload = new PersistedStats
         {
             Today = _today,
+            DailyHistory = _dailyHistory.ToList(),
             AppStats = _stats.Values.OrderBy(item => item.AppName, StringComparer.OrdinalIgnoreCase).ToList()
         };
         var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_statsPath, json);
     }
 
+    private IReadOnlyList<DailyTotalEntry> BuildDailyHistoryLocked()
+    {
+        var history = _dailyHistory
+            .OrderBy(item => item.Date)
+            .ToList();
+        AppendDailyHistory(history, _today, _stats.Values.Sum(item => item.TodayCount));
+        return history;
+    }
+
+    private static void AppendDailyHistory(List<DailyTotalEntry> history, DateOnly date, int totalCount)
+    {
+        var entry = new DailyTotalEntry
+        {
+            Date = date,
+            TotalCount = totalCount
+        };
+
+        var existingIndex = history.FindIndex(item => item.Date == date);
+        if (existingIndex >= 0)
+        {
+            history[existingIndex] = entry;
+        }
+        else
+        {
+            history.Add(entry);
+        }
+
+        history.Sort((left, right) => left.Date.CompareTo(right.Date));
+        if (history.Count > MaxDailyHistoryEntries)
+        {
+            history.RemoveRange(0, history.Count - MaxDailyHistoryEntries);
+        }
+    }
+
     private sealed class PersistedStats
     {
         public DateOnly Today { get; init; }
+        public List<DailyTotalEntry>? DailyHistory { get; init; }
         public List<AppStat> AppStats { get; init; } = [];
     }
 }

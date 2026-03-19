@@ -45,6 +45,16 @@ internal static class WindowHelpers
         window.Activate();
     }
 
+    public static void SetWindowIcon(Window window, string iconPath)
+    {
+        if (string.IsNullOrWhiteSpace(iconPath) || !File.Exists(iconPath))
+        {
+            return;
+        }
+
+        GetAppWindow(window).SetIcon(iconPath);
+    }
+
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ShowWindow(nint hWnd, int nCmdShow);
