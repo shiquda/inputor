@@ -5,7 +5,6 @@ public sealed class AppSettings
     private static readonly string[] AlwaysExcludedApps = ["inputor.app", "betterlyrics.winui3"];
 
     public bool StartWithWindows { get; set; }
-    public bool ShowAdminReminder { get; set; } = true;
     public bool PrivacyMode { get; set; } = true;
     public bool DebugCaptureEnabled { get; set; }
     public string Language { get; set; } = string.Empty;

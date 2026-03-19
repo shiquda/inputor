@@ -69,7 +69,6 @@
   <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>数据管理</value></data>
   <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>仅当你确定要永久移除本地统计数据时再使用。</value></data>
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>开机启动</value></data>
-  <data name="Settings.Label.ShowAdminReminder" xml:space="preserve"><value>显示管理员限制提醒</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>语言</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>

@@ -8,7 +8,6 @@ public sealed class DashboardSnapshot
     public required string CurrentAppName { get; init; }
     public required bool IsCurrentTargetSupported { get; init; }
     public required bool IsPaused { get; init; }
-    public required bool ShowAdminReminder { get; init; }
     public required bool IsDebugCaptureEnabled { get; init; }
     public required IReadOnlyList<AppStat> AppStats { get; init; }
     public required IReadOnlyList<DailyTotalEntry> DailyHistory { get; init; }

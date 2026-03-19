@@ -23,7 +23,6 @@ public sealed class MonitoringService : IDisposable
     {
         _statsStore = statsStore;
         _settings = settings;
-        _statsStore.SetAdminReminderVisible(_settings.ShowAdminReminder);
     }
 
     public bool IsPaused => _isPaused;

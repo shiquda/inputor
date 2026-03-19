@@ -12,7 +12,6 @@ namespace Inputor.WinUI;
 public sealed class SettingsPage : UserControl
 {
     private readonly CheckBox _startWithWindowsCheckBox;
-    private readonly CheckBox _showAdminReminderCheckBox;
     private readonly ComboBox _languageComboBox;
     private readonly TextBox _excludedAppsTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
@@ -23,7 +22,6 @@ public sealed class SettingsPage : UserControl
     public SettingsPage()
     {
         _startWithWindowsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.StartWithWindows") };
-        _showAdminReminderCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.ShowAdminReminder") };
         _languageComboBox = new ComboBox
         {
             ItemsSource = AppStrings.GetLanguageOptions(),
@@ -54,7 +52,6 @@ public sealed class SettingsPage : UserControl
         var snapshot = App.Current.StatsStore.GetSnapshot();
 
         _startWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
-        _showAdminReminderCheckBox.IsChecked = settings.ShowAdminReminder;
         _languageComboBox.SelectedValue = settings.Language;
         _excludedAppsTextBox.Text = settings.ExcludedApps;
         _confirmClearStatisticsCheckBox.IsChecked = false;
@@ -84,7 +81,6 @@ public sealed class SettingsPage : UserControl
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Section.PreferencesTitle"), AppStrings.Get("Settings.Section.PreferencesSubtitle")));
         var preferences = new StackPanel { Spacing = 16 };
         preferences.Children.Add(_startWithWindowsCheckBox);
-        preferences.Children.Add(_showAdminReminderCheckBox);
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.Language"), _languageComboBox, AppStrings.Get("Settings.Caption.Language")));
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.ExcludedApps"), _excludedAppsTextBox, AppStrings.Get("Settings.Caption.ExcludedApps")));
         root.Children.Add(CreateCard(preferences));
@@ -134,7 +130,6 @@ public sealed class SettingsPage : UserControl
         var settings = App.Current.Settings;
         var previousLanguage = settings.Language;
         settings.StartWithWindows = _startWithWindowsCheckBox.IsChecked ?? false;
-        settings.ShowAdminReminder = _showAdminReminderCheckBox.IsChecked ?? true;
         settings.Language = _languageComboBox.SelectedValue as string ?? string.Empty;
         settings.ExcludedApps = string.Join(", ", (_excludedAppsTextBox.Text ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -142,7 +137,6 @@ public sealed class SettingsPage : UserControl
             .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
 
         App.Current.SaveSettings();
-        App.Current.StatsStore.SetAdminReminderVisible(settings.ShowAdminReminder);
         var languageChanged = !string.Equals(previousLanguage, settings.Language, StringComparison.OrdinalIgnoreCase);
         _restartNoticeTextBlock.Visibility = languageChanged ? Visibility.Visible : Visibility.Collapsed;
         App.Current.StatsStore.SetStatus(

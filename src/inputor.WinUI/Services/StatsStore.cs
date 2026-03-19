@@ -23,7 +23,6 @@ public sealed class StatsStore : IDisposable
     private string? _currentProcessName;
     private bool _isCurrentTargetSupported;
     private bool _isPaused;
-    private bool _showAdminReminder = true;
     private bool _isDebugCaptureEnabled;
 
     public StatsStore(string dataDirectory)
@@ -157,16 +156,6 @@ public sealed class StatsStore : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public void SetAdminReminderVisible(bool isVisible)
-    {
-        lock (_syncRoot)
-        {
-            _showAdminReminder = isVisible;
-        }
-
-        Changed?.Invoke(this, EventArgs.Empty);
-    }
-
     public void ResetSession()
     {
         lock (_syncRoot)
@@ -212,7 +201,6 @@ public sealed class StatsStore : IDisposable
                 CurrentAppName = _currentAppName,
                 IsCurrentTargetSupported = _isCurrentTargetSupported,
                 IsPaused = _isPaused,
-                ShowAdminReminder = _showAdminReminder,
                 IsDebugCaptureEnabled = _isDebugCaptureEnabled,
                 DailyHistory = BuildDailyHistoryLocked(),
                 DailyAppHistory = BuildDailyAppHistoryLocked(),

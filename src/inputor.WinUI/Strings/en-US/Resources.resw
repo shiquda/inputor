@@ -69,7 +69,6 @@
   <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>Data management</value></data>
   <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>Use this only when you want to permanently remove stored local statistics.</value></data>
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
-  <data name="Settings.Label.ShowAdminReminder" xml:space="preserve"><value>Show admin limitation reminder</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>
