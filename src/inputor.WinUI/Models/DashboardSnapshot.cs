@@ -11,6 +11,7 @@ public sealed class DashboardSnapshot
     public required bool ShowAdminReminder { get; init; }
     public required IReadOnlyList<AppStat> AppStats { get; init; }
     public required IReadOnlyList<RecentActivityEntry> RecentActivity { get; init; }
+    public required IReadOnlyList<DebugEventEntry> DebugEvents { get; init; }
     public int TotalToday => AppStats.Sum(item => item.TodayCount);
     public int TotalSession => AppStats.Sum(item => item.SessionCount);
     public int TotalAllTime => AppStats.Sum(item => item.TotalCount);

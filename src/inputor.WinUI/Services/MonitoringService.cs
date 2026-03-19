@@ -75,7 +75,9 @@ public sealed class MonitoringService : IDisposable
             }
             catch (Exception ex)
             {
-                _statsStore.SetStatus($"Monitoring error: {ex.Message}", "Unavailable", false);
+                var statusMessage = $"Monitoring error: {ex.Message}";
+                _statsStore.SetStatus(statusMessage, "Unavailable", false);
+                RecordDebugEvent("Unavailable", statusMessage, string.Empty, 0, null, false, false, false, false);
                 _deltaTracker.Reset();
             }
 
@@ -88,7 +90,9 @@ public sealed class MonitoringService : IDisposable
         var foregroundWindow = GetForegroundWindow();
         if (foregroundWindow == IntPtr.Zero)
         {
-            _statsStore.SetStatus("No foreground window.", "Idle", false);
+            const string statusMessage = "No foreground window.";
+            _statsStore.SetStatus(statusMessage, "Idle", false);
+            RecordDebugEvent("Idle", statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -96,7 +100,9 @@ public sealed class MonitoringService : IDisposable
         _ = GetWindowThreadProcessId(foregroundWindow, out var processId);
         if (processId == 0)
         {
-            _statsStore.SetStatus("Unable to resolve the active process.", "Unavailable", false);
+            const string statusMessage = "Unable to resolve the active process.";
+            _statsStore.SetStatus(statusMessage, "Unavailable", false);
+            RecordDebugEvent("Unavailable", statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -104,21 +110,27 @@ public sealed class MonitoringService : IDisposable
         var processName = GetProcessName(processId);
         if (string.IsNullOrWhiteSpace(processName))
         {
-            _statsStore.SetStatus("Unable to resolve the active process name.", "Unavailable", false);
+            const string statusMessage = "Unable to resolve the active process name.";
+            _statsStore.SetStatus(statusMessage, "Unavailable", false);
+            RecordDebugEvent("Unavailable", statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         if (_settings.IsExcluded(processName))
         {
-            _statsStore.SetStatus($"{processName} is excluded.", processName, false);
+            var statusMessage = $"{processName} is excluded.";
+            _statsStore.SetStatus(statusMessage, processName, false);
+            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         if (string.Equals(processName, "inputor.App", StringComparison.OrdinalIgnoreCase))
         {
-            _statsStore.SetStatus("inputor window is active; monitoring external apps only.", processName, false);
+            const string statusMessage = "inputor window is active; monitoring external apps only.";
+            _statsStore.SetStatus(statusMessage, processName, false);
+            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -126,14 +138,18 @@ public sealed class MonitoringService : IDisposable
         var focusedElement = automation.FocusedElement();
         if (focusedElement is null)
         {
-            _statsStore.SetStatus($"{processName}: no focused element.", processName, false);
+            var statusMessage = $"{processName}: no focused element.";
+            _statsStore.SetStatus(statusMessage, processName, false);
+            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         if (focusedElement.Properties.IsPassword.ValueOrDefault)
         {
-            _statsStore.SetStatus($"{processName}: password field skipped.", processName, false);
+            var statusMessage = $"{processName}: password field skipped.";
+            _statsStore.SetStatus(statusMessage, processName, false);
+            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -141,7 +157,9 @@ public sealed class MonitoringService : IDisposable
         var text = TryReadText(focusedElement);
         if (text is null)
         {
-            _statsStore.SetStatus($"{processName}: focused control does not expose readable text.", processName, false);
+            var statusMessage = $"{processName}: focused control does not expose readable text.";
+            _statsStore.SetStatus(statusMessage, processName, false);
+            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -157,26 +175,67 @@ public sealed class MonitoringService : IDisposable
             var isPaste = PasteDetectionService.LooksLikePaste(result.InsertedTextSegment, clipboardText);
             if (isPaste)
             {
-                _statsStore.SetStatus($"Monitoring {processName}; pasted text excluded by default.", processName, true);
+                var statusMessage = $"Monitoring {processName}; pasted text excluded by default.";
+                _statsStore.SetStatus(statusMessage, processName, true);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, true, false, isNativeImeInputMode);
             }
             else if (BulkLoadDetectionService.LooksLikeBulkContentLoad(result.Delta, result.InsertedTextSegment, controlTypeName, isPaste))
             {
-                _statsStore.SetStatus($"Monitoring {processName}; ignored suspicious bulk content refresh.", processName, true);
+                var statusMessage = $"Monitoring {processName}; ignored suspicious bulk content refresh.";
+                _statsStore.SetStatus(statusMessage, processName, true);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, false, true, isNativeImeInputMode);
             }
             else
             {
                 _statsStore.RecordDelta(processName, result.Delta);
-                _statsStore.SetStatus($"Recorded +{result.Delta} supported characters in {processName}.", processName, true);
+                var statusMessage = $"Recorded +{result.Delta} supported characters in {processName}.";
+                _statsStore.SetStatus(statusMessage, processName, true);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, false, false, isNativeImeInputMode);
             }
         }
         else if (result.IsPendingComposition)
         {
-            _statsStore.SetStatus($"Monitoring {processName}; waiting for composition confirmation.", processName, true);
+            var statusMessage = $"Monitoring {processName}; waiting for composition confirmation.";
+            _statsStore.SetStatus(statusMessage, processName, true);
+            RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, true, false, false, isNativeImeInputMode);
         }
         else
         {
-            _statsStore.SetStatus($"Monitoring {processName}; no positive delta detected.", processName, true);
+            var statusMessage = $"Monitoring {processName}; no positive delta detected.";
+            _statsStore.SetStatus(statusMessage, processName, true);
+            RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, false, false, false, isNativeImeInputMode);
         }
+    }
+
+    private void RecordDebugEvent(
+        string appName,
+        string statusMessage,
+        string controlTypeName,
+        int delta,
+        string? insertedTextSegment,
+        bool isPendingComposition,
+        bool isPaste,
+        bool isBulkContentLoad,
+        bool isNativeImeInputMode)
+    {
+        var segment = insertedTextSegment ?? string.Empty;
+        _statsStore.AddDebugEvent(new DebugEventEntry
+        {
+            Timestamp = DateTime.Now,
+            AppName = appName,
+            StatusMessage = statusMessage,
+            ControlTypeName = controlTypeName,
+            Delta = delta,
+            InsertedSegmentLength = segment.Length,
+            InsertedSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(segment),
+            InsertedChineseCharacterCount = CharacterCountService.CountChineseCharacters(segment),
+            InsertedEnglishLetterCount = CharacterCountService.CountEnglishLetters(segment),
+            IsPendingComposition = isPendingComposition,
+            IsPaste = isPaste,
+            IsBulkContentLoad = isBulkContentLoad,
+            IsNativeImeInputMode = isNativeImeInputMode,
+            IsCurrentTargetSupported = _statsStore.IsCurrentTargetSupported
+        });
     }
 
     private static string? TryReadText(AutomationElement element)

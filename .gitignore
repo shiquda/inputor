@@ -15,4 +15,6 @@ obj/
 *.log
 *.tmp
 
-.sisiphus/
+# AI agent working directories
+.sisyphus/
+.agents/

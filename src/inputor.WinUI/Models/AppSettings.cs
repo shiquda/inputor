@@ -5,7 +5,6 @@ public sealed class AppSettings
     public bool StartWithWindows { get; set; }
     public bool ShowAdminReminder { get; set; } = true;
     public bool PrivacyMode { get; set; } = true;
-    public int DailyGoal { get; set; } = 1000;
     public string ExcludedApps { get; set; } = "inputor.app";
 
     public bool IsExcluded(string processName)

@@ -6,11 +6,13 @@ namespace Inputor.App.Services;
 public sealed class StatsStore : IDisposable
 {
     private const int MaxRecentActivityEntries = 8;
+    private const int MaxDebugEventEntries = 40;
 
     private readonly object _syncRoot = new();
     private readonly string _statsPath;
     private readonly Dictionary<string, AppStat> _stats;
     private readonly List<RecentActivityEntry> _recentActivity = [];
+    private readonly List<DebugEventEntry> _debugEvents = [];
     private DateOnly _today;
     private DateTime _sessionStartedAt;
     private string _statusMessage = "Monitoring has not started yet.";
@@ -94,6 +96,20 @@ public sealed class StatsStore : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    public void AddDebugEvent(DebugEventEntry entry)
+    {
+        lock (_syncRoot)
+        {
+            _debugEvents.Insert(0, entry);
+            if (_debugEvents.Count > MaxDebugEventEntries)
+            {
+                _debugEvents.RemoveRange(MaxDebugEventEntries, _debugEvents.Count - MaxDebugEventEntries);
+            }
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     public void SetPaused(bool isPaused)
     {
         lock (_syncRoot)
@@ -120,10 +136,26 @@ public sealed class StatsStore : IDisposable
         {
             _sessionStartedAt = DateTime.Now;
             _recentActivity.Clear();
+            _debugEvents.Clear();
             foreach (var stat in _stats.Values)
             {
                 stat.SessionCount = 0;
             }
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClearAllStatistics()
+    {
+        lock (_syncRoot)
+        {
+            _today = DateOnly.FromDateTime(DateTime.Now);
+            _sessionStartedAt = DateTime.Now;
+            _stats.Clear();
+            _recentActivity.Clear();
+            _debugEvents.Clear();
+            PersistLocked();
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
@@ -160,6 +192,25 @@ public sealed class StatsStore : IDisposable
                         AppName = item.AppName,
                         Delta = item.Delta,
                         Timestamp = item.Timestamp
+                    })
+                    .ToList(),
+                DebugEvents = _debugEvents
+                    .Select(item => new DebugEventEntry
+                    {
+                        Timestamp = item.Timestamp,
+                        AppName = item.AppName,
+                        StatusMessage = item.StatusMessage,
+                        ControlTypeName = item.ControlTypeName,
+                        Delta = item.Delta,
+                        InsertedSegmentLength = item.InsertedSegmentLength,
+                        InsertedSupportedCharacterCount = item.InsertedSupportedCharacterCount,
+                        InsertedChineseCharacterCount = item.InsertedChineseCharacterCount,
+                        InsertedEnglishLetterCount = item.InsertedEnglishLetterCount,
+                        IsPendingComposition = item.IsPendingComposition,
+                        IsPaste = item.IsPaste,
+                        IsBulkContentLoad = item.IsBulkContentLoad,
+                        IsNativeImeInputMode = item.IsNativeImeInputMode,
+                        IsCurrentTargetSupported = item.IsCurrentTargetSupported
                     })
                     .ToList()
             };
