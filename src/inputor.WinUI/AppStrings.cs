@@ -3,7 +3,7 @@ using System.Xml.Linq;
 
 namespace Inputor.WinUI;
 
-internal static class AppStrings
+internal static partial class AppStrings
 {
     private static readonly Dictionary<string, string> Strings = new(StringComparer.OrdinalIgnoreCase);
 

@@ -8,6 +8,7 @@ using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -42,6 +43,11 @@ public sealed class MainWindow : Window
     private readonly StackPanel _recentActivityPanel;
     private readonly StackPanel _topAppsPanel;
     private readonly StackPanel _allAppsPanel;
+    private readonly Border _titleBarHost;
+    private readonly Grid _titleBarDragRegion;
+    private Border? _titleBarGlyphHost;
+    private readonly List<(Border Border, bool Elevated)> _trackedSurfaces = [];
+    private readonly AppWindow _appWindow;
     private bool _isClosed;
 
     public MainWindow()
@@ -131,12 +137,20 @@ public sealed class MainWindow : Window
         _rootNavigation.MenuItems.Add(_settingsItem);
         _rootNavigation.SelectionChanged += RootNavigation_SelectionChanged;
         _rootNavigation.SelectedItem = _overviewItem;
-        _rootNavigation.Margin = new Thickness(0, 8, 0, 0);
-        _rootNavigation.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+        _rootNavigation.Margin = new Thickness(0);
+        _rootNavigation.Background = ThemeBrushes.GetNavigationPaneBrush();
 
-        Content = _rootNavigation;
+        _titleBarHost = CreateTitleBarHost();
+        _titleBarDragRegion = (Grid)_titleBarHost.Child;
+        _appWindow = WindowHelpers.GetAppWindow(this);
+        Content = BuildWindowShell();
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(_titleBarDragRegion);
+        ApplyThemeMode(AppStrings.ResolveThemeMode(App.Current.Settings.ThemeMode));
         ApplyWindowChrome();
-        _rootNavigation.ActualThemeChanged += (_, _) => ApplyWindowChrome();
+        _rootNavigation.ActualThemeChanged += RootNavigation_ActualThemeChanged;
+        _appWindow.Changed += AppWindow_Changed;
+        ThemeBrushes.Changed += ThemeBrushes_Changed;
         App.Current.StatsStore.Changed += StatsStore_Changed;
         AppPresentationService.IconsChanged += AppPresentationService_IconsChanged;
         Closed += MainWindow_Closed;
@@ -153,11 +167,55 @@ public sealed class MainWindow : Window
         QueueRefresh();
     }
 
+    private void RootNavigation_ActualThemeChanged(FrameworkElement sender, object args)
+    {
+        ThemeBrushes.NotifyChanged();
+        ApplyWindowChrome();
+    }
+
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _isClosed = true;
+        _appWindow.Changed -= AppWindow_Changed;
+        ThemeBrushes.Changed -= ThemeBrushes_Changed;
         App.Current.StatsStore.Changed -= StatsStore_Changed;
         AppPresentationService.IconsChanged -= AppPresentationService_IconsChanged;
+    }
+
+    private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (_isClosed || !(args.DidSizeChange || args.DidPositionChange || args.DidPresenterChange))
+        {
+            return;
+        }
+
+        if (_dispatcherQueue.HasThreadAccess)
+        {
+            ApplyWindowChrome();
+            return;
+        }
+
+        _dispatcherQueue.TryEnqueue(ApplyWindowChrome);
+    }
+
+    private void ThemeBrushes_Changed(object? sender, EventArgs e)
+    {
+        _titleBarHost.Background = ThemeBrushes.GetTitleBarBackgroundBrush();
+        _titleBarHost.BorderBrush = ThemeBrushes.GetTitleBarBorderBrush();
+        if (_titleBarGlyphHost is not null)
+        {
+            _titleBarGlyphHost.Background = ThemeBrushes.GetCardBackgroundBrush();
+        }
+        _rootNavigation.Background = ThemeBrushes.GetNavigationPaneBrush();
+        foreach (var (border, elevated) in _trackedSurfaces)
+        {
+            border.Background = ThemeBrushes.GetCardBackgroundBrush(elevated);
+            border.BorderBrush = ThemeBrushes.GetCardBorderBrush();
+        }
+        _settingsPage.RefreshTheme();
+        _statisticsPage.RefreshTheme();
+        _debugPage.RefreshTheme();
+        Refresh();
     }
 
     private void QueueRefresh()
@@ -197,6 +255,83 @@ public sealed class MainWindow : Window
         SwitchPage("Settings");
     }
 
+    internal void ApplyThemeMode(AppThemeMode themeMode)
+    {
+        _rootNavigation.RequestedTheme = themeMode switch
+        {
+            AppThemeMode.Light => ElementTheme.Light,
+            AppThemeMode.Dark => ElementTheme.Dark,
+            _ => ElementTheme.Default
+        };
+
+        ThemeBrushes.NotifyChanged();
+        ApplyWindowChrome();
+    }
+
+    private Grid BuildWindowShell()
+    {
+        var root = new Grid
+        {
+            Background = ThemeBrushes.GetWindowSurfaceBrush()
+        };
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        root.Children.Add(_titleBarHost);
+        Grid.SetRow(_rootNavigation, 1);
+        root.Children.Add(_rootNavigation);
+        return root;
+    }
+
+    private Border CreateTitleBarHost()
+    {
+        var dragRegion = new Grid
+        {
+            Height = 38,
+            Padding = new Thickness(14, 0, 14, 0),
+            ColumnSpacing = 10
+        };
+        dragRegion.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        dragRegion.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        _titleBarGlyphHost = new Border
+        {
+            Width = 24,
+            Height = 24,
+            CornerRadius = new CornerRadius(7),
+            Background = ThemeBrushes.GetCardBackgroundBrush(),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new FontIcon
+            {
+                Glyph = "\uE8D4",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+        dragRegion.Children.Add(_titleBarGlyphHost);
+
+        var titleText = new TextBlock
+        {
+            Text = AppStrings.Get("App.Name"),
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(titleText, 1);
+        dragRegion.Children.Add(titleText);
+
+        var host = new Border
+        {
+            Background = ThemeBrushes.GetTitleBarBackgroundBrush(),
+            BorderBrush = ThemeBrushes.GetTitleBarBorderBrush(),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = dragRegion
+        };
+        return host;
+    }
+
     private UIElement BuildPaneHeader()
     {
         var panel = new StackPanel { Spacing = 6, Margin = new Thickness(12, 8, 12, 12) };
@@ -224,11 +359,11 @@ public sealed class MainWindow : Window
         metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        metrics.Children.Add(CreateCard(AppStrings.Get("Common.Today"), _todayTextBlock));
-        var sessionCard = CreateCard(AppStrings.Get("Common.Session"), _sessionTextBlock);
+        metrics.Children.Add(CreateCard(AppStrings.Get("Common.Today"), _todayTextBlock, true));
+        var sessionCard = CreateCard(AppStrings.Get("Common.Session"), _sessionTextBlock, true);
         Grid.SetColumn(sessionCard, 1);
         metrics.Children.Add(sessionCard);
-        var totalCard = CreateCard(AppStrings.Get("Common.AllTime"), _totalTextBlock);
+        var totalCard = CreateCard(AppStrings.Get("Common.AllTime"), _totalTextBlock, true);
         Grid.SetColumn(totalCard, 2);
         metrics.Children.Add(totalCard);
         stack.Children.Add(metrics);
@@ -236,7 +371,7 @@ public sealed class MainWindow : Window
         stack.Children.Add(CreateSectionHeader(AppStrings.Get("Main.Section.FocusTitle"), AppStrings.Get("Main.Section.FocusSubtitle")));
         var details = new Grid { ColumnSpacing = 16, Margin = new Thickness(0, 20, 0, 0) };
         details.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        details.Children.Add(CreateInfoCard(AppStrings.Get("Main.Card.CurrentTarget"), _currentTargetTextBlock, _statusTextBlock));
+        details.Children.Add(CreateInfoCard(AppStrings.Get("Main.Card.CurrentTarget"), _currentTargetTextBlock, _statusTextBlock, true));
         stack.Children.Add(details);
 
         stack.Children.Add(CreateSectionHeader(AppStrings.Get("Main.Section.WorkflowTitle"), AppStrings.Get("Main.Section.WorkflowSubtitle")));
@@ -255,12 +390,12 @@ public sealed class MainWindow : Window
         actions.Children.Add(CreateActionButton(AppStrings.Get("Main.Button.OpenStatistics"), (_, _) => ShowStatisticsPage()));
         actions.Children.Add(CreateActionButton(AppStrings.Get("Main.Button.OpenSettings"), (_, _) => ShowSettingsPage()));
         actions.Children.Add(CreateActionButton(AppStrings.Get("Main.Button.OpenDebug"), (_, _) => ShowDebugPage()));
-        lower.Children.Add(CreateInfoCard(AppStrings.Get("Main.Card.QuickActions"), actions));
+        lower.Children.Add(CreateInfoCard(AppStrings.Get("Main.Card.QuickActions"), actions, true));
 
-        var recentCard = CreateInfoCard(AppStrings.Get("Main.Card.RecentActivity"), _recentActivityPanel);
+        var recentCard = CreateInfoCard(AppStrings.Get("Main.Card.RecentActivity"), _recentActivityPanel, true);
         Grid.SetColumn(recentCard, 1);
         lower.Children.Add(recentCard);
-        var topAppsCard = CreateInfoCard(AppStrings.Get("Main.Card.TopAppsToday"), _topAppsPanel);
+        var topAppsCard = CreateInfoCard(AppStrings.Get("Main.Card.TopAppsToday"), _topAppsPanel, true);
         Grid.SetColumn(topAppsCard, 2);
         lower.Children.Add(topAppsCard);
         stack.Children.Add(lower);
@@ -291,7 +426,7 @@ public sealed class MainWindow : Window
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         toolbar.Children.Add(_searchBox);
         toolbar.Children.Add(_sortComboBox);
-        var toolbarCard = CreateCard(toolbar);
+        var toolbarCard = CreateCard(toolbar, null, true);
         toolbarCard.Margin = new Thickness(0, 16, 0, 0);
         Grid.SetRow(toolbarCard, 1);
         grid.Children.Add(toolbarCard);
@@ -476,12 +611,12 @@ public sealed class MainWindow : Window
         return button;
     }
 
-    private static Border CreateCard(string title, TextBlock value)
+    private Border CreateCard(string title, TextBlock value, bool track = false)
     {
         var panel = new StackPanel { Spacing = 6 };
         panel.Children.Add(new TextBlock { Text = title, Opacity = 0.72 });
         panel.Children.Add(value);
-        return CreateCard(panel);
+        return CreateCard(panel, null, track);
     }
 
     private static UIElement CreateSectionHeader(string title, string subtitle)
@@ -492,39 +627,43 @@ public sealed class MainWindow : Window
         return panel;
     }
 
-    private static Border CreateInfoCard(string title, UIElement content)
+    private Border CreateInfoCard(string title, UIElement content, bool track = false)
     {
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 14 });
         panel.Children.Add(content);
-        return CreateCard(panel);
+        return CreateCard(panel, null, track);
     }
 
-    private static Border CreateInfoCard(string title, TextBlock primary, TextBlock secondary)
+    private Border CreateInfoCard(string title, TextBlock primary, TextBlock secondary, bool track = false)
     {
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 14 });
         panel.Children.Add(primary);
         panel.Children.Add(new TextBlock { Text = AppStrings.Get("Main.Card.Status"), FontWeight = FontWeights.SemiBold, FontSize = 12, Opacity = 0.7 });
         panel.Children.Add(secondary);
-        return CreateCard(panel);
+        return CreateCard(panel, null, track);
     }
 
-    private static Border CreateCard(UIElement child, Brush? background = null)
+    private Border CreateCard(UIElement child, Brush? background = null, bool track = false)
     {
         var border = new Border
         {
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(16),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("CardStrokeColorDefaultBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             Child = child
         };
-        border.Background = background ?? ThemeBrushes.Get("CardBackgroundFillColorDefaultBrush", "LayerFillColorDefaultBrush");
+        border.Background = background ?? ThemeBrushes.GetCardBackgroundBrush();
+        if (track)
+        {
+            _trackedSurfaces.Add((border, false));
+        }
         return border;
     }
 
-    private static Border CreateInfoRow(string primary, string secondary)
+    private Border CreateInfoRow(string primary, string secondary, bool track = false)
     {
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(new TextBlock { Text = primary, FontWeight = FontWeights.SemiBold });
@@ -534,14 +673,18 @@ public sealed class MainWindow : Window
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("SurfaceStrokeColorFlyoutBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             Child = panel
         };
-        border.Background = ThemeBrushes.Get("CardBackgroundFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush");
+        border.Background = ThemeBrushes.GetCardBackgroundBrush(true);
+        if (track)
+        {
+            _trackedSurfaces.Add((border, true));
+        }
         return border;
     }
 
-    private static Border CreateAppInfoRow(AppAggregate aggregate, string secondary)
+    private Border CreateAppInfoRow(AppAggregate aggregate, string secondary, bool track = false)
     {
         var iconSource = AppPresentationService.TryGetIconSource(aggregate.ProcessNames);
         var layout = new Grid { ColumnSpacing = 12 };
@@ -553,7 +696,7 @@ public sealed class MainWindow : Window
             Width = 38,
             Height = 38,
             CornerRadius = new CornerRadius(12),
-            Background = ThemeBrushes.Get("AccentFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush"),
+            Background = ThemeBrushes.GetCardBackgroundBrush(true),
             Child = iconSource is not null
                 ? new Image
                 {
@@ -596,22 +739,26 @@ public sealed class MainWindow : Window
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("SurfaceStrokeColorFlyoutBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             Child = layout
         };
-        border.Background = ThemeBrushes.Get("CardBackgroundFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush");
+        border.Background = ThemeBrushes.GetCardBackgroundBrush(true);
+        if (track)
+        {
+            _trackedSurfaces.Add((border, true));
+        }
         return border;
     }
 
     private void ApplyWindowChrome()
     {
-        var appWindow = WindowHelpers.GetAppWindow(this);
         if (!AppWindowTitleBar.IsCustomizationSupported())
         {
             return;
         }
 
-        var titleBar = appWindow.TitleBar;
+        var titleBar = _appWindow.TitleBar;
+        UpdateTitleBarMetrics(titleBar);
         titleBar.PreferredTheme = _rootNavigation.ActualTheme switch
         {
             ElementTheme.Light => TitleBarTheme.Light,
@@ -619,11 +766,23 @@ public sealed class MainWindow : Window
             _ => TitleBarTheme.UseDefaultAppMode
         };
 
+        var isDark = _rootNavigation.ActualTheme == ElementTheme.Dark;
         titleBar.BackgroundColor = Microsoft.UI.Colors.Transparent;
         titleBar.InactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
         titleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
         titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
-        titleBar.ButtonHoverBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(32, 255, 255, 255);
-        titleBar.ButtonPressedBackgroundColor = Microsoft.UI.ColorHelper.FromArgb(48, 255, 255, 255);
+        titleBar.ButtonHoverBackgroundColor = isDark
+            ? Microsoft.UI.ColorHelper.FromArgb(40, 255, 255, 255)
+            : Microsoft.UI.ColorHelper.FromArgb(32, 0, 0, 0);
+        titleBar.ButtonPressedBackgroundColor = isDark
+            ? Microsoft.UI.ColorHelper.FromArgb(68, 255, 255, 255)
+            : Microsoft.UI.ColorHelper.FromArgb(56, 0, 0, 0);
+    }
+
+    private void UpdateTitleBarMetrics(AppWindowTitleBar titleBar)
+    {
+        var leftPadding = Math.Max(10, titleBar.LeftInset + 6);
+        var rightPadding = Math.Max(14, titleBar.RightInset + 14);
+        _titleBarDragRegion.Padding = new Thickness(leftPadding, 0, rightPadding, 0);
     }
 }

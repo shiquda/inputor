@@ -3,6 +3,9 @@
   <data name="App.Name" xml:space="preserve"><value>inputor</value></data>
   <data name="App.Tagline" xml:space="preserve"><value>Private typing insights</value></data>
   <data name="Language.FollowSystem" xml:space="preserve"><value>Follow system</value></data>
+  <data name="Theme.FollowSystem" xml:space="preserve"><value>Follow system</value></data>
+  <data name="Theme.Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Theme.Dark" xml:space="preserve"><value>Dark</value></data>
   <data name="Language.English" xml:space="preserve"><value>English</value></data>
   <data name="Language.SimplifiedChinese" xml:space="preserve"><value>Simplified Chinese</value></data>
   <data name="Common.On" xml:space="preserve"><value>On</value></data>
@@ -69,6 +72,8 @@
   <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>Data management</value></data>
   <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>Use this only when you want to permanently remove stored local statistics.</value></data>
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="Settings.Label.ThemeMode" xml:space="preserve"><value>Theme</value></data>
+  <data name="Settings.Caption.ThemeMode" xml:space="preserve"><value>Sync the app surface and title bar with the system, or force a light or dark theme.</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>

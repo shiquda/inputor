@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.XamlTypeInfo;
+using Windows.UI.ViewManagement;
 
 namespace Inputor.WinUI;
 
@@ -15,6 +16,7 @@ public sealed class App : Application, IXamlMetadataProvider
     private readonly string _dataDirectory;
     private bool _exitRequested;
     private bool _shutdownCompleted;
+    private readonly UISettings _uiSettings;
     private NotifyIconService? _notifyIconService;
     private TrayMenuWindow? _trayMenuWindow;
     private XamlControlsXamlMetaDataProvider? _metadataProvider;
@@ -29,6 +31,8 @@ public sealed class App : Application, IXamlMetadataProvider
 
         SettingsService = new AppSettingsService(_dataDirectory);
         Settings = SettingsService.Load();
+        _uiSettings = new UISettings();
+        _uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
         AppStrings.Initialize(AppContext.BaseDirectory, Settings.Language);
         StatsStore = new StatsStore(_dataDirectory);
         Exporter = new CsvExportService();
@@ -68,6 +72,7 @@ public sealed class App : Application, IXamlMetadataProvider
         Resources.MergedDictionaries.Add(new XamlControlsResources());
 
         MainWindow = new MainWindow();
+        ApplyThemeMode();
         StartupDiagnostics.Log("MainWindow created.");
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "inputor.ico");
         WindowHelpers.SetWindowIcon(MainWindow, iconPath);
@@ -190,6 +195,7 @@ public sealed class App : Application, IXamlMetadataProvider
     {
         SettingsService.Save(Settings);
         AutoStartService.Apply(Settings.StartWithWindows);
+        ApplyThemeMode();
     }
 
     public void SetDebugCaptureEnabled(bool isEnabled)
@@ -256,10 +262,38 @@ public sealed class App : Application, IXamlMetadataProvider
         }
 
         _shutdownCompleted = true;
+        _uiSettings.ColorValuesChanged -= UiSettings_ColorValuesChanged;
         _notifyIconService?.Dispose();
         _notifyIconService = null;
         MonitoringService.Dispose();
         StatsStore.Dispose();
+    }
+
+    private void ApplyThemeMode()
+    {
+        MainWindow?.ApplyThemeMode(AppStrings.ResolveThemeMode(Settings.ThemeMode));
+    }
+
+    private void UiSettings_ColorValuesChanged(UISettings sender, object args)
+    {
+        if (AppStrings.ResolveThemeMode(Settings.ThemeMode) is not AppThemeMode.FollowSystem)
+        {
+            return;
+        }
+
+        var window = MainWindow;
+        if (window is null)
+        {
+            return;
+        }
+
+        if (window.DispatcherQueue.HasThreadAccess)
+        {
+            window.ApplyThemeMode(AppThemeMode.FollowSystem);
+            return;
+        }
+
+        window.DispatcherQueue.TryEnqueue(() => window.ApplyThemeMode(AppThemeMode.FollowSystem));
     }
 
     private static bool CanExclude(string? processName)

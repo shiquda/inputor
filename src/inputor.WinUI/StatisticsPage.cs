@@ -35,6 +35,7 @@ public sealed class StatisticsPage : UserControl
     private readonly ComboBox _distributionRangeComboBox;
     private DashboardSnapshot? _pendingSnapshot;
     private int _interactionDepth;
+    private readonly List<Border> _cards = [];
 
     public StatisticsPage()
     {
@@ -61,7 +62,23 @@ public sealed class StatisticsPage : UserControl
             Content = BuildContent()
         };
 
+        ThemeBrushes.Changed += ThemeBrushes_Changed;
         Unloaded += (_, _) => ResetInteractionState();
+        Unloaded += (_, _) => ThemeBrushes.Changed -= ThemeBrushes_Changed;
+    }
+
+    public void RefreshTheme()
+    {
+        foreach (var card in _cards)
+        {
+            card.Background = ThemeBrushes.GetCardBackgroundBrush();
+            card.BorderBrush = ThemeBrushes.GetCardBorderBrush();
+        }
+    }
+
+    private void ThemeBrushes_Changed(object? sender, EventArgs e)
+    {
+        RefreshTheme();
     }
 
     public void Refresh(DashboardSnapshot snapshot)
@@ -157,7 +174,7 @@ public sealed class StatisticsPage : UserControl
                     Y1 = previous.Value.Y,
                     X2 = point.X,
                     Y2 = point.Y,
-                    Stroke = new SolidColorBrush(ColorHelper.FromArgb(255, 46, 156, 202)),
+                    Stroke = new SolidColorBrush(ThemeBrushes.GetChartAccentColor()),
                     StrokeThickness = 3
                 });
             }
@@ -166,8 +183,8 @@ public sealed class StatisticsPage : UserControl
             {
                 Width = 8,
                 Height = 8,
-                Fill = new SolidColorBrush(ColorHelper.FromArgb(255, 255, 255, 255)),
-                Stroke = new SolidColorBrush(ColorHelper.FromArgb(255, 46, 156, 202)),
+                Fill = ThemeBrushes.GetChartMarkerFillBrush(),
+                Stroke = new SolidColorBrush(ThemeBrushes.GetChartAccentColor()),
                 StrokeThickness = 2
             };
             Canvas.SetLeft(marker, point.X - 4);
@@ -217,9 +234,9 @@ public sealed class StatisticsPage : UserControl
                     Width = 18,
                     Height = 18,
                     CornerRadius = new CornerRadius(5),
-                    Background = new SolidColorBrush(ColorHelper.FromArgb(intensity, 46, 156, 202)),
+                    Background = ThemeBrushes.GetHeatmapCellBrush(intensity),
                     BorderThickness = new Thickness(1),
-                    BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(32, 255, 255, 255))
+                    BorderBrush = ThemeBrushes.GetHeatmapBorderBrush()
                 };
                 ToolTipService.SetToolTip(cell, new ToolTip
                 {
@@ -228,13 +245,13 @@ public sealed class StatisticsPage : UserControl
                 cell.PointerEntered += (_, _) =>
                 {
                     BeginInteraction();
-                    cell.BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(180, 255, 255, 255));
+                    cell.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush(true);
                     cell.Opacity = 0.94;
                     _heatmapDetailTextBlock.Text = $"{entry.Date:yyyy-MM-dd} • {entry.TotalCount:N0} characters";
                 };
                 cell.PointerExited += (_, _) =>
                 {
-                    cell.BorderBrush = new SolidColorBrush(ColorHelper.FromArgb(32, 255, 255, 255));
+                    cell.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush();
                     cell.Opacity = 1;
                     _heatmapDetailTextBlock.Text = $"Hover a cell to inspect a day. Peak in this view: {busiestDay.Date:yyyy-MM-dd} • {busiestDay.TotalCount:N0}.";
                     EndInteraction();
@@ -285,9 +302,9 @@ public sealed class StatisticsPage : UserControl
             Width = 92,
             Height = 92,
             CornerRadius = new CornerRadius(999),
-            Background = ThemeBrushes.Get("CardBackgroundFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush"),
+            Background = ThemeBrushes.GetSubtleSurfaceBrush(),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("CardStrokeColorDefaultBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Child = new TextBlock
@@ -301,15 +318,7 @@ public sealed class StatisticsPage : UserControl
         };
         pieHost.Children.Add(centerBadge);
 
-        var palette = new[]
-        {
-            ColorHelper.FromArgb(255, 72, 183, 255),
-            ColorHelper.FromArgb(255, 62, 209, 185),
-            ColorHelper.FromArgb(255, 255, 179, 71),
-            ColorHelper.FromArgb(255, 255, 120, 120),
-            ColorHelper.FromArgb(255, 162, 136, 255),
-            ColorHelper.FromArgb(255, 120, 210, 255)
-        };
+        var palette = ThemeBrushes.GetDistributionPalette();
 
         var startAngle = -90.0;
         _distributionDetailTextBlock.Text = "Hover or click a slice to inspect an app share.";
@@ -320,7 +329,7 @@ public sealed class StatisticsPage : UserControl
             var item = ordered[index];
             var share = item.Value / (double)total;
             var sweepAngle = share * 360.0;
-            var slice = CreatePieSlice(PieSize / 2, PieSize / 2, PieSize / 2 - 6, startAngle, sweepAngle, palette[index % palette.Length]);
+            var slice = CreatePieSlice(PieSize / 2, PieSize / 2, PieSize / 2 - 6, startAngle, sweepAngle, palette[index % palette.Count]);
             ToolTipService.SetToolTip(slice, new ToolTip
             {
                 Content = $"{item.Aggregate.DisplayName}\n{item.Value:N0} • {share:P0}"
@@ -328,9 +337,7 @@ public sealed class StatisticsPage : UserControl
 
             void SetSliceState(bool active)
             {
-                slice.Stroke = active
-                    ? new SolidColorBrush(ColorHelper.FromArgb(220, 255, 255, 255))
-                    : new SolidColorBrush(ColorHelper.FromArgb(120, 24, 24, 24));
+                slice.Stroke = ThemeBrushes.GetChartOutlineBrush(active);
                 slice.Opacity = active ? 1 : 0.95;
             }
 
@@ -365,7 +372,7 @@ public sealed class StatisticsPage : UserControl
             {
                 if (selectedSlice is not null && !ReferenceEquals(selectedSlice, slice))
                 {
-                    selectedSlice.Stroke = new SolidColorBrush(ColorHelper.FromArgb(120, 24, 24, 24));
+                    selectedSlice.Stroke = ThemeBrushes.GetChartOutlineBrush();
                     selectedSlice.Opacity = 0.95;
                 }
 
@@ -384,7 +391,7 @@ public sealed class StatisticsPage : UserControl
         {
             var item = ordered[index];
             var share = item.Value / (double)total;
-            legend.Children.Add(CreateDistributionLegendRow(item.Aggregate, item.Value, share, palette[index % palette.Length], defaultDetailText, detail =>
+            legend.Children.Add(CreateDistributionLegendRow(item.Aggregate, item.Value, share, palette[index % palette.Count], defaultDetailText, detail =>
             {
                 _distributionDetailTextBlock.Text = detail;
             }));
@@ -473,7 +480,7 @@ public sealed class StatisticsPage : UserControl
         {
             Fill = new SolidColorBrush(color),
             Data = geometry,
-            Stroke = new SolidColorBrush(ColorHelper.FromArgb(120, 24, 24, 24)),
+            Stroke = ThemeBrushes.GetChartOutlineBrush(),
             StrokeThickness = 1
         };
     }
@@ -501,7 +508,7 @@ public sealed class StatisticsPage : UserControl
             Width = 22,
             Height = 22,
             CornerRadius = new CornerRadius(6),
-            Background = ThemeBrushes.Get("CardBackgroundFillColorTertiaryBrush", "SubtleFillColorSecondaryBrush"),
+            Background = ThemeBrushes.GetSubtleSurfaceBrush(),
             VerticalAlignment = VerticalAlignment.Center,
             Child = iconSource is not null
             ? new Image
@@ -517,7 +524,7 @@ public sealed class StatisticsPage : UserControl
                 Glyph = aggregate.IconGlyph,
                 FontFamily = new FontFamily("Segoe Fluent Icons"),
                 FontSize = 12,
-                Foreground = new SolidColorBrush(Colors.White),
+                Foreground = ThemeBrushes.IsDarkTheme() ? new SolidColorBrush(Colors.White) : ThemeBrushes.Get("TextFillColorPrimaryBrush", "TextFillColorPrimaryBrush"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             }
@@ -535,7 +542,7 @@ public sealed class StatisticsPage : UserControl
         {
             Padding = new Thickness(10, 8, 10, 8),
             CornerRadius = new CornerRadius(10),
-            Background = ThemeBrushes.Get("CardBackgroundFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush"),
+            Background = ThemeBrushes.GetSubtleSurfaceBrush(),
             Child = row
         };
         var detail = $"{aggregate.DisplayName} • {value:N0} characters • {share:P0}";
@@ -621,17 +628,18 @@ public sealed class StatisticsPage : UserControl
         return panel;
     }
 
-    private static Border CreateCard(UIElement child, Brush? background = null, Thickness? padding = null)
+    private Border CreateCard(UIElement child, Brush? background = null, Thickness? padding = null)
     {
         var border = new Border
         {
             CornerRadius = new CornerRadius(8),
             Padding = padding ?? new Thickness(20),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("CardStrokeColorDefaultBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             Child = child
         };
-        border.Background = background ?? ThemeBrushes.Get("CardBackgroundFillColorDefaultBrush", "LayerFillColorDefaultBrush");
+        border.Background = background ?? ThemeBrushes.GetCardBackgroundBrush();
+        _cards.Add(border);
         return border;
     }
 }

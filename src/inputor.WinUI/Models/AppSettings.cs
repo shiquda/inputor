@@ -7,6 +7,7 @@ public sealed class AppSettings
     public bool StartWithWindows { get; set; }
     public bool PrivacyMode { get; set; } = true;
     public bool DebugCaptureEnabled { get; set; }
+    public string ThemeMode { get; set; } = string.Empty;
     public string Language { get; set; } = string.Empty;
     public string ExcludedApps { get; set; } = "inputor.app";
 

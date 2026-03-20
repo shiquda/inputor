@@ -3,6 +3,9 @@
   <data name="App.Name" xml:space="preserve"><value>inputor</value></data>
   <data name="App.Tagline" xml:space="preserve"><value>私密输入洞察</value></data>
   <data name="Language.FollowSystem" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Theme.FollowSystem" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Theme.Light" xml:space="preserve"><value>浅色</value></data>
+  <data name="Theme.Dark" xml:space="preserve"><value>深色</value></data>
   <data name="Language.English" xml:space="preserve"><value>English</value></data>
   <data name="Language.SimplifiedChinese" xml:space="preserve"><value>简体中文</value></data>
   <data name="Common.On" xml:space="preserve"><value>开</value></data>
@@ -69,6 +72,8 @@
   <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>数据管理</value></data>
   <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>仅当你确定要永久移除本地统计数据时再使用。</value></data>
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>开机启动</value></data>
+  <data name="Settings.Label.ThemeMode" xml:space="preserve"><value>主题</value></data>
+  <data name="Settings.Caption.ThemeMode" xml:space="preserve"><value>让应用内容区和标题栏跟随系统，或者固定为浅色 / 深色。</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>语言</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>

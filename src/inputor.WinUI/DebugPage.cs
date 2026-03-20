@@ -20,6 +20,7 @@ public sealed class DebugPage : UserControl
     private readonly StackPanel _eventsPanel;
     private DashboardSnapshot? _pendingSnapshot;
     private int _interactionDepth;
+    private readonly List<(Border Border, bool Subtle)> _cards = [];
 
     public DebugPage()
     {
@@ -68,7 +69,25 @@ public sealed class DebugPage : UserControl
             Content = BuildContent()
         };
 
+        ThemeBrushes.Changed += ThemeBrushes_Changed;
         Unloaded += (_, _) => ResetInteractionState();
+        Unloaded += (_, _) => ThemeBrushes.Changed -= ThemeBrushes_Changed;
+    }
+
+    public void RefreshTheme()
+    {
+        foreach (var (card, subtle) in _cards)
+        {
+            card.Background = subtle ? ThemeBrushes.GetSubtleSurfaceBrush() : ThemeBrushes.GetCardBackgroundBrush();
+            card.BorderBrush = ThemeBrushes.GetCardBorderBrush();
+        }
+
+        _captureButton.Background = ThemeBrushes.GetAccentBadgeBackgroundBrush();
+    }
+
+    private void ThemeBrushes_Changed(object? sender, EventArgs e)
+    {
+        RefreshTheme();
     }
 
     public void Refresh(DashboardSnapshot snapshot)
@@ -87,6 +106,7 @@ public sealed class DebugPage : UserControl
             return;
         }
 
+        _cards.Clear();
         _summaryPanel.Children.Clear();
         _eventsPanel.Children.Clear();
 
@@ -209,12 +229,12 @@ public sealed class DebugPage : UserControl
         };
     }
 
-    private static Border CreateSummaryChip(string label, string value)
+    private Border CreateSummaryChip(string label, string value)
     {
         var panel = new StackPanel { Spacing = 2 };
         panel.Children.Add(new TextBlock { Text = label, FontSize = 12, Opacity = 0.68 });
         panel.Children.Add(new TextBlock { Text = value, FontSize = 20, FontWeight = FontWeights.SemiBold });
-        return CreateCard(panel, ThemeBrushes.Get("CardBackgroundFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush"), new Thickness(16, 12, 16, 12));
+        return CreateCard(panel, ThemeBrushes.GetSubtleSurfaceBrush(), new Thickness(16, 12, 16, 12), true);
     }
 
     private void AddSummaryChip(int row, int column, string label, string value)
@@ -242,7 +262,7 @@ public sealed class DebugPage : UserControl
         {
             Padding = new Thickness(10, 4, 10, 4),
             CornerRadius = new CornerRadius(999),
-            Background = ThemeBrushes.Get("AccentFillColorSecondaryBrush", "SubtleFillColorSecondaryBrush"),
+            Background = ThemeBrushes.GetAccentBadgeBackgroundBrush(),
             Child = new TextBlock
             {
                 Text = entry.Delta > 0 && !entry.IsPaste && !entry.IsBulkContentLoad ? AppStrings.Get("Debug.Badge.Counter") : AppStrings.Get("Debug.Badge.NoCount"),
@@ -378,7 +398,7 @@ public sealed class DebugPage : UserControl
         return panel;
     }
 
-    private static Border CreateInfoCard(string title, UIElement content)
+    private Border CreateInfoCard(string title, UIElement content)
     {
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 14 });
@@ -386,7 +406,7 @@ public sealed class DebugPage : UserControl
         return CreateCard(panel);
     }
 
-    private static Border CreateInfoCard(string title, string text)
+    private Border CreateInfoCard(string title, string text)
     {
         return CreateInfoCard(title, new TextBlock
         {
@@ -401,17 +421,18 @@ public sealed class DebugPage : UserControl
         return string.Join('|', entry.Timestamp.Ticks, entry.AppName, entry.StatusMessage, entry.Delta, entry.ControlTypeName);
     }
 
-    private static Border CreateCard(UIElement child, Brush? background = null, Thickness? padding = null)
+    private Border CreateCard(UIElement child, Brush? background = null, Thickness? padding = null, bool subtle = false)
     {
         var border = new Border
         {
             CornerRadius = new CornerRadius(8),
             Padding = padding ?? new Thickness(20),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("CardStrokeColorDefaultBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             Child = child
         };
-        border.Background = background ?? ThemeBrushes.Get("CardBackgroundFillColorDefaultBrush", "LayerFillColorDefaultBrush");
+        border.Background = background ?? ThemeBrushes.GetCardBackgroundBrush();
+        _cards.Add((border, subtle));
         return border;
     }
 }

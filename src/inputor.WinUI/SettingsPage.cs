@@ -12,16 +12,26 @@ namespace Inputor.WinUI;
 public sealed class SettingsPage : UserControl
 {
     private readonly CheckBox _startWithWindowsCheckBox;
+    private readonly ComboBox _themeModeComboBox;
     private readonly ComboBox _languageComboBox;
     private readonly TextBox _excludedAppsTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
     private readonly Button _clearStatisticsButton;
     private readonly TextBlock _headerNoteTextBlock;
     private readonly TextBlock _restartNoticeTextBlock;
+    private readonly List<Border> _cards = [];
 
     public SettingsPage()
     {
         _startWithWindowsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.StartWithWindows") };
+        _themeModeComboBox = new ComboBox
+        {
+            ItemsSource = AppStrings.GetThemeModeOptions(),
+            DisplayMemberPath = nameof(AppThemeModeOption.DisplayName),
+            SelectedValuePath = nameof(AppThemeModeOption.Tag),
+            Width = 220,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
         _languageComboBox = new ComboBox
         {
             ItemsSource = AppStrings.GetLanguageOptions(),
@@ -43,7 +53,23 @@ public sealed class SettingsPage : UserControl
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = BuildContent()
         };
+        Unloaded += (_, _) => ThemeBrushes.Changed -= ThemeBrushes_Changed;
+        ThemeBrushes.Changed += ThemeBrushes_Changed;
         RefreshFromState();
+    }
+
+    public void RefreshTheme()
+    {
+        foreach (var card in _cards)
+        {
+            card.Background = ThemeBrushes.GetCardBackgroundBrush();
+            card.BorderBrush = ThemeBrushes.GetCardBorderBrush();
+        }
+    }
+
+    private void ThemeBrushes_Changed(object? sender, EventArgs e)
+    {
+        RefreshTheme();
     }
 
     public void RefreshFromState()
@@ -52,6 +78,7 @@ public sealed class SettingsPage : UserControl
         var snapshot = App.Current.StatsStore.GetSnapshot();
 
         _startWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
+        _themeModeComboBox.SelectedValue = settings.ThemeMode;
         _languageComboBox.SelectedValue = settings.Language;
         _excludedAppsTextBox.Text = settings.ExcludedApps;
         _confirmClearStatisticsCheckBox.IsChecked = false;
@@ -77,6 +104,11 @@ public sealed class SettingsPage : UserControl
         header.Children.Add(_headerNoteTextBlock);
         header.Children.Add(_restartNoticeTextBlock);
         root.Children.Add(header);
+
+        root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Label.ThemeMode"), AppStrings.Get("Settings.Caption.ThemeMode")));
+        var themePanel = new StackPanel { Spacing = 10 };
+        themePanel.Children.Add(_themeModeComboBox);
+        root.Children.Add(CreateCard(themePanel, ThemeBrushes.GetSubtleSurfaceBrush()));
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Section.PreferencesTitle"), AppStrings.Get("Settings.Section.PreferencesSubtitle")));
         var preferences = new StackPanel { Spacing = 16 };
@@ -130,6 +162,7 @@ public sealed class SettingsPage : UserControl
         var settings = App.Current.Settings;
         var previousLanguage = settings.Language;
         settings.StartWithWindows = _startWithWindowsCheckBox.IsChecked ?? false;
+        settings.ThemeMode = _themeModeComboBox.SelectedValue as string ?? string.Empty;
         settings.Language = _languageComboBox.SelectedValue as string ?? string.Empty;
         settings.ExcludedApps = string.Join(", ", (_excludedAppsTextBox.Text ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -177,17 +210,18 @@ public sealed class SettingsPage : UserControl
         return panel;
     }
 
-    private static Border CreateCard(UIElement child, Brush? background = null)
+    private Border CreateCard(UIElement child, Brush? background = null)
     {
         var border = new Border
         {
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(20),
             BorderThickness = new Thickness(1),
-            BorderBrush = ThemeBrushes.Get("CardStrokeColorDefaultBrush", "SurfaceStrokeColorDefaultBrush"),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
             Child = child
         };
-        border.Background = background ?? ThemeBrushes.Get("CardBackgroundFillColorDefaultBrush", "LayerFillColorDefaultBrush");
+        border.Background = background ?? ThemeBrushes.GetCardBackgroundBrush();
+        _cards.Add(border);
         return border;
     }
 
