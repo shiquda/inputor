@@ -12,6 +12,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 
 namespace Inputor.WinUI;
 
@@ -468,11 +469,20 @@ public sealed class MainWindow : Window
             _debugPage.ResetInteractionState();
         }
 
-        _overviewPage.Visibility = selectedTag == "Overview" ? Visibility.Visible : Visibility.Collapsed;
-        _statisticsPage.Visibility = selectedTag == "Statistics" ? Visibility.Visible : Visibility.Collapsed;
-        _appsPage.Visibility = selectedTag == "Apps" ? Visibility.Visible : Visibility.Collapsed;
-        _debugPage.Visibility = selectedTag == "Debug" ? Visibility.Visible : Visibility.Collapsed;
-        _settingsPage.Visibility = selectedTag == "Settings" ? Visibility.Visible : Visibility.Collapsed;
+        UIElement? incoming = null;
+
+        void SetVisibility(UIElement page, string tag)
+        {
+            var visible = selectedTag == tag;
+            page.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (visible) incoming = page;
+        }
+
+        SetVisibility(_overviewPage, "Overview");
+        SetVisibility(_statisticsPage, "Statistics");
+        SetVisibility(_appsPage, "Apps");
+        SetVisibility(_debugPage, "Debug");
+        SetVisibility(_settingsPage, "Settings");
 
         if (selectedTag == "Settings")
         {
@@ -485,6 +495,11 @@ public sealed class MainWindow : Window
         else if (selectedTag == "Debug")
         {
             _debugPage.Refresh(App.Current.StatsStore.GetSnapshot());
+        }
+
+        if (incoming is not null)
+        {
+            AnimatePageIn(incoming);
         }
     }
 
@@ -794,6 +809,39 @@ public sealed class MainWindow : Window
                 TextWrapping = TextWrapping.NoWrap
             }
         };
+    }
+
+    private static void AnimatePageIn(UIElement page)
+    {
+        var transform = new CompositeTransform { TranslateY = 16 };
+        page.RenderTransform = transform;
+        page.Opacity = 0;
+
+        var storyboard = new Storyboard();
+
+        var fadeIn = new DoubleAnimation
+        {
+            From = 0,
+            To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(220)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(fadeIn, page);
+        Storyboard.SetTargetProperty(fadeIn, "Opacity");
+
+        var slideIn = new DoubleAnimation
+        {
+            From = 16,
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(220)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(slideIn, transform);
+        Storyboard.SetTargetProperty(slideIn, "TranslateY");
+
+        storyboard.Children.Add(fadeIn);
+        storyboard.Children.Add(slideIn);
+        storyboard.Begin();
     }
 
     private void ApplyWindowChrome()
