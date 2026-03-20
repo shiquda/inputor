@@ -133,6 +133,8 @@
   <data name="Debug.Button.ClearRecords" xml:space="preserve"><value>清除记录</value></data>
   <data name="Debug.Button.StartCapture" xml:space="preserve"><value>开始捕获</value></data>
   <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>暂停捕获</value></data>
+  <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>临时诊断与隐私说明</value></data>
+  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>这里只缓存最近 {0} 条临时调试记录，全部仅保存在内存中；它们不会写入统计文件，也不会保存原始文本。差异预览使用掩码字符：H=汉字，A=英文字母，0=数字，_=空白，.=标点/符号，?=其他。</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>调试捕获默认关闭。仅在你需要排查为什么计数被记录或未记录时再开启。</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>调试捕获已暂停。只有在你想检查为什么某次输入被记录或跳过时，再开始捕获。</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>调试捕获已关闭</value></data>
@@ -159,8 +161,17 @@
   <data name="Debug.Label.InsertedSegmentLength" xml:space="preserve"><value>插入片段长度</value></data>
   <data name="Debug.Label.CharacterMix" xml:space="preserve"><value>字符构成</value></data>
   <data name="Debug.Label.Flags" xml:space="preserve"><value>标记</value></data>
+  <data name="Debug.Label.TextLengths" xml:space="preserve"><value>前后文本长度</value></data>
+  <data name="Debug.Label.TextChange" xml:space="preserve"><value>差异区间</value></data>
+  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>变更前掩码预览</value></data>
+  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>变更后掩码预览</value></data>
+  <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>变更前字符构成</value></data>
+  <data name="Debug.Label.AfterMix" xml:space="preserve"><value>变更后字符构成</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} 个受支持字符</value></data>
   <data name="Debug.CharacterMixLine" xml:space="preserve"><value>中文 {0} • 英文 {1} • 受支持 {2}</value></data>
+  <data name="Debug.TextLengthsLine" xml:space="preserve"><value>之前 {0} • 当前 {1}</value></data>
+  <data name="Debug.TextChangeLine" xml:space="preserve"><value>起始索引 {0} • 变更长度 {1} → {2}</value></data>
+  <data name="Debug.TextPreviewLine" xml:space="preserve"><value>{0}</value></data>
   <data name="Debug.EventSummary" xml:space="preserve"><value>{0:HH:mm:ss} • {1} • {2}</value></data>
   <data name="Debug.Primary.CounterIncreased" xml:space="preserve"><value>计数增加了 {0} 个受支持字符。</value></data>
   <data name="Debug.Primary.PasteFiltered" xml:space="preserve"><value>检测到了类似粘贴的输入，因此没有计入统计。</value></data>

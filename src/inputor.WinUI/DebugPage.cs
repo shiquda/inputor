@@ -213,6 +213,10 @@ public sealed class DebugPage : UserControl
         toolbar.Children.Add(_clearButton);
         root.Children.Add(toolbar);
 
+        root.Children.Add(CreateInfoCard(
+            AppStrings.Get("Debug.Card.PrivacyTitle"),
+            AppStrings.Format("Debug.Card.PrivacyBody", 120)));
+
         root.Children.Add(_summaryPanel);
         root.Children.Add(_eventsPanel);
         return root;
@@ -295,6 +299,27 @@ public sealed class DebugPage : UserControl
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.InsertedSegmentLength"), entry.InsertedSegmentLength.ToString()));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.CharacterMix"), AppStrings.Format("Debug.CharacterMixLine", entry.InsertedChineseCharacterCount, entry.InsertedEnglishLetterCount, entry.InsertedSupportedCharacterCount)));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.Flags"), BuildFlagsSummary(entry)));
+        if (entry.TextComparison is not null)
+        {
+            detailsPanel.Children.Add(CreateMetricLine(
+                AppStrings.Get("Debug.Label.TextLengths"),
+                AppStrings.Format("Debug.TextLengthsLine", entry.TextComparison.PreviousTextLength, entry.TextComparison.CurrentTextLength)));
+            detailsPanel.Children.Add(CreateMetricLine(
+                AppStrings.Get("Debug.Label.TextChange"),
+                AppStrings.Format("Debug.TextChangeLine", entry.TextComparison.ChangeStartIndex, entry.TextComparison.PreviousSegmentLength, entry.TextComparison.CurrentSegmentLength)));
+            detailsPanel.Children.Add(CreateMetricLine(
+                AppStrings.Get("Debug.Label.BeforePreview"),
+                AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.PreviousPreviewMask)));
+            detailsPanel.Children.Add(CreateMetricLine(
+                AppStrings.Get("Debug.Label.AfterPreview"),
+                AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.CurrentPreviewMask)));
+            detailsPanel.Children.Add(CreateMetricLine(
+                AppStrings.Get("Debug.Label.BeforeMix"),
+                AppStrings.Format("Debug.CharacterMixLine", entry.TextComparison.PreviousChineseCharacterCount, entry.TextComparison.PreviousEnglishLetterCount, entry.TextComparison.PreviousSupportedCharacterCount)));
+            detailsPanel.Children.Add(CreateMetricLine(
+                AppStrings.Get("Debug.Label.AfterMix"),
+                AppStrings.Format("Debug.CharacterMixLine", entry.TextComparison.CurrentChineseCharacterCount, entry.TextComparison.CurrentEnglishLetterCount, entry.TextComparison.CurrentSupportedCharacterCount)));
+        }
 
         toggleButton.Click += (_, _) =>
         {

@@ -1,5 +1,7 @@
 namespace Inputor.App.Services;
 
+using Inputor.App.Models;
+
 public sealed class CompositionAwareDeltaTracker
 {
     private static readonly TimeSpan PendingConfirmationDelay = TimeSpan.FromMilliseconds(700);
@@ -9,7 +11,7 @@ public sealed class CompositionAwareDeltaTracker
     private string _lastRawText = string.Empty;
     private int _lastCommittedCount;
 
-    public DeltaResult ProcessSnapshot(string snapshotKey, string rawText, DateTime utcNow, bool isNativeImeInputMode)
+    public DeltaResult ProcessSnapshot(string snapshotKey, string rawText, DateTime utcNow, bool isNativeImeInputMode, bool includeTextComparison)
     {
         if (_lastSnapshotKey != snapshotKey)
         {
@@ -17,10 +19,11 @@ public sealed class CompositionAwareDeltaTracker
             return DeltaResult.NoChange(false);
         }
 
-        var insertedTextSegment = GetCurrentChangedSegment(_lastRawText, rawText);
+        var textComparison = includeTextComparison ? BuildTextComparison(_lastRawText, rawText) : null;
+        var insertedTextSegment = GetCurrentChangedSegment(_lastRawText, rawText, textComparison);
 
         if (_pendingSegment is not null
-            && TryProcessCompositionCommit(rawText, insertedTextSegment, out var compositionCommitResult))
+            && TryProcessCompositionCommit(rawText, insertedTextSegment, textComparison, out var compositionCommitResult))
         {
             return compositionCommitResult;
         }
@@ -34,10 +37,10 @@ public sealed class CompositionAwareDeltaTracker
         _lastRawText = rawText;
         _lastCommittedCount = effectiveCommittedCount;
 
-        return new DeltaResult(delta, _pendingSegment is not null, insertedTextSegment);
+        return new DeltaResult(delta, _pendingSegment is not null, insertedTextSegment, textComparison);
     }
 
-    private bool TryProcessCompositionCommit(string currentRawText, string? insertedTextSegment, out DeltaResult result)
+    private bool TryProcessCompositionCommit(string currentRawText, string? insertedTextSegment, DebugTextComparison? textComparison, out DeltaResult result)
     {
         result = DeltaResult.NoChange(false);
 
@@ -56,7 +59,7 @@ public sealed class CompositionAwareDeltaTracker
         _pendingSegment = null;
         _lastRawText = currentRawText;
         _lastCommittedCount = CharacterCountService.CountSupportedCharacters(currentRawText);
-        result = new DeltaResult(chineseIncrease, false, insertedTextSegment);
+        result = new DeltaResult(chineseIncrease, false, insertedTextSegment, textComparison);
         return true;
     }
 
@@ -153,11 +156,18 @@ public sealed class CompositionAwareDeltaTracker
         return pendingLetterCount > 0;
     }
 
-    private static string? GetCurrentChangedSegment(string previousRawText, string currentRawText)
+    private static string? GetCurrentChangedSegment(string previousRawText, string currentRawText, DebugTextComparison? textComparison)
     {
         if (previousRawText == currentRawText)
         {
             return null;
+        }
+
+        if (textComparison is not null)
+        {
+            return textComparison.CurrentSegmentLength <= 0
+                ? null
+                : currentRawText.Substring(textComparison.ChangeStartIndex, textComparison.CurrentSegmentLength);
         }
 
         var prefixLength = GetCommonPrefixLength(previousRawText, currentRawText);
@@ -169,6 +179,107 @@ public sealed class CompositionAwareDeltaTracker
         }
 
         return currentRawText.Substring(prefixLength, currentChangedLength);
+    }
+
+    private static DebugTextComparison? BuildTextComparison(string previousRawText, string currentRawText)
+    {
+        if (previousRawText == currentRawText)
+        {
+            return null;
+        }
+
+        var prefixLength = GetCommonPrefixLength(previousRawText, currentRawText);
+        var suffixLength = GetCommonSuffixLength(previousRawText, currentRawText, prefixLength);
+        var previousChangedLength = previousRawText.Length - prefixLength - suffixLength;
+        var currentChangedLength = currentRawText.Length - prefixLength - suffixLength;
+        var previousChangedSegment = previousChangedLength > 0
+            ? previousRawText.Substring(prefixLength, previousChangedLength)
+            : string.Empty;
+        var currentChangedSegment = currentChangedLength > 0
+            ? currentRawText.Substring(prefixLength, currentChangedLength)
+            : string.Empty;
+
+        return new DebugTextComparison
+        {
+            ChangeStartIndex = prefixLength,
+            PreviousTextLength = previousRawText.Length,
+            CurrentTextLength = currentRawText.Length,
+            PreviousSegmentLength = previousChangedLength,
+            CurrentSegmentLength = currentChangedLength,
+            PreviousSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(previousChangedSegment),
+            PreviousChineseCharacterCount = CharacterCountService.CountChineseCharacters(previousChangedSegment),
+            PreviousEnglishLetterCount = CharacterCountService.CountEnglishLetters(previousChangedSegment),
+            CurrentSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(currentChangedSegment),
+            CurrentChineseCharacterCount = CharacterCountService.CountChineseCharacters(currentChangedSegment),
+            CurrentEnglishLetterCount = CharacterCountService.CountEnglishLetters(currentChangedSegment),
+            PreviousPreviewMask = BuildMaskedPreview(previousChangedSegment),
+            CurrentPreviewMask = BuildMaskedPreview(currentChangedSegment)
+        };
+    }
+
+    private static string BuildMaskedPreview(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return "-";
+        }
+
+        const int PreviewLimit = 18;
+        var builder = new System.Text.StringBuilder();
+        foreach (var rune in text.EnumerateRunes().Take(PreviewLimit))
+        {
+            builder.Append(ClassifyRune(rune.Value));
+        }
+
+        if (text.EnumerateRunes().Count() > PreviewLimit)
+        {
+            builder.Append("...");
+        }
+
+        return builder.ToString();
+    }
+
+    private static char ClassifyRune(int value)
+    {
+        if (!System.Text.Rune.TryCreate(value, out var rune))
+        {
+            return '?';
+        }
+
+        if (CharacterCountService.IsChineseRune(value))
+        {
+            return 'H';
+        }
+
+        if (CharacterCountService.IsEnglishLetter(value))
+        {
+            return 'A';
+        }
+
+        if (System.Text.Rune.IsDigit(rune))
+        {
+            return '0';
+        }
+
+        if (System.Text.Rune.IsWhiteSpace(rune))
+        {
+            return '_';
+        }
+
+        var category = System.Text.Rune.GetUnicodeCategory(rune);
+        return category is System.Globalization.UnicodeCategory.ConnectorPunctuation
+            or System.Globalization.UnicodeCategory.DashPunctuation
+            or System.Globalization.UnicodeCategory.ClosePunctuation
+            or System.Globalization.UnicodeCategory.FinalQuotePunctuation
+            or System.Globalization.UnicodeCategory.InitialQuotePunctuation
+            or System.Globalization.UnicodeCategory.OpenPunctuation
+            or System.Globalization.UnicodeCategory.OtherPunctuation
+            or System.Globalization.UnicodeCategory.CurrencySymbol
+            or System.Globalization.UnicodeCategory.MathSymbol
+            or System.Globalization.UnicodeCategory.ModifierSymbol
+            or System.Globalization.UnicodeCategory.OtherSymbol
+            ? '.'
+            : '?';
     }
 
     private static int GetCommonPrefixLength(string left, string right)
@@ -199,9 +310,9 @@ public sealed class CompositionAwareDeltaTracker
         return count;
     }
 
-    public readonly record struct DeltaResult(int Delta, bool IsPendingComposition, string? InsertedTextSegment)
+    public readonly record struct DeltaResult(int Delta, bool IsPendingComposition, string? InsertedTextSegment, DebugTextComparison? TextComparison)
     {
-        public static DeltaResult NoChange(bool isPendingComposition) => new(0, isPendingComposition, null);
+        public static DeltaResult NoChange(bool isPendingComposition) => new(0, isPendingComposition, null, null);
     }
 
     private sealed record PendingEnglishSegment(string RawText, int LetterCount, DateTime FirstSeenUtc);

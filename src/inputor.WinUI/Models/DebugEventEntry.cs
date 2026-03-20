@@ -16,4 +16,5 @@ public sealed class DebugEventEntry
     public required bool IsBulkContentLoad { get; init; }
     public required bool IsNativeImeInputMode { get; init; }
     public required bool IsCurrentTargetSupported { get; init; }
+    public DebugTextComparison? TextComparison { get; init; }
 }

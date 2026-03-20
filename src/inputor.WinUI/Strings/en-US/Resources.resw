@@ -133,6 +133,8 @@
   <data name="Debug.Button.ClearRecords" xml:space="preserve"><value>Clear records</value></data>
   <data name="Debug.Button.StartCapture" xml:space="preserve"><value>Start capture</value></data>
   <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>Pause capture</value></data>
+  <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>Temporary diagnostics and privacy</value></data>
+  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>This page buffers the most recent {0} temporary debug records in memory only. They never go into the statistics file and never store raw text. Diff previews use masked characters: H=Han, A=English letter, 0=digit, _=whitespace, .=punctuation/symbol, ?=other.</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>Debug capture is off by default. Turn it on only when you need to inspect why a count was or was not recorded.</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>Debug capture is paused. Start capture only when you want to inspect why a count was recorded or skipped.</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>Debug capture is off</value></data>
@@ -159,8 +161,17 @@
   <data name="Debug.Label.InsertedSegmentLength" xml:space="preserve"><value>Inserted segment length</value></data>
   <data name="Debug.Label.CharacterMix" xml:space="preserve"><value>Character mix</value></data>
   <data name="Debug.Label.Flags" xml:space="preserve"><value>Flags</value></data>
+  <data name="Debug.Label.TextLengths" xml:space="preserve"><value>Text lengths</value></data>
+  <data name="Debug.Label.TextChange" xml:space="preserve"><value>Diff range</value></data>
+  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>Before masked preview</value></data>
+  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>After masked preview</value></data>
+  <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>Before character mix</value></data>
+  <data name="Debug.Label.AfterMix" xml:space="preserve"><value>After character mix</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} supported chars</value></data>
   <data name="Debug.CharacterMixLine" xml:space="preserve"><value>Chinese {0} • English {1} • Supported {2}</value></data>
+  <data name="Debug.TextLengthsLine" xml:space="preserve"><value>Before {0} • After {1}</value></data>
+  <data name="Debug.TextChangeLine" xml:space="preserve"><value>Start index {0} • Changed length {1} -> {2}</value></data>
+  <data name="Debug.TextPreviewLine" xml:space="preserve"><value>{0}</value></data>
   <data name="Debug.EventSummary" xml:space="preserve"><value>{0:HH:mm:ss} • {1} • {2}</value></data>
   <data name="Debug.Primary.CounterIncreased" xml:space="preserve"><value>Counter increased by {0} supported characters.</value></data>
   <data name="Debug.Primary.PasteFiltered" xml:space="preserve"><value>Paste-like input was detected and excluded from counting.</value></data>

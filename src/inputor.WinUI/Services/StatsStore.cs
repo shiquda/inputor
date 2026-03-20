@@ -6,7 +6,7 @@ namespace Inputor.App.Services;
 public sealed class StatsStore : IDisposable
 {
     private const int MaxRecentActivityEntries = 8;
-    private const int MaxDebugEventEntries = 40;
+    private const int MaxDebugEventEntries = 120;
     private const int MaxDailyHistoryEntries = 90;
 
     private readonly object _syncRoot = new();
@@ -239,7 +239,25 @@ public sealed class StatsStore : IDisposable
                         IsPaste = item.IsPaste,
                         IsBulkContentLoad = item.IsBulkContentLoad,
                         IsNativeImeInputMode = item.IsNativeImeInputMode,
-                        IsCurrentTargetSupported = item.IsCurrentTargetSupported
+                        IsCurrentTargetSupported = item.IsCurrentTargetSupported,
+                        TextComparison = item.TextComparison is null
+                            ? null
+                            : new DebugTextComparison
+                            {
+                                ChangeStartIndex = item.TextComparison.ChangeStartIndex,
+                                PreviousTextLength = item.TextComparison.PreviousTextLength,
+                                CurrentTextLength = item.TextComparison.CurrentTextLength,
+                                PreviousSegmentLength = item.TextComparison.PreviousSegmentLength,
+                                CurrentSegmentLength = item.TextComparison.CurrentSegmentLength,
+                                PreviousSupportedCharacterCount = item.TextComparison.PreviousSupportedCharacterCount,
+                                PreviousChineseCharacterCount = item.TextComparison.PreviousChineseCharacterCount,
+                                PreviousEnglishLetterCount = item.TextComparison.PreviousEnglishLetterCount,
+                                CurrentSupportedCharacterCount = item.TextComparison.CurrentSupportedCharacterCount,
+                                CurrentChineseCharacterCount = item.TextComparison.CurrentChineseCharacterCount,
+                                CurrentEnglishLetterCount = item.TextComparison.CurrentEnglishLetterCount,
+                                PreviousPreviewMask = item.TextComparison.PreviousPreviewMask,
+                                CurrentPreviewMask = item.TextComparison.CurrentPreviewMask
+                            }
                     })
                     .ToList()
             };

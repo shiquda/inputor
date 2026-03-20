@@ -85,7 +85,7 @@ public sealed class MonitoringService : IDisposable
                 var statusMessage = StatusText.MonitoringError(ex.Message);
                 var displayName = StatusText.UnavailableDisplayName();
                 _statsStore.SetStatus(statusMessage, displayName, false);
-                RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
+                RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
                 _deltaTracker.Reset();
             }
 
@@ -103,7 +103,7 @@ public sealed class MonitoringService : IDisposable
             var statusMessage = StatusText.NoForegroundWindow();
             var displayName = StatusText.IdleDisplayName();
             _statsStore.SetStatus(statusMessage, displayName, false);
-            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
+            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -115,7 +115,7 @@ public sealed class MonitoringService : IDisposable
             var statusMessage = StatusText.UnableToResolveActiveProcess();
             var displayName = StatusText.UnavailableDisplayName();
             _statsStore.SetStatus(statusMessage, displayName, false);
-            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
+            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -127,7 +127,7 @@ public sealed class MonitoringService : IDisposable
             var statusMessage = StatusText.UnableToResolveActiveProcessName();
             var displayName = StatusText.UnavailableDisplayName();
             _statsStore.SetStatus(statusMessage, displayName, false);
-            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, false, false, false, false);
+            RecordDebugEvent(displayName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -136,7 +136,7 @@ public sealed class MonitoringService : IDisposable
         {
             var statusMessage = StatusText.ProcessExcluded(processName);
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
+            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -145,7 +145,7 @@ public sealed class MonitoringService : IDisposable
         {
             var statusMessage = StatusText.SelfWindowActive();
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
+            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -156,7 +156,7 @@ public sealed class MonitoringService : IDisposable
         {
             var statusMessage = StatusText.NoFocusedElement(processName);
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, false, false, false, false);
+            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -165,7 +165,7 @@ public sealed class MonitoringService : IDisposable
         {
             var statusMessage = StatusText.PasswordFieldSkipped(processName);
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, false, false, false, false);
+            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -176,14 +176,14 @@ public sealed class MonitoringService : IDisposable
         {
             var statusMessage = StatusText.FocusedControlUnreadable(processName);
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, false, false, false, false);
+            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
 
         var snapshotKey = BuildSnapshotKey(processName, focusedElement);
         var isNativeImeInputMode = IsNativeChineseImeInputMode(foregroundWindow);
-        var result = _deltaTracker.ProcessSnapshot(snapshotKey, text, DateTime.UtcNow, isNativeImeInputMode);
+        var result = _deltaTracker.ProcessSnapshot(snapshotKey, text, DateTime.UtcNow, isNativeImeInputMode, _settings.DebugCaptureEnabled);
         LogFirstPoll($"Delta tracker produced delta {result.Delta}, pending={result.IsPendingComposition}.");
         var clipboardText = result.Delta > 0 ? _clipboardTextService.TryGetText() : null;
         var controlTypeName = focusedElement.Properties.ControlType.ValueOrDefault.ToString();
@@ -196,33 +196,33 @@ public sealed class MonitoringService : IDisposable
             {
                 var statusMessage = StatusText.PasteExcluded(processName);
                 _statsStore.SetStatus(statusMessage, processName, true, processName);
-                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, true, false, isNativeImeInputMode);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, result.IsPendingComposition, true, false, isNativeImeInputMode);
             }
             else if (BulkLoadDetectionService.LooksLikeBulkContentLoad(result.Delta, result.InsertedTextSegment, controlTypeName, isPaste))
             {
                 var statusMessage = StatusText.BulkRefreshIgnored(processName);
                 _statsStore.SetStatus(statusMessage, processName, true, processName);
-                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, false, true, isNativeImeInputMode);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, result.IsPendingComposition, false, true, isNativeImeInputMode);
             }
             else
             {
                 _statsStore.RecordDelta(processName, result.Delta);
                 var statusMessage = StatusText.RecordedSupportedCharacters(result.Delta, processName);
                 _statsStore.SetStatus(statusMessage, processName, true, processName);
-                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.IsPendingComposition, false, false, isNativeImeInputMode);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, result.IsPendingComposition, false, false, isNativeImeInputMode);
             }
         }
         else if (result.IsPendingComposition)
         {
             var statusMessage = StatusText.WaitingForComposition(processName);
             _statsStore.SetStatus(statusMessage, processName, true, processName);
-            RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, true, false, false, isNativeImeInputMode);
+            RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, true, false, false, isNativeImeInputMode);
         }
         else
         {
             var statusMessage = StatusText.NoPositiveDelta(processName);
             _statsStore.SetStatus(statusMessage, processName, true, processName);
-            RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, false, false, false, isNativeImeInputMode);
+            RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, false, false, false, isNativeImeInputMode);
         }
     }
 
@@ -249,6 +249,7 @@ public sealed class MonitoringService : IDisposable
         string controlTypeName,
         int delta,
         string? insertedTextSegment,
+        DebugTextComparison? textComparison,
         bool isPendingComposition,
         bool isPaste,
         bool isBulkContentLoad,
@@ -275,7 +276,8 @@ public sealed class MonitoringService : IDisposable
             IsPaste = isPaste,
             IsBulkContentLoad = isBulkContentLoad,
             IsNativeImeInputMode = isNativeImeInputMode,
-            IsCurrentTargetSupported = _statsStore.IsCurrentTargetSupported
+            IsCurrentTargetSupported = _statsStore.IsCurrentTargetSupported,
+            TextComparison = textComparison
         });
     }
 

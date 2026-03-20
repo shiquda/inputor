@@ -64,7 +64,7 @@ internal static class Program
             var isNativeImeInputMode = args.Length >= 3 && bool.TryParse(args[2], out var parsedImeMode) && parsedImeMode;
             foreach (var sample in args[1].Split('|', StringSplitOptions.None))
             {
-                var result = tracker.ProcessSnapshot("sample", sample, now, isNativeImeInputMode);
+                var result = tracker.ProcessSnapshot("sample", sample, now, isNativeImeInputMode, false);
                 Console.WriteLine($"{sample} => delta={result.Delta}, pending={result.IsPendingComposition}");
                 now = now.AddMilliseconds(500);
             }
@@ -76,8 +76,8 @@ internal static class Program
         {
             var tracker = new CompositionAwareDeltaTracker();
             var now = DateTime.UtcNow;
-            _ = tracker.ProcessSnapshot("sample", args[1], now, false);
-            var result = tracker.ProcessSnapshot("sample", args[2], now.AddMilliseconds(500), false);
+            _ = tracker.ProcessSnapshot("sample", args[1], now, false, false);
+            var result = tracker.ProcessSnapshot("sample", args[2], now.AddMilliseconds(500), false, false);
             var isPaste = PasteDetectionService.LooksLikePaste(result.InsertedTextSegment, args[3]);
             Console.WriteLine($"delta={result.Delta}, pending={result.IsPendingComposition}, inserted={result.InsertedTextSegment}, paste={isPaste}");
             return true;
