@@ -299,30 +299,11 @@ public sealed class DebugPage : UserControl
                 AppStrings.Get("Debug.Label.TextLengths"),
                 AppStrings.Format("Debug.TextLengthsLine", entry.TextComparison.PreviousTextLength, entry.TextComparison.CurrentTextLength)));
             detailsPanel.Children.Add(CreateMetricLine(
-                AppStrings.Get("Debug.Label.TextChange"),
-                AppStrings.Format("Debug.TextChangeLine", entry.TextComparison.ChangeStartIndex, entry.TextComparison.PreviousSegmentLength, entry.TextComparison.CurrentSegmentLength)));
-            detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.BeforePreview"),
                 AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.PreviousText)));
             detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.AfterPreview"),
                 AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.CurrentText)));
-            detailsPanel.Children.Add(CreateMetricLine(
-                AppStrings.Get("Debug.Label.BeforeMix"),
-                AppStrings.Format(
-                    "Debug.CharacterMixLine",
-                    entry.TextComparison.PreviousChineseCharacterCount,
-                    entry.TextComparison.PreviousEnglishLetterCount,
-                    Math.Max(0, entry.TextComparison.PreviousSupportedCharacterCount - entry.TextComparison.PreviousChineseCharacterCount - entry.TextComparison.PreviousEnglishLetterCount),
-                    entry.TextComparison.PreviousSupportedCharacterCount)));
-            detailsPanel.Children.Add(CreateMetricLine(
-                AppStrings.Get("Debug.Label.AfterMix"),
-                AppStrings.Format(
-                    "Debug.CharacterMixLine",
-                    entry.TextComparison.CurrentChineseCharacterCount,
-                    entry.TextComparison.CurrentEnglishLetterCount,
-                    Math.Max(0, entry.TextComparison.CurrentSupportedCharacterCount - entry.TextComparison.CurrentChineseCharacterCount - entry.TextComparison.CurrentEnglishLetterCount),
-                    entry.TextComparison.CurrentSupportedCharacterCount)));
         }
 
         toggleButton.Click += (_, _) =>
