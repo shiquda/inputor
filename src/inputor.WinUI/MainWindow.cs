@@ -388,7 +388,6 @@ public sealed class MainWindow : Window
         stack.Children.Add(CreateSectionHeader(AppStrings.Get("Main.Section.WorkflowTitle"), AppStrings.Get("Main.Section.WorkflowSubtitle")));
         var lower = new Grid { ColumnSpacing = 16 };
         lower.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(240) });
-        lower.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(320) });
         lower.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         lower.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -407,7 +406,8 @@ public sealed class MainWindow : Window
         Grid.SetColumn(recentCard, 1);
         lower.Children.Add(recentCard);
         var topAppsCard = CreateInfoCard(AppStrings.Get("Main.Card.TopAppsToday"), _topAppsPanel, true);
-        Grid.SetColumn(topAppsCard, 2);
+        Grid.SetColumn(topAppsCard, 1);
+        Grid.SetColumnSpan(topAppsCard, 2);
         lower.Children.Add(topAppsCard);
         stack.Children.Add(lower);
 
