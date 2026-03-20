@@ -16,10 +16,12 @@ public sealed class SettingsPage : UserControl
     private readonly ComboBox _languageComboBox;
     private readonly TextBox _excludedAppsTextBox;
     private readonly TextBox _appTagMappingsTextBox;
+    private readonly TextBox _statisticsSourcePathTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
     private readonly Button _clearStatisticsButton;
     private readonly TextBlock _headerNoteTextBlock;
     private readonly TextBlock _restartNoticeTextBlock;
+    private readonly TextBlock _statisticsSourceStateTextBlock;
     private readonly List<Border> _cards = [];
 
     public SettingsPage()
@@ -41,10 +43,12 @@ public sealed class SettingsPage : UserControl
         };
         _excludedAppsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
         _appTagMappingsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 120, TextWrapping = TextWrapping.Wrap };
+        _statisticsSourcePathTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.StatisticsSourcePath") };
         _confirmClearStatisticsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.ConfirmClearStatistics") };
         _clearStatisticsButton = new Button { Content = AppStrings.Get("Settings.Button.ClearStoredStatistics"), Padding = new Thickness(24, 8, 24, 8), IsEnabled = false };
         _headerNoteTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         _restartNoticeTextBlock = new TextBlock { Text = AppStrings.Get("Settings.RestartNotice"), TextWrapping = TextWrapping.Wrap, Opacity = 0.7, Visibility = Visibility.Collapsed };
+        _statisticsSourceStateTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
 
         _confirmClearStatisticsCheckBox.Checked += (_, _) => _clearStatisticsButton.IsEnabled = true;
         _confirmClearStatisticsCheckBox.Unchecked += (_, _) => _clearStatisticsButton.IsEnabled = false;
@@ -85,12 +89,17 @@ public sealed class SettingsPage : UserControl
         _excludedAppsTextBox.Text = settings.ExcludedApps;
         _appTagMappingsTextBox.Text = string.Join(Environment.NewLine,
             settings.GetNormalizedTagMappings().Select(item => $"{item.AppName}: {string.Join(", ", item.Tags)}"));
+        _statisticsSourcePathTextBox.Text = settings.StatisticsSourcePath;
         _confirmClearStatisticsCheckBox.IsChecked = false;
         _clearStatisticsButton.IsEnabled = false;
         _restartNoticeTextBlock.Visibility = string.Equals(AppStrings.ResolveLanguageTag(settings.Language), AppStrings.CurrentLanguageTag, StringComparison.OrdinalIgnoreCase)
             ? Visibility.Collapsed
             : Visibility.Visible;
         _headerNoteTextBlock.Text = AppStrings.Format("Settings.HeaderNote", snapshot.CurrentAppName, snapshot.TotalToday, snapshot.TotalSession);
+        _statisticsSourceStateTextBlock.Text = AppStrings.Format(
+            "Settings.Data.SourceState",
+            App.Current.StatsStore.CurrentSourcePath,
+            App.Current.StatsStore.DefaultSourcePath);
     }
 
     private UIElement BuildContent()
@@ -146,6 +155,19 @@ public sealed class SettingsPage : UserControl
         var dataManagement = new StackPanel { Spacing = 12 };
         dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Data.Item1"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
         dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Data.Item2"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
+        dataManagement.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.StatisticsSourcePath"), _statisticsSourcePathTextBox, AppStrings.Get("Settings.Caption.StatisticsSourcePath")));
+        dataManagement.Children.Add(_statisticsSourceStateTextBlock);
+        var sourceActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        var backupButton = CreatePrimaryButton(AppStrings.Get("Settings.Button.BackupStatisticsSource"));
+        backupButton.Click += (_, _) => App.Current.BackupStatisticsSource();
+        var switchSourceButton = new Button { Content = AppStrings.Get("Settings.Button.SwitchStatisticsSource"), Padding = new Thickness(20, 8, 20, 8) };
+        switchSourceButton.Click += (_, _) => SwitchStatisticsSource();
+        var resetSourceButton = new Button { Content = AppStrings.Get("Settings.Button.UseDefaultStatisticsSource"), Padding = new Thickness(20, 8, 20, 8) };
+        resetSourceButton.Click += (_, _) => ResetStatisticsSource();
+        sourceActions.Children.Add(backupButton);
+        sourceActions.Children.Add(switchSourceButton);
+        sourceActions.Children.Add(resetSourceButton);
+        dataManagement.Children.Add(sourceActions);
         dataManagement.Children.Add(_confirmClearStatisticsCheckBox);
         dataManagement.Children.Add(_clearStatisticsButton);
         root.Children.Add(CreateCard(dataManagement));
@@ -249,6 +271,18 @@ public sealed class SettingsPage : UserControl
 
         App.Current.StatsStore.ClearAllStatistics();
         App.Current.StatsStore.SetStatus(StatusText.StoredStatisticsCleared(), App.Current.StatsStore.CurrentAppName, App.Current.StatsStore.IsCurrentTargetSupported, App.Current.StatsStore.CurrentProcessName);
+        RefreshFromState();
+    }
+
+    private void SwitchStatisticsSource()
+    {
+        App.Current.SwitchStatisticsSource(_statisticsSourcePathTextBox.Text);
+        RefreshFromState();
+    }
+
+    private void ResetStatisticsSource()
+    {
+        App.Current.SwitchStatisticsSource(string.Empty);
         RefreshFromState();
     }
 

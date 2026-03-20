@@ -91,7 +91,15 @@
   <data name="Settings.Privacy.Item3" xml:space="preserve"><value>密码框、不受支持的控件和受保护窗口会按设计保持排除。</value></data>
   <data name="Settings.Data.Item1" xml:space="preserve"><value>这会清除当前设备上保存的今日、会话和累计的各应用统计。</value></data>
   <data name="Settings.Data.Item2" xml:space="preserve"><value>此操作不会修改隐私设置或排除应用偏好。</value></data>
+  <data name="Settings.Data.SourceState" xml:space="preserve"><value>当前统计源：{0}
+默认统计源：{1}</value></data>
+  <data name="Settings.Label.StatisticsSourcePath" xml:space="preserve"><value>统计源路径</value></data>
+  <data name="Settings.Caption.StatisticsSourcePath" xml:space="preserve"><value>留空表示使用默认 LocalAppData 统计源；填写一个 JSON 路径后可立即切换到该统计源。</value></data>
+  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>例如 C:\Users\你的用户名\Documents\inputor-backups\inputor-stats-20260320-090000.json</value></data>
   <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>我已了解这会永久清除所有已保存的统计数据。</value></data>
+  <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>备份当前统计源</value></data>
+  <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>切换到此统计源</value></data>
+  <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>恢复默认统计源</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>清除已保存统计</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>保存设置</value></data>
   <data name="Statistics.Title" xml:space="preserve"><value>统计</value></data>
@@ -198,9 +206,14 @@
   <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} 已经在排除列表中。</value></data>
   <data name="Status.AddedExcludedApp" xml:space="preserve"><value>已将 {0} 加入排除列表。</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>已将 CSV 导出到 {0}</value></data>
+  <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>已将统计源备份到 {0}</value></data>
+  <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>统计源备份失败：{0}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>设置已更新。</value></data>
   <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>其他设置已保存，但应用标签映射里有 {0} 行格式无效，原有标签映射保持不变。</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>已清除已保存统计。</value></data>
+  <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>已切换统计源到 {0}</value></data>
+  <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>统计源切换失败：{0}</value></data>
+  <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>已检测到损坏的统计源配置，已回退到默认统计源。</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>调试捕获已开启。</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>调试捕获已关闭。</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>调试事件已清除。</value></data>

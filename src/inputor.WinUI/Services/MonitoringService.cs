@@ -54,6 +54,11 @@ public sealed class MonitoringService : IDisposable
         _statsStore.SetStatus(StatusText.MonitoringPauseChanged(_isPaused), _statsStore.CurrentAppName, _statsStore.IsCurrentTargetSupported, _statsStore.CurrentProcessName);
     }
 
+    public void ResetTrackingState()
+    {
+        _deltaTracker.Reset();
+    }
+
     public void Dispose()
     {
         _cts.Cancel();

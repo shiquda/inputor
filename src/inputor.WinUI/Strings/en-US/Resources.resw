@@ -91,7 +91,15 @@
   <data name="Settings.Privacy.Item3" xml:space="preserve"><value>Password fields, unsupported controls, and protected windows remain excluded by design.</value></data>
   <data name="Settings.Data.Item1" xml:space="preserve"><value>This clears today, session, and all-time per-app counts stored on this device.</value></data>
   <data name="Settings.Data.Item2" xml:space="preserve"><value>The action does not change privacy settings or excluded-app preferences.</value></data>
+  <data name="Settings.Data.SourceState" xml:space="preserve"><value>Current statistics source: {0}
+Default statistics source: {1}</value></data>
+  <data name="Settings.Label.StatisticsSourcePath" xml:space="preserve"><value>Statistics source path</value></data>
+  <data name="Settings.Caption.StatisticsSourcePath" xml:space="preserve"><value>Leave empty to use the default LocalAppData source, or enter a JSON path and switch to it immediately.</value></data>
+  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>For example C:\Users\you\Documents\inputor-backups\inputor-stats-20260320-090000.json</value></data>
   <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>I understand this permanently clears all stored statistics.</value></data>
+  <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>Backup current source</value></data>
+  <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>Switch to this source</value></data>
+  <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>Use default source</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>Clear stored statistics</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>Save settings</value></data>
   <data name="Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
@@ -198,9 +206,14 @@
   <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} is already excluded.</value></data>
   <data name="Status.AddedExcludedApp" xml:space="preserve"><value>Added {0} to excluded apps.</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>Exported CSV to {0}</value></data>
+  <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>Backed up the statistics source to {0}</value></data>
+  <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>Statistics source backup failed: {0}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>Settings updated.</value></data>
   <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>Other settings were saved, but {0} app tag mapping lines were invalid, so the existing tag mappings were left unchanged.</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>Stored statistics cleared.</value></data>
+  <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>Switched the statistics source to {0}</value></data>
+  <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>Statistics source switch failed: {0}</value></data>
+  <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>A broken configured statistics source was detected, so inputor fell back to the default source.</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>Debug capture enabled.</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>Debug capture disabled.</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>Debug events cleared.</value></data>
