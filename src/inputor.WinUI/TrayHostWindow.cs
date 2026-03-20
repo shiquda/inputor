@@ -19,8 +19,6 @@ internal sealed class TrayHostWindow : Window, IDisposable
     private readonly MenuFlyoutItem _openSettingsItem;
     private readonly MenuFlyoutItem _togglePauseItem;
     private readonly FontIcon _togglePauseIcon;
-    private readonly MenuFlyoutItem _excludeCurrentAppItem;
-    private readonly MenuFlyoutItem _restartItem;
     private readonly MenuFlyoutItem _exitItem;
     private bool _isDisposed;
 
@@ -39,8 +37,6 @@ internal sealed class TrayHostWindow : Window, IDisposable
         _openSettingsItem = CreateMenuItem(AppStrings.Get("Tray.OpenSettings"), "\uE713", (_, _) => App.Current.ShowSettingsPage());
         _togglePauseIcon = CreateIcon("\uE769");
         _togglePauseItem = CreateMenuItem(AppStrings.Get("Main.Button.PauseMonitoring"), _togglePauseIcon, (_, _) => App.Current.TogglePauseMonitoring(), MenuForegroundBrush);
-        _excludeCurrentAppItem = CreateMenuItem(AppStrings.Get("Tray.ExcludeCurrentApp"), "\uE8D9", (_, _) => App.Current.ExcludeCurrentApp());
-        _restartItem = CreateMenuItem(AppStrings.Get("Tray.RestartInputor"), "\uE777", (_, _) => App.Current.RestartApplication());
         _exitItem = CreateMenuItem(AppStrings.Get("Tray.ExitInputor"), CreateIcon("\uE7E8", MenuDangerBrush), (_, _) => App.Current.ExitApplication(), MenuDangerBrush);
 
         var menuFlyout = new MenuFlyout
@@ -55,9 +51,7 @@ internal sealed class TrayHostWindow : Window, IDisposable
         menuFlyout.Items.Add(_openSettingsItem);
         menuFlyout.Items.Add(new MenuFlyoutSeparator());
         menuFlyout.Items.Add(_togglePauseItem);
-        menuFlyout.Items.Add(_excludeCurrentAppItem);
         menuFlyout.Items.Add(new MenuFlyoutSeparator());
-        menuFlyout.Items.Add(_restartItem);
         menuFlyout.Items.Add(_exitItem);
         trayIcon.ContextFlyout = menuFlyout;
 
@@ -79,12 +73,11 @@ internal sealed class TrayHostWindow : Window, IDisposable
         TrayIcon.ForceCreate();
     }
 
-    public void UpdateState(string toolTipText, string pauseText, string pauseGlyph, bool excludeEnabled)
+    public void UpdateState(string toolTipText, string pauseText, string pauseGlyph)
     {
         TrayIcon.ToolTipText = toolTipText;
         _togglePauseItem.Text = pauseText;
         _togglePauseIcon.Glyph = pauseGlyph;
-        _excludeCurrentAppItem.IsEnabled = excludeEnabled;
     }
 
     public void Dispose()
@@ -96,6 +89,7 @@ internal sealed class TrayHostWindow : Window, IDisposable
 
         _isDisposed = true;
         Closed -= TrayHostWindow_Closed;
+        TrayIcon.Dispose();
         Close();
     }
 

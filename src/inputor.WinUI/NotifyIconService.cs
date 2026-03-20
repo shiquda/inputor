@@ -67,16 +67,8 @@ internal sealed class NotifyIconService : IDisposable
             snapshot.IsPaused ? AppStrings.Get("Common.Paused") : snapshot.CurrentAppName));
         var pauseText = snapshot.IsPaused ? AppStrings.Get("Main.Button.ResumeMonitoring") : AppStrings.Get("Main.Button.PauseMonitoring");
         var pauseGlyph = snapshot.IsPaused ? "\uF5B0" : "\uE769";
-        var excludeEnabled = CanExcludeCurrentApp();
 
-        _trayHostWindow.UpdateState(toolTip, pauseText, pauseGlyph, excludeEnabled);
-    }
-
-    private static bool CanExcludeCurrentApp()
-    {
-        var processName = App.Current.StatsStore.CurrentProcessName;
-        return !string.IsNullOrWhiteSpace(processName)
-            && !string.Equals(processName, "inputor.App", StringComparison.OrdinalIgnoreCase);
+        _trayHostWindow.UpdateState(toolTip, pauseText, pauseGlyph);
     }
 
     private static string TrimToolTip(string value)
