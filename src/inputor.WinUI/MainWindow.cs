@@ -562,7 +562,10 @@ public sealed class MainWindow : Window
 
         foreach (var item in snapshot.RecentActivity)
         {
-            _recentActivityPanel.Children.Add(CreateInfoRow(item.AppName, AppStrings.Format("Main.RecentActivity.Row", item.Delta, item.Timestamp)));
+            var timeLabel = item.StartTime == item.EndTime
+                ? item.StartTime.ToString("HH:mm:ss")
+                : $"{item.StartTime:HH:mm:ss}–{item.EndTime:HH:mm:ss}";
+            _recentActivityPanel.Children.Add(CreateInfoRow(item.AppName, $"+{item.TotalDelta} • {timeLabel}"));
         }
     }
 

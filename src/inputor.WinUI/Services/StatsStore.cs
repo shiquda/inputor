@@ -5,7 +5,7 @@ namespace Inputor.App.Services;
 
 public sealed class StatsStore : IDisposable
 {
-    private const int MaxRecentActivityEntries = 8;
+    private const int MaxRecentActivityEntries = 20;
     private const int MaxDebugEventEntries = 120;
     private const int MaxDailyHistoryEntries = 90;
 
@@ -99,15 +99,25 @@ public sealed class StatsStore : IDisposable
             stat.TodayCount += delta;
             stat.SessionCount += delta;
             stat.TotalCount += delta;
-            _recentActivity.Insert(0, new RecentActivityEntry
+            var now = DateTime.Now;
+            if (_recentActivity.Count > 0 && _recentActivity[0].AppName == appName)
             {
-                AppName = appName,
-                Delta = delta,
-                Timestamp = DateTime.Now
-            });
-            if (_recentActivity.Count > MaxRecentActivityEntries)
+                _recentActivity[0].TotalDelta += delta;
+                _recentActivity[0].EndTime = now;
+            }
+            else
             {
-                _recentActivity.RemoveRange(MaxRecentActivityEntries, _recentActivity.Count - MaxRecentActivityEntries);
+                _recentActivity.Insert(0, new RecentActivityEntry
+                {
+                    AppName = appName,
+                    TotalDelta = delta,
+                    StartTime = now,
+                    EndTime = now
+                });
+                if (_recentActivity.Count > MaxRecentActivityEntries)
+                {
+                    _recentActivity.RemoveRange(MaxRecentActivityEntries, _recentActivity.Count - MaxRecentActivityEntries);
+                }
             }
             PersistLocked();
         }
@@ -237,8 +247,9 @@ public sealed class StatsStore : IDisposable
                     .Select(item => new RecentActivityEntry
                     {
                         AppName = item.AppName,
-                        Delta = item.Delta,
-                        Timestamp = item.Timestamp
+                        TotalDelta = item.TotalDelta,
+                        StartTime = item.StartTime,
+                        EndTime = item.EndTime
                     })
                     .ToList(),
                 DebugEvents = _debugEvents
