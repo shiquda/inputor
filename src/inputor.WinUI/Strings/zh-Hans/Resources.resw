@@ -152,7 +152,7 @@
   <data name="Debug.Button.StartCapture" xml:space="preserve"><value>开始捕获</value></data>
   <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>暂停捕获</value></data>
   <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>临时诊断与隐私说明</value></data>
-  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>这里只缓存最近 {0} 条临时调试记录，全部仅保存在内存中；它们不会写入统计文件，也不会保存原始文本。差异预览使用掩码字符：H=汉字，A=英文字母，0=数字，_=空白，.=标点/符号，?=其他。</value></data>
+  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>这里只缓存最近 {0} 条临时调试记录，全部仅保存在内存中；它们不会写入统计文件，也不会被导出或上传。</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>调试捕获默认关闭。仅在你需要排查为什么计数被记录或未记录时再开启。</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>调试捕获已暂停。只有在你想检查为什么某次输入被记录或跳过时，再开始捕获。</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>调试捕获已关闭</value></data>

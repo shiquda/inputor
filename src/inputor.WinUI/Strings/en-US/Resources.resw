@@ -152,7 +152,7 @@ Default statistics source: {1}</value></data>
   <data name="Debug.Button.StartCapture" xml:space="preserve"><value>Start capture</value></data>
   <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>Pause capture</value></data>
   <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>Temporary diagnostics and privacy</value></data>
-  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>This page buffers the most recent {0} temporary debug records in memory only. They never go into the statistics file and never store raw text. Diff previews use masked characters: H=Han, A=English letter, 0=digit, _=whitespace, .=punctuation/symbol, ?=other.</value></data>
+  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>This page buffers the most recent {0} temporary debug records in memory only. They never go into the statistics file and are never exported or uploaded.</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>Debug capture is off by default. Turn it on only when you need to inspect why a count was or was not recorded.</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>Debug capture is paused. Start capture only when you want to inspect why a count was recorded or skipped.</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>Debug capture is off</value></data>
