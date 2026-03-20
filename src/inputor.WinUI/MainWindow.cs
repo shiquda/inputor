@@ -403,11 +403,10 @@ public sealed class MainWindow : Window
         lower.Children.Add(CreateInfoCard(AppStrings.Get("Main.Card.QuickActions"), actions, true));
 
         var recentCard = CreateInfoCard(AppStrings.Get("Main.Card.RecentActivity"), _recentActivityPanel, true);
-        Grid.SetColumn(recentCard, 1);
+        Grid.SetColumn(recentCard, 2);
         lower.Children.Add(recentCard);
         var topAppsCard = CreateInfoCard(AppStrings.Get("Main.Card.TopAppsToday"), _topAppsPanel, true);
         Grid.SetColumn(topAppsCard, 1);
-        Grid.SetColumnSpan(topAppsCard, 2);
         lower.Children.Add(topAppsCard);
         stack.Children.Add(lower);
 
