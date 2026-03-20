@@ -40,6 +40,7 @@ public sealed class MainWindow : Window
     private readonly TextBlock _paneStatusTextBlock;
     private readonly TextBox _searchBox;
     private readonly ComboBox _sortComboBox;
+    private readonly ComboBox _appsAggregationComboBox;
     private readonly StackPanel _recentActivityPanel;
     private readonly StackPanel _topAppsPanel;
     private readonly StackPanel _allAppsPanel;
@@ -89,6 +90,15 @@ public sealed class MainWindow : Window
             SelectedIndex = 0
         };
         _sortComboBox.SelectionChanged += (_, _) => Refresh();
+        _appsAggregationComboBox = new ComboBox
+        {
+            Width = 160,
+            ItemsSource = AppStrings.GetAggregationOptions(),
+            DisplayMemberPath = nameof(AppAggregationOption.DisplayName),
+            SelectedValuePath = nameof(AppAggregationOption.Tag),
+            SelectedValue = "app"
+        };
+        _appsAggregationComboBox.SelectionChanged += (_, _) => Refresh();
         _recentActivityPanel = new StackPanel { Spacing = 8 };
         _topAppsPanel = new StackPanel { Spacing = 8 };
         _allAppsPanel = new StackPanel { Spacing = 8 };
@@ -425,6 +435,7 @@ public sealed class MainWindow : Window
 
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         toolbar.Children.Add(_searchBox);
+        toolbar.Children.Add(_appsAggregationComboBox);
         toolbar.Children.Add(_sortComboBox);
         var toolbarCard = CreateCard(toolbar, null, true);
         toolbarCard.Margin = new Thickness(0, 16, 0, 0);
@@ -566,7 +577,10 @@ public sealed class MainWindow : Window
     private void UpdateAppList(DashboardSnapshot snapshot)
     {
         var query = _searchBox.Text?.Trim() ?? string.Empty;
-        IEnumerable<AppAggregate> stats = AppPresentationService.BuildAggregates(snapshot.AppStats);
+        var aggregateByTag = (_appsAggregationComboBox.SelectedValue as string) == "tag";
+        IEnumerable<AppAggregate> stats = aggregateByTag
+            ? AppPresentationService.BuildTagAggregates(snapshot.AppStats, App.Current.Settings)
+            : AppPresentationService.BuildAggregates(snapshot.AppStats);
         stats = stats.Where(item => AppPresentationService.MatchesQuery(item, query));
 
         stats = _sortComboBox.SelectedIndex switch
@@ -578,14 +592,20 @@ public sealed class MainWindow : Window
         };
 
         var filtered = stats.ToList();
+        var aggregationLabel = aggregateByTag
+            ? AppStrings.Get("Aggregation.Tag")
+            : AppStrings.Get("Aggregation.App");
+        var percentageTotal = aggregateByTag
+            ? Math.Max(1, filtered.Sum(item => item.TodayCount))
+            : Math.Max(1, snapshot.TotalToday);
         _appsSummaryTextBlock.Text = filtered.Count == 0
             ? AppStrings.Get("Main.Apps.NoMatch")
-            : AppStrings.Format("Main.Apps.Summary", filtered.Count, snapshot.TotalToday, snapshot.TotalSession, snapshot.TotalAllTime);
+            : AppStrings.Format("Main.Apps.Summary", aggregationLabel, filtered.Count, snapshot.TotalToday, snapshot.TotalSession, snapshot.TotalAllTime);
 
         _allAppsPanel.Children.Clear();
         foreach (var stat in filtered)
         {
-            var percentage = snapshot.TotalToday == 0 ? 0 : stat.TodayCount * 100.0 / snapshot.TotalToday;
+            var percentage = stat.TodayCount == 0 ? 0 : stat.TodayCount * 100.0 / percentageTotal;
             _allAppsPanel.Children.Add(CreateAppInfoRow(
                 stat,
                 AppStrings.Format("Main.Apps.Row", stat.TodayCount, stat.SessionCount, stat.TotalCount, percentage)));
@@ -720,6 +740,17 @@ public sealed class MainWindow : Window
         var body = new StackPanel { Spacing = 4 };
         body.Children.Add(new TextBlock { Text = aggregate.DisplayName, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.WrapWholeWords });
         body.Children.Add(new TextBlock { Text = secondary, TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
+        var appTags = App.Current.Settings.GetTagsForApps(aggregate.ProcessNames);
+        if (!aggregate.GroupKey.StartsWith("tag:", StringComparison.OrdinalIgnoreCase) && appTags.Count > 0)
+        {
+            var tagsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            foreach (var tag in appTags)
+            {
+                tagsRow.Children.Add(CreateAppTagBadge(tag));
+            }
+
+            body.Children.Add(tagsRow);
+        }
         if (aggregate.ProcessNames.Count > 1)
         {
             body.Children.Add(new TextBlock
@@ -730,7 +761,6 @@ public sealed class MainWindow : Window
                 FontSize = 12
             });
         }
-
         Grid.SetColumn(body, 1);
         layout.Children.Add(body);
 
@@ -748,6 +778,22 @@ public sealed class MainWindow : Window
             _trackedSurfaces.Add((border, true));
         }
         return border;
+    }
+
+    private static Border CreateAppTagBadge(string tag)
+    {
+        return new Border
+        {
+            Padding = new Thickness(8, 3, 8, 3),
+            CornerRadius = new CornerRadius(999),
+            Background = ThemeBrushes.GetAccentBadgeBackgroundBrush(),
+            Child = new TextBlock
+            {
+                Text = tag,
+                FontSize = 12,
+                TextWrapping = TextWrapping.NoWrap
+            }
+        };
     }
 
     private void ApplyWindowChrome()

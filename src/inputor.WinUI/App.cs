@@ -34,7 +34,18 @@ public sealed class App : Application, IXamlMetadataProvider
         _uiSettings = new UISettings();
         _uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
         AppStrings.Initialize(AppContext.BaseDirectory, Settings.Language);
-        StatsStore = new StatsStore(_dataDirectory);
+        try
+        {
+            StatsStore = new StatsStore(_dataDirectory, Settings.StatisticsSourcePath, strictSourceValidation: !string.IsNullOrWhiteSpace(Settings.StatisticsSourcePath));
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"StatsStore custom source initialization failed; falling back to default source. {exception}");
+            Settings.StatisticsSourcePath = string.Empty;
+            SettingsService.Save(Settings);
+            StatsStore = new StatsStore(_dataDirectory);
+            StatsStore.SetStatus(StatusText.StatisticsSourceFallbackToDefault(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
         Exporter = new CsvExportService();
         AutoStartService = new AutoStartService();
         AutoStartService.Apply(Settings.StartWithWindows);
@@ -189,6 +200,56 @@ public sealed class App : Application, IXamlMetadataProvider
     {
         var path = Exporter.ExportToday(StatsStore.GetSnapshot());
         StatsStore.SetStatus(StatusText.ExportedCsv(path), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+    }
+
+    public void BackupStatisticsSource()
+    {
+        try
+        {
+            var backupPath = StatsStore.BackupCurrentSource(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "inputor-backups"));
+            StatsStore.SetStatus(StatusText.StatisticsBackupCreated(backupPath), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"BackupStatisticsSource failed: {exception}");
+            StatsStore.SetStatus(StatusText.StatisticsBackupFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+    }
+
+    public void SwitchStatisticsSource(string? sourcePath)
+    {
+        var previousSourcePath = StatsStore.CurrentSourcePath;
+        var previousSettingsSource = Settings.StatisticsSourcePath;
+
+        try
+        {
+            var normalizedSourcePath = string.IsNullOrWhiteSpace(sourcePath)
+                ? string.Empty
+                : Path.GetFullPath(sourcePath.Trim());
+            StatsStore.SwitchSource(normalizedSourcePath);
+            MonitoringService.ResetTrackingState();
+            Settings.StatisticsSourcePath = normalizedSourcePath;
+            SaveSettings();
+            StatsStore.SetStatus(StatusText.StatisticsSourceSwitched(StatsStore.CurrentSourcePath), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+        catch (Exception exception)
+        {
+            try
+            {
+                StatsStore.SwitchSource(previousSourcePath);
+                MonitoringService.ResetTrackingState();
+                Settings.StatisticsSourcePath = previousSettingsSource;
+            }
+            catch (Exception rollbackException)
+            {
+                StartupDiagnostics.Log($"SwitchStatisticsSource rollback failed: {rollbackException}");
+            }
+
+            StartupDiagnostics.Log($"SwitchStatisticsSource failed: {exception}");
+            StatsStore.SetStatus(StatusText.StatisticsSourceSwitchFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
     }
 
     public void SaveSettings()

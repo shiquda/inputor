@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace Inputor.App.Services;
 
 public static class CharacterCountService
@@ -7,7 +10,7 @@ public static class CharacterCountService
         var count = 0;
         foreach (var rune in text.EnumerateRunes())
         {
-            if (IsChineseRune(rune.Value) || IsEnglishLetter(rune.Value))
+            if (IsSupportedRune(rune.Value))
             {
                 count++;
             }
@@ -42,6 +45,43 @@ public static class CharacterCountService
         }
 
         return count;
+    }
+
+    public static int CountOtherSupportedCharacters(string text)
+    {
+        var count = 0;
+        foreach (var rune in text.EnumerateRunes())
+        {
+            if (IsSupportedRune(rune.Value)
+                && !IsChineseRune(rune.Value)
+                && !IsEnglishLetter(rune.Value))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    public static bool IsSupportedRune(int value)
+    {
+        if (!Rune.TryCreate(value, out var rune))
+        {
+            return false;
+        }
+
+        var category = Rune.GetUnicodeCategory(rune);
+        return category is not UnicodeCategory.Control
+            and not UnicodeCategory.Format
+            and not UnicodeCategory.PrivateUse
+            and not UnicodeCategory.Surrogate
+            and not UnicodeCategory.LineSeparator
+            and not UnicodeCategory.NonSpacingMark
+            and not UnicodeCategory.SpacingCombiningMark
+            and not UnicodeCategory.EnclosingMark
+            and not UnicodeCategory.ParagraphSeparator
+            and not UnicodeCategory.SpaceSeparator
+            and not UnicodeCategory.OtherNotAssigned;
     }
 
     public static bool IsChineseRune(int value)

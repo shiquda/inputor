@@ -14,6 +14,9 @@
   <data name="Common.Session" xml:space="preserve"><value>本次会话</value></data>
   <data name="Common.AllTime" xml:space="preserve"><value>累计</value></data>
   <data name="Common.Name" xml:space="preserve"><value>名称</value></data>
+  <data name="Aggregation.App" xml:space="preserve"><value>按应用</value></data>
+  <data name="Aggregation.Tag" xml:space="preserve"><value>按标签</value></data>
+  <data name="Aggregation.Untagged" xml:space="preserve"><value>未标记</value></data>
   <data name="Common.Paused" xml:space="preserve"><value>已暂停</value></data>
   <data name="Target.Supported" xml:space="preserve"><value>支持</value></data>
   <data name="Target.Unsupported" xml:space="preserve"><value>不支持</value></data>
@@ -56,9 +59,10 @@
   <data name="Main.TopApps.Row" xml:space="preserve"><value>{0:N0} 今日 • {1:0.#}%</value></data>
   <data name="Main.TopApps.Empty" xml:space="preserve"><value>还没有活动记录。</value></data>
   <data name="Main.Apps.NoMatch" xml:space="preserve"><value>没有应用匹配当前筛选条件。</value></data>
-  <data name="Main.Apps.Summary" xml:space="preserve"><value>{0} 个分组应用 • 今日 {1:N0} • 会话 {2:N0} • 累计 {3:N0}</value></data>
+  <data name="Main.Apps.Summary" xml:space="preserve"><value>{1} 个{0}分组 • 今日 {2:N0} • 会话 {3:N0} • 累计 {4:N0}</value></data>
   <data name="Main.Apps.Row" xml:space="preserve"><value>今日 {0:N0} • 会话 {1:N0} • 累计 {2:N0} • {3:0.#}%</value></data>
   <data name="Main.Apps.GroupedFrom" xml:space="preserve"><value>分组来源：{0}</value></data>
+  <data name="Main.Apps.TagAggregationHint" xml:space="preserve"><value>同一应用可出现在多个标签中，因此标签累计可能高于原始应用累计。</value></data>
   <data name="Settings.Title" xml:space="preserve"><value>设置</value></data>
   <data name="Settings.Subtitle" xml:space="preserve"><value>在这里统一管理启动项、隐私默认值、导出、排除项和本地数据控制。</value></data>
   <data name="Settings.HeaderNote" xml:space="preserve"><value>当前目标：{0} • 今日 {1:N0} • 会话 {2:N0}</value></data>
@@ -78,6 +82,18 @@
   <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>
   <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>使用逗号分隔进程名。快捷操作也可以将当前应用加入排除列表。</value></data>
+  <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>应用标签</value></data>
+  <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>先搜索应用，再为它添加一个或多个标签。输入时会优先复用已有标签；未配置标签的应用会归入未标记。</value></data>
+  <data name="Settings.Placeholder.AppTagSearch" xml:space="preserve"><value>搜索应用名或已有标签</value></data>
+  <data name="Settings.Placeholder.AppTagNewApp" xml:space="preserve"><value>手动添加还没出现过的进程名</value></data>
+  <data name="Settings.Placeholder.AppTagInput" xml:space="preserve"><value>输入新标签，或选择已有标签</value></data>
+  <data name="Settings.Caption.AppTagInput" xml:space="preserve"><value>按 Enter 或点击添加即可保存到当前应用；支持复用已有标签。</value></data>
+  <data name="Settings.AppTagMappings.Summary" xml:space="preserve"><value>当前显示 {0}/{1} 个应用，其中 {2} 个已有标签，现有标签 {3} 个。</value></data>
+  <data name="Settings.AppTagMappings.Empty" xml:space="preserve"><value>没有匹配当前搜索条件的应用。</value></data>
+  <data name="Settings.AppTagMappings.NoTags" xml:space="preserve"><value>暂未添加标签</value></data>
+  <data name="Settings.AppTagMappings.RowCounts" xml:space="preserve"><value>今日 {0:N0} • 会话 {1:N0} • 累计 {2:N0}</value></data>
+  <data name="Settings.Button.AddTag" xml:space="preserve"><value>添加标签</value></data>
+  <data name="Settings.Button.AddAppTagTarget" xml:space="preserve"><value>添加应用</value></data>
   <data name="Settings.Export.Description" xml:space="preserve"><value>导出会把 CSV 文件写入本地文档导出目录，并确保原始文本不会出现在文件里。</value></data>
   <data name="Settings.Button.ExportTodayCsv" xml:space="preserve"><value>导出今日 CSV</value></data>
   <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor 始终保持隐私保护开启：它只在本地保存计数、进程名和日期分桶。</value></data>
@@ -85,7 +101,15 @@
   <data name="Settings.Privacy.Item3" xml:space="preserve"><value>密码框、不受支持的控件和受保护窗口会按设计保持排除。</value></data>
   <data name="Settings.Data.Item1" xml:space="preserve"><value>这会清除当前设备上保存的今日、会话和累计的各应用统计。</value></data>
   <data name="Settings.Data.Item2" xml:space="preserve"><value>此操作不会修改隐私设置或排除应用偏好。</value></data>
+  <data name="Settings.Data.SourceState" xml:space="preserve"><value>当前统计源：{0}
+默认统计源：{1}</value></data>
+  <data name="Settings.Label.StatisticsSourcePath" xml:space="preserve"><value>统计源路径</value></data>
+  <data name="Settings.Caption.StatisticsSourcePath" xml:space="preserve"><value>留空表示使用默认 LocalAppData 统计源；填写一个 JSON 路径后可立即切换到该统计源。</value></data>
+  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>例如 C:\Users\你的用户名\Documents\inputor-backups\inputor-stats-20260320-090000.json</value></data>
   <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>我已了解这会永久清除所有已保存的统计数据。</value></data>
+  <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>备份当前统计源</value></data>
+  <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>切换到此统计源</value></data>
+  <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>恢复默认统计源</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>清除已保存统计</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>保存设置</value></data>
   <data name="Statistics.Title" xml:space="preserve"><value>统计</value></data>
@@ -108,6 +132,15 @@
   <data name="Statistics.Distribution.Row" xml:space="preserve"><value>{0:N0} • {1:P0}</value></data>
   <data name="Statistics.Distribution.Today" xml:space="preserve"><value>当前分布基于今日计数。</value></data>
   <data name="Statistics.Distribution.AllTimeFallback" xml:space="preserve"><value>今天还没有记录到活动，因此分布回退到累计总量。</value></data>
+  <data name="Statistics.Distribution.Caption.App.Today" xml:space="preserve"><value>当前显示今日按应用聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.App.Last7" xml:space="preserve"><value>当前显示最近 7 天按应用聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.App.Last30" xml:space="preserve"><value>当前显示最近 30 天按应用聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.App.AllTime" xml:space="preserve"><value>当前显示累计按应用聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.Today" xml:space="preserve"><value>当前显示今日按标签聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.Last7" xml:space="preserve"><value>当前显示最近 7 天按标签聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.Last30" xml:space="preserve"><value>当前显示最近 30 天按标签聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.AllTime" xml:space="preserve"><value>当前显示累计按标签聚合分布。</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.MultiTagNote" xml:space="preserve"><value>由于同一应用可对应多个标签，标签总量可能高于原始应用总量。</value></data>
   <data name="Debug.Title" xml:space="preserve"><value>调试</value></data>
   <data name="Debug.Subtitle" xml:space="preserve"><value>把这里当成专注的诊断页面：默认保持关闭，需要时临时开启，然后只查看你关心的记录。</value></data>
   <data name="Debug.Toggle.Header" xml:space="preserve"><value>调试捕获</value></data>
@@ -118,6 +151,8 @@
   <data name="Debug.Button.ClearRecords" xml:space="preserve"><value>清除记录</value></data>
   <data name="Debug.Button.StartCapture" xml:space="preserve"><value>开始捕获</value></data>
   <data name="Debug.Button.PauseCapture" xml:space="preserve"><value>暂停捕获</value></data>
+  <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>临时诊断与隐私说明</value></data>
+  <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>这里只缓存最近 {0} 条临时调试记录，全部仅保存在内存中；它们不会写入统计文件，也不会被导出或上传。</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>调试捕获默认关闭。仅在你需要排查为什么计数被记录或未记录时再开启。</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>调试捕获已暂停。只有在你想检查为什么某次输入被记录或跳过时，再开始捕获。</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>调试捕获已关闭</value></data>
@@ -144,8 +179,17 @@
   <data name="Debug.Label.InsertedSegmentLength" xml:space="preserve"><value>插入片段长度</value></data>
   <data name="Debug.Label.CharacterMix" xml:space="preserve"><value>字符构成</value></data>
   <data name="Debug.Label.Flags" xml:space="preserve"><value>标记</value></data>
+  <data name="Debug.Label.TextLengths" xml:space="preserve"><value>前后文本长度</value></data>
+  <data name="Debug.Label.TextChange" xml:space="preserve"><value>差异区间</value></data>
+  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>变更前文本</value></data>
+  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>变更后文本</value></data>
+  <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>变更前字符构成</value></data>
+  <data name="Debug.Label.AfterMix" xml:space="preserve"><value>变更后字符构成</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} 个受支持字符</value></data>
-  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>中文 {0} • 英文 {1} • 受支持 {2}</value></data>
+  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>中文 {0} • 英文 {1} • 其他 {2} • 受支持 {3}</value></data>
+  <data name="Debug.TextLengthsLine" xml:space="preserve"><value>之前 {0} • 当前 {1}</value></data>
+  <data name="Debug.TextChangeLine" xml:space="preserve"><value>起始索引 {0} • 变更长度 {1} → {2}</value></data>
+  <data name="Debug.TextPreviewLine" xml:space="preserve"><value>{0}</value></data>
   <data name="Debug.EventSummary" xml:space="preserve"><value>{0:HH:mm:ss} • {1} • {2}</value></data>
   <data name="Debug.Primary.CounterIncreased" xml:space="preserve"><value>计数增加了 {0} 个受支持字符。</value></data>
   <data name="Debug.Primary.PasteFiltered" xml:space="preserve"><value>检测到了类似粘贴的输入，因此没有计入统计。</value></data>
@@ -172,8 +216,14 @@
   <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} 已经在排除列表中。</value></data>
   <data name="Status.AddedExcludedApp" xml:space="preserve"><value>已将 {0} 加入排除列表。</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>已将 CSV 导出到 {0}</value></data>
+  <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>已将统计源备份到 {0}</value></data>
+  <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>统计源备份失败：{0}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>设置已更新。</value></data>
+  <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>其他设置已保存，但应用标签映射里有 {0} 行格式无效，原有标签映射保持不变。</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>已清除已保存统计。</value></data>
+  <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>已切换统计源到 {0}</value></data>
+  <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>统计源切换失败：{0}</value></data>
+  <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>已检测到损坏的统计源配置，已回退到默认统计源。</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>调试捕获已开启。</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>调试捕获已关闭。</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>调试事件已清除。</value></data>

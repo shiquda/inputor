@@ -75,6 +75,43 @@ internal static class AppPresentationService
             .ToList();
     }
 
+    public static IReadOnlyList<AppAggregate> BuildTagAggregates(IEnumerable<AppStat> stats, AppSettings settings)
+    {
+        const string UntaggedGroupKey = "tag:__untagged__";
+        var rows = new List<(string GroupKey, string DisplayName, string ProcessName, AppStat Stat)>();
+        foreach (var stat in stats)
+        {
+            var tags = settings.GetTagsForApp(stat.AppName);
+            if (tags.Count == 0)
+            {
+                rows.Add((UntaggedGroupKey, AppStrings.Get("Aggregation.Untagged"), stat.AppName, stat));
+                continue;
+            }
+
+            foreach (var tag in tags)
+            {
+                rows.Add(($"tag:{tag}", tag, stat.AppName, stat));
+            }
+        }
+
+        return rows
+            .GroupBy(item => item.GroupKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new AppAggregate
+            {
+                GroupKey = group.Key,
+                DisplayName = group.First().DisplayName,
+                IconGlyph = "\uE8EC",
+                ProcessNames = group.Select(item => item.ProcessName)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+                TodayCount = group.Sum(item => item.Stat.TodayCount),
+                SessionCount = group.Sum(item => item.Stat.SessionCount),
+                TotalCount = group.Sum(item => item.Stat.TotalCount)
+            })
+            .ToList();
+    }
+
     public static bool MatchesQuery(AppAggregate aggregate, string query)
     {
         if (string.IsNullOrWhiteSpace(query))
