@@ -14,6 +14,9 @@
   <data name="Common.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Common.AllTime" xml:space="preserve"><value>All time</value></data>
   <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Aggregation.App" xml:space="preserve"><value>By app</value></data>
+  <data name="Aggregation.Tag" xml:space="preserve"><value>By tag</value></data>
+  <data name="Aggregation.Untagged" xml:space="preserve"><value>Untagged</value></data>
   <data name="Common.Paused" xml:space="preserve"><value>Paused</value></data>
   <data name="Target.Supported" xml:space="preserve"><value>Supported</value></data>
   <data name="Target.Unsupported" xml:space="preserve"><value>Unsupported</value></data>
@@ -56,9 +59,10 @@
   <data name="Main.TopApps.Row" xml:space="preserve"><value>{0:N0} today • {1:0.#}%</value></data>
   <data name="Main.TopApps.Empty" xml:space="preserve"><value>No activity yet.</value></data>
   <data name="Main.Apps.NoMatch" xml:space="preserve"><value>No apps match the current filter.</value></data>
-  <data name="Main.Apps.Summary" xml:space="preserve"><value>{0} grouped apps • {1:N0} today • {2:N0} session • {3:N0} total</value></data>
+  <data name="Main.Apps.Summary" xml:space="preserve"><value>{1} grouped {0} items • {2:N0} today • {3:N0} session • {4:N0} total</value></data>
   <data name="Main.Apps.Row" xml:space="preserve"><value>{0:N0} today • {1:N0} session • {2:N0} total • {3:0.#}%</value></data>
   <data name="Main.Apps.GroupedFrom" xml:space="preserve"><value>Grouped from {0}</value></data>
+  <data name="Main.Apps.TagAggregationHint" xml:space="preserve"><value>A single app can belong to multiple tags, so tag totals can exceed raw app totals.</value></data>
   <data name="Settings.Title" xml:space="preserve"><value>Settings</value></data>
   <data name="Settings.Subtitle" xml:space="preserve"><value>Manage startup, privacy defaults, exports, exclusions, and local data controls in one place.</value></data>
   <data name="Settings.HeaderNote" xml:space="preserve"><value>Current target: {0} • Today {1:N0} • Session {2:N0}</value></data>
@@ -78,6 +82,8 @@
   <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>
   <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>Use comma-separated process names. Quick actions can add the current app for you.</value></data>
+  <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>App tag mappings</value></data>
+  <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>Use one mapping per line in the format process-name: tag1, tag2. An app can have multiple tags; apps without a mapping fall into Untagged.</value></data>
   <data name="Settings.Export.Description" xml:space="preserve"><value>Export writes a CSV file into your local documents export folder and keeps raw text out of the file.</value></data>
   <data name="Settings.Button.ExportTodayCsv" xml:space="preserve"><value>Export today CSV</value></data>
   <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor always keeps privacy protections on: it stores counts, process names, and date buckets locally.</value></data>
@@ -108,6 +114,15 @@
   <data name="Statistics.Distribution.Row" xml:space="preserve"><value>{0:N0} • {1:P0}</value></data>
   <data name="Statistics.Distribution.Today" xml:space="preserve"><value>Distribution currently reflects today's counts.</value></data>
   <data name="Statistics.Distribution.AllTimeFallback" xml:space="preserve"><value>No activity has been recorded today, so distribution falls back to all-time totals.</value></data>
+  <data name="Statistics.Distribution.Caption.App.Today" xml:space="preserve"><value>Showing today's distribution aggregated by app.</value></data>
+  <data name="Statistics.Distribution.Caption.App.Last7" xml:space="preserve"><value>Showing the last 7 days aggregated by app.</value></data>
+  <data name="Statistics.Distribution.Caption.App.Last30" xml:space="preserve"><value>Showing the last 30 days aggregated by app.</value></data>
+  <data name="Statistics.Distribution.Caption.App.AllTime" xml:space="preserve"><value>Showing the all-time distribution aggregated by app.</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.Today" xml:space="preserve"><value>Showing today's distribution aggregated by tag.</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.Last7" xml:space="preserve"><value>Showing the last 7 days aggregated by tag.</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.Last30" xml:space="preserve"><value>Showing the last 30 days aggregated by tag.</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.AllTime" xml:space="preserve"><value>Showing the all-time distribution aggregated by tag.</value></data>
+  <data name="Statistics.Distribution.Caption.Tag.MultiTagNote" xml:space="preserve"><value>Because one app can belong to multiple tags, tag totals can exceed raw app totals.</value></data>
   <data name="Debug.Title" xml:space="preserve"><value>Debug</value></data>
   <data name="Debug.Subtitle" xml:space="preserve"><value>Use this page as a focused diagnostic surface: keep capture off by default, switch it on temporarily, then inspect only the records you care about.</value></data>
   <data name="Debug.Toggle.Header" xml:space="preserve"><value>Debug capture</value></data>
@@ -173,6 +188,7 @@
   <data name="Status.AddedExcludedApp" xml:space="preserve"><value>Added {0} to excluded apps.</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>Exported CSV to {0}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>Settings updated.</value></data>
+  <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>Other settings were saved, but {0} app tag mapping lines were invalid, so the existing tag mappings were left unchanged.</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>Stored statistics cleared.</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>Debug capture enabled.</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>Debug capture disabled.</value></data>

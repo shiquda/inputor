@@ -15,6 +15,7 @@ public sealed class SettingsPage : UserControl
     private readonly ComboBox _themeModeComboBox;
     private readonly ComboBox _languageComboBox;
     private readonly TextBox _excludedAppsTextBox;
+    private readonly TextBox _appTagMappingsTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
     private readonly Button _clearStatisticsButton;
     private readonly TextBlock _headerNoteTextBlock;
@@ -39,6 +40,7 @@ public sealed class SettingsPage : UserControl
             SelectedValuePath = nameof(AppLanguageOption.Tag)
         };
         _excludedAppsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
+        _appTagMappingsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 120, TextWrapping = TextWrapping.Wrap };
         _confirmClearStatisticsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.ConfirmClearStatistics") };
         _clearStatisticsButton = new Button { Content = AppStrings.Get("Settings.Button.ClearStoredStatistics"), Padding = new Thickness(24, 8, 24, 8), IsEnabled = false };
         _headerNoteTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
@@ -81,6 +83,8 @@ public sealed class SettingsPage : UserControl
         _themeModeComboBox.SelectedValue = settings.ThemeMode;
         _languageComboBox.SelectedValue = settings.Language;
         _excludedAppsTextBox.Text = settings.ExcludedApps;
+        _appTagMappingsTextBox.Text = string.Join(Environment.NewLine,
+            settings.GetNormalizedTagMappings().Select(item => $"{item.AppName}: {string.Join(", ", item.Tags)}"));
         _confirmClearStatisticsCheckBox.IsChecked = false;
         _clearStatisticsButton.IsEnabled = false;
         _restartNoticeTextBlock.Visibility = string.Equals(AppStrings.ResolveLanguageTag(settings.Language), AppStrings.CurrentLanguageTag, StringComparison.OrdinalIgnoreCase)
@@ -115,6 +119,7 @@ public sealed class SettingsPage : UserControl
         preferences.Children.Add(_startWithWindowsCheckBox);
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.Language"), _languageComboBox, AppStrings.Get("Settings.Caption.Language")));
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.ExcludedApps"), _excludedAppsTextBox, AppStrings.Get("Settings.Caption.ExcludedApps")));
+        preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.AppTagMappings"), _appTagMappingsTextBox, AppStrings.Get("Settings.Caption.AppTagMappings")));
         root.Children.Add(CreateCard(preferences));
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Section.ExportTitle"), AppStrings.Get("Settings.Section.ExportSubtitle")));
@@ -161,6 +166,7 @@ public sealed class SettingsPage : UserControl
     {
         var settings = App.Current.Settings;
         var previousLanguage = settings.Language;
+        var previousMappings = settings.AppTagMappings.ToList();
         settings.StartWithWindows = _startWithWindowsCheckBox.IsChecked ?? false;
         settings.ThemeMode = _themeModeComboBox.SelectedValue as string ?? string.Empty;
         settings.Language = _languageComboBox.SelectedValue as string ?? string.Empty;
@@ -169,16 +175,69 @@ public sealed class SettingsPage : UserControl
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
 
+        var invalidLineCount = 0;
+        if (TryParseAppTagMappings(_appTagMappingsTextBox.Text, out var parsedMappings, out invalidLineCount))
+        {
+            settings.AppTagMappings = parsedMappings;
+        }
+        else
+        {
+            settings.AppTagMappings = previousMappings;
+        }
+
         App.Current.SaveSettings();
         var languageChanged = !string.Equals(previousLanguage, settings.Language, StringComparison.OrdinalIgnoreCase);
         _restartNoticeTextBlock.Visibility = languageChanged ? Visibility.Visible : Visibility.Collapsed;
         App.Current.StatsStore.SetStatus(
-            languageChanged ? StatusText.LanguageChangeRequiresRestart() : StatusText.SettingsUpdated(),
+            invalidLineCount > 0
+                ? StatusText.InvalidAppTagMappings(invalidLineCount)
+                : languageChanged ? StatusText.LanguageChangeRequiresRestart() : StatusText.SettingsUpdated(),
             App.Current.StatsStore.CurrentAppName,
             App.Current.StatsStore.IsCurrentTargetSupported,
             App.Current.StatsStore.CurrentProcessName);
-        RefreshFromState();
+
+        if (invalidLineCount == 0)
+        {
+            RefreshFromState();
+        }
+
         _restartNoticeTextBlock.Visibility = languageChanged ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static bool TryParseAppTagMappings(string? rawText, out List<AppTagMapping> mappings, out int invalidLineCount)
+    {
+        mappings = [];
+        invalidLineCount = 0;
+
+        foreach (var line in (rawText ?? string.Empty).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = line.Split(':', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]))
+            {
+                invalidLineCount++;
+                continue;
+            }
+
+            var tags = parts[1]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (tags.Count == 0)
+            {
+                invalidLineCount++;
+                continue;
+            }
+
+            mappings.Add(new AppTagMapping
+            {
+                AppName = parts[0],
+                Tags = tags
+            });
+        }
+
+        mappings = new AppSettings { AppTagMappings = mappings }.GetNormalizedTagMappings().ToList();
+        return invalidLineCount == 0;
     }
 
     private void ClearStoredStatistics()

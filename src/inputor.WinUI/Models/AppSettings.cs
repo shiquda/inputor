@@ -10,6 +10,7 @@ public sealed class AppSettings
     public string ThemeMode { get; set; } = string.Empty;
     public string Language { get; set; } = string.Empty;
     public string ExcludedApps { get; set; } = "inputor.app";
+    public List<AppTagMapping> AppTagMappings { get; set; } = [];
 
     public bool IsExcluded(string processName)
     {
@@ -40,5 +41,45 @@ public sealed class AppSettings
         apps.Add(processName.Trim());
         ExcludedApps = string.Join(", ", apps.OrderBy(app => app, StringComparer.OrdinalIgnoreCase));
         return true;
+    }
+
+    public IReadOnlyList<string> GetTagsForApp(string processName)
+    {
+        return AppTagMappings
+            .Where(item => string.Equals(item.AppName, processName, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(item => item.Tags)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public IReadOnlyList<AppTagMapping> GetNormalizedTagMappings()
+    {
+        return AppTagMappings
+            .Where(item => !string.IsNullOrWhiteSpace(item.AppName))
+            .Select(item => new AppTagMapping
+            {
+                AppName = item.AppName.Trim(),
+                Tags = item.Tags
+                    .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                    .Select(tag => tag.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(tag => tag, StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            })
+            .Where(item => item.Tags.Count > 0)
+            .GroupBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new AppTagMapping
+            {
+                AppName = group.First().AppName,
+                Tags = group.SelectMany(item => item.Tags)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(tag => tag, StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            })
+            .OrderBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

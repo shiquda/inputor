@@ -12,6 +12,7 @@ internal static class StatusText
     public static string AddedExcludedApp(string processName) => AppStrings.Format("Status.AddedExcludedApp", processName);
     public static string ExportedCsv(string path) => AppStrings.Format("Status.ExportedCsv", path);
     public static string SettingsUpdated() => AppStrings.Get("Status.SettingsUpdated");
+    public static string InvalidAppTagMappings(int invalidLineCount) => AppStrings.Format("Status.InvalidAppTagMappings", invalidLineCount);
     public static string StoredStatisticsCleared() => AppStrings.Get("Status.StoredStatisticsCleared");
     public static string DebugCaptureChanged(bool isEnabled) => AppStrings.Get(isEnabled ? "Status.DebugCaptureEnabled" : "Status.DebugCaptureDisabled");
     public static string DebugEventsCleared() => AppStrings.Get("Status.DebugEventsCleared");

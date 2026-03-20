@@ -33,6 +33,7 @@ public sealed class StatisticsPage : UserControl
     private readonly TextBlock _distributionDetailTextBlock;
     private readonly TextBlock _distributionCaptionTextBlock;
     private readonly ComboBox _distributionRangeComboBox;
+    private readonly ComboBox _distributionAggregationComboBox;
     private DashboardSnapshot? _pendingSnapshot;
     private int _interactionDepth;
     private readonly List<Border> _cards = [];
@@ -55,6 +56,15 @@ public sealed class StatisticsPage : UserControl
             SelectedIndex = 0
         };
         _distributionRangeComboBox.SelectionChanged += (_, _) => Refresh(App.Current.StatsStore.GetSnapshot());
+        _distributionAggregationComboBox = new ComboBox
+        {
+            Width = 160,
+            ItemsSource = AppStrings.GetAggregationOptions(),
+            DisplayMemberPath = nameof(AppAggregationOption.DisplayName),
+            SelectedValuePath = nameof(AppAggregationOption.Tag),
+            SelectedValue = "app"
+        };
+        _distributionAggregationComboBox.SelectionChanged += (_, _) => Refresh(App.Current.StatsStore.GetSnapshot());
 
         Content = new ScrollViewer
         {
@@ -140,7 +150,10 @@ public sealed class StatisticsPage : UserControl
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Statistics.Section.DistributionTitle"), AppStrings.Get("Statistics.Section.DistributionSubtitle")));
         var distributionPanel = new StackPanel { Spacing = 12 };
-        distributionPanel.Children.Add(_distributionRangeComboBox);
+        var distributionToolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        distributionToolbar.Children.Add(_distributionAggregationComboBox);
+        distributionToolbar.Children.Add(_distributionRangeComboBox);
+        distributionPanel.Children.Add(distributionToolbar);
         distributionPanel.Children.Add(_distributionPanel);
         distributionPanel.Children.Add(_distributionDetailTextBlock);
         distributionPanel.Children.Add(_distributionCaptionTextBlock);
@@ -269,7 +282,8 @@ public sealed class StatisticsPage : UserControl
     {
         _distributionPanel.Children.Clear();
         var range = _distributionRangeComboBox.SelectedIndex;
-        var ordered = BuildDistributionData(snapshot, range)
+        var aggregateByTag = (_distributionAggregationComboBox.SelectedValue as string) == "tag";
+        var ordered = BuildDistributionData(snapshot, range, aggregateByTag)
             .OrderByDescending(item => item.Value)
             .Take(6)
             .ToList();
@@ -403,18 +417,26 @@ public sealed class StatisticsPage : UserControl
 
         _distributionCaptionTextBlock.Text = range switch
         {
-            0 => "Showing today's app distribution.",
-            1 => "Showing app distribution over the last 7 days.",
-            2 => "Showing app distribution over the last 30 days.",
-            _ => "Showing all-time app distribution."
+            0 => AppStrings.Get(aggregateByTag ? "Statistics.Distribution.Caption.Tag.Today" : "Statistics.Distribution.Caption.App.Today"),
+            1 => AppStrings.Get(aggregateByTag ? "Statistics.Distribution.Caption.Tag.Last7" : "Statistics.Distribution.Caption.App.Last7"),
+            2 => AppStrings.Get(aggregateByTag ? "Statistics.Distribution.Caption.Tag.Last30" : "Statistics.Distribution.Caption.App.Last30"),
+            _ => AppStrings.Get(aggregateByTag ? "Statistics.Distribution.Caption.Tag.AllTime" : "Statistics.Distribution.Caption.App.AllTime")
         };
+
+        if (aggregateByTag)
+        {
+            _distributionCaptionTextBlock.Text += " " + AppStrings.Get("Statistics.Distribution.Caption.Tag.MultiTagNote");
+        }
     }
 
-    private static IReadOnlyList<DistributionSlice> BuildDistributionData(DashboardSnapshot snapshot, int range)
+    private static IReadOnlyList<DistributionSlice> BuildDistributionData(DashboardSnapshot snapshot, int range, bool aggregateByTag)
     {
         if (range == 0)
         {
-            return AppPresentationService.BuildAggregates(snapshot.AppStats)
+            var groupedToday = aggregateByTag
+                ? AppPresentationService.BuildTagAggregates(snapshot.AppStats, App.Current.Settings)
+                : AppPresentationService.BuildAggregates(snapshot.AppStats);
+            return groupedToday
                 .Where(item => item.TodayCount > 0)
                 .Select(item => new DistributionSlice { Aggregate = item, Value = item.TodayCount })
                 .ToList();
@@ -422,7 +444,10 @@ public sealed class StatisticsPage : UserControl
 
         if (range == 3)
         {
-            return AppPresentationService.BuildAggregates(snapshot.AppStats)
+            var groupedAllTime = aggregateByTag
+                ? AppPresentationService.BuildTagAggregates(snapshot.AppStats, App.Current.Settings)
+                : AppPresentationService.BuildAggregates(snapshot.AppStats);
+            return groupedAllTime
                 .Where(item => item.TotalCount > 0)
                 .Select(item => new DistributionSlice { Aggregate = item, Value = item.TotalCount })
                 .ToList();
@@ -442,7 +467,11 @@ public sealed class StatisticsPage : UserControl
             })
             .ToList();
 
-        return AppPresentationService.BuildAggregates(rawStats)
+        var aggregates = aggregateByTag
+            ? AppPresentationService.BuildTagAggregates(rawStats, App.Current.Settings)
+            : AppPresentationService.BuildAggregates(rawStats);
+
+        return aggregates
             .Where(item => item.TodayCount > 0)
             .Select(item => new DistributionSlice { Aggregate = item, Value = item.TodayCount })
             .ToList();
