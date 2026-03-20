@@ -315,10 +315,20 @@ public sealed class DebugPage : UserControl
                 AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.CurrentPreviewMask)));
             detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.BeforeMix"),
-                AppStrings.Format("Debug.CharacterMixLine", entry.TextComparison.PreviousChineseCharacterCount, entry.TextComparison.PreviousEnglishLetterCount, entry.TextComparison.PreviousSupportedCharacterCount)));
+                AppStrings.Format(
+                    "Debug.CharacterMixLine",
+                    entry.TextComparison.PreviousChineseCharacterCount,
+                    entry.TextComparison.PreviousEnglishLetterCount,
+                    Math.Max(0, entry.TextComparison.PreviousSupportedCharacterCount - entry.TextComparison.PreviousChineseCharacterCount - entry.TextComparison.PreviousEnglishLetterCount),
+                    entry.TextComparison.PreviousSupportedCharacterCount)));
             detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.AfterMix"),
-                AppStrings.Format("Debug.CharacterMixLine", entry.TextComparison.CurrentChineseCharacterCount, entry.TextComparison.CurrentEnglishLetterCount, entry.TextComparison.CurrentSupportedCharacterCount)));
+                AppStrings.Format(
+                    "Debug.CharacterMixLine",
+                    entry.TextComparison.CurrentChineseCharacterCount,
+                    entry.TextComparison.CurrentEnglishLetterCount,
+                    Math.Max(0, entry.TextComparison.CurrentSupportedCharacterCount - entry.TextComparison.CurrentChineseCharacterCount - entry.TextComparison.CurrentEnglishLetterCount),
+                    entry.TextComparison.CurrentSupportedCharacterCount)));
         }
 
         toggleButton.Click += (_, _) =>
