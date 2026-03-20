@@ -190,12 +190,6 @@ public sealed class DebugPage : UserControl
 
         var header = new StackPanel { Spacing = 8 };
         header.Children.Add(new TextBlock { Text = AppStrings.Get("Debug.Title"), FontSize = 28, FontWeight = FontWeights.SemiBold });
-        header.Children.Add(new TextBlock
-        {
-            Text = AppStrings.Get("Debug.Subtitle"),
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.7
-        });
         header.Children.Add(_summaryTextBlock);
         root.Children.Add(header);
 
@@ -309,10 +303,10 @@ public sealed class DebugPage : UserControl
                 AppStrings.Format("Debug.TextChangeLine", entry.TextComparison.ChangeStartIndex, entry.TextComparison.PreviousSegmentLength, entry.TextComparison.CurrentSegmentLength)));
             detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.BeforePreview"),
-                AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.PreviousPreviewMask)));
+                AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.PreviousText)));
             detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.AfterPreview"),
-                AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.CurrentPreviewMask)));
+                AppStrings.Format("Debug.TextPreviewLine", entry.TextComparison.CurrentText)));
             detailsPanel.Children.Add(CreateMetricLine(
                 AppStrings.Get("Debug.Label.BeforeMix"),
                 AppStrings.Format(

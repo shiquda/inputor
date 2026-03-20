@@ -15,7 +15,10 @@ public sealed class SettingsPage : UserControl
     private readonly ComboBox _themeModeComboBox;
     private readonly ComboBox _languageComboBox;
     private readonly TextBox _excludedAppsTextBox;
-    private readonly TextBox _appTagMappingsTextBox;
+    private readonly TextBox _appTagNewAppTextBox;
+    private readonly TextBox _appTagSearchTextBox;
+    private readonly StackPanel _appTagAssignmentsPanel;
+    private readonly TextBlock _appTagSummaryTextBlock;
     private readonly TextBox _statisticsSourcePathTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
     private readonly Button _clearStatisticsButton;
@@ -23,6 +26,7 @@ public sealed class SettingsPage : UserControl
     private readonly TextBlock _restartNoticeTextBlock;
     private readonly TextBlock _statisticsSourceStateTextBlock;
     private readonly List<Border> _cards = [];
+    private readonly List<AppTagEditorState> _appTagEditors = [];
 
     public SettingsPage()
     {
@@ -42,7 +46,11 @@ public sealed class SettingsPage : UserControl
             SelectedValuePath = nameof(AppLanguageOption.Tag)
         };
         _excludedAppsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
-        _appTagMappingsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 120, TextWrapping = TextWrapping.Wrap };
+        _appTagNewAppTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagNewApp") };
+        _appTagSearchTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagSearch") };
+        _appTagSearchTextBox.TextChanged += (_, _) => RefreshAppTagEditorList();
+        _appTagAssignmentsPanel = new StackPanel { Spacing = 12 };
+        _appTagSummaryTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.72 };
         _statisticsSourcePathTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.StatisticsSourcePath") };
         _confirmClearStatisticsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.ConfirmClearStatistics") };
         _clearStatisticsButton = new Button { Content = AppStrings.Get("Settings.Button.ClearStoredStatistics"), Padding = new Thickness(24, 8, 24, 8), IsEnabled = false };
@@ -76,6 +84,7 @@ public sealed class SettingsPage : UserControl
     private void ThemeBrushes_Changed(object? sender, EventArgs e)
     {
         RefreshTheme();
+        RefreshAppTagEditorList();
     }
 
     public void RefreshFromState()
@@ -87,8 +96,6 @@ public sealed class SettingsPage : UserControl
         _themeModeComboBox.SelectedValue = settings.ThemeMode;
         _languageComboBox.SelectedValue = settings.Language;
         _excludedAppsTextBox.Text = settings.ExcludedApps;
-        _appTagMappingsTextBox.Text = string.Join(Environment.NewLine,
-            settings.GetNormalizedTagMappings().Select(item => $"{item.AppName}: {string.Join(", ", item.Tags)}"));
         _statisticsSourcePathTextBox.Text = settings.StatisticsSourcePath;
         _confirmClearStatisticsCheckBox.IsChecked = false;
         _clearStatisticsButton.IsEnabled = false;
@@ -100,6 +107,52 @@ public sealed class SettingsPage : UserControl
             "Settings.Data.SourceState",
             App.Current.StatsStore.CurrentSourcePath,
             App.Current.StatsStore.DefaultSourcePath);
+
+        RebuildAppTagEditors(snapshot, settings);
+        _appTagNewAppTextBox.Text = string.Empty;
+        RefreshAppTagEditorList();
+    }
+
+    private void RebuildAppTagEditors(DashboardSnapshot snapshot, AppSettings settings)
+    {
+        _appTagEditors.Clear();
+        MergeSnapshotIntoEditors(snapshot, settings);
+    }
+
+    private void MergeSnapshotIntoEditors(DashboardSnapshot snapshot, AppSettings settings)
+    {
+        var statsByApp = snapshot.AppStats.ToDictionary(item => item.AppName, StringComparer.OrdinalIgnoreCase);
+        var candidateNames = snapshot.AppStats
+            .Select(item => item.AppName)
+            .Concat(settings.GetNormalizedTagMappings().Select(item => item.AppName))
+            .Concat(_appTagEditors.Select(item => item.AppName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var appName in candidateNames)
+        {
+            statsByApp.TryGetValue(appName, out var stat);
+            var existing = _appTagEditors.FirstOrDefault(item => string.Equals(item.AppName, appName, StringComparison.OrdinalIgnoreCase));
+            if (existing is null)
+            {
+                _appTagEditors.Add(new AppTagEditorState
+                {
+                    AppName = appName,
+                    TodayCount = stat?.TodayCount ?? 0,
+                    SessionCount = stat?.SessionCount ?? 0,
+                    TotalCount = stat?.TotalCount ?? 0,
+                    Tags = settings.GetTagsForApp(appName).ToList()
+                });
+                continue;
+            }
+
+            existing.TodayCount = stat?.TodayCount ?? 0;
+            existing.SessionCount = stat?.SessionCount ?? 0;
+            existing.TotalCount = stat?.TotalCount ?? 0;
+        }
+
+        AppPresentationService.WarmIcons(_appTagEditors.Select(item => item.AppName).ToList(), Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
     }
 
     private UIElement BuildContent()
@@ -128,7 +181,23 @@ public sealed class SettingsPage : UserControl
         preferences.Children.Add(_startWithWindowsCheckBox);
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.Language"), _languageComboBox, AppStrings.Get("Settings.Caption.Language")));
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.ExcludedApps"), _excludedAppsTextBox, AppStrings.Get("Settings.Caption.ExcludedApps")));
-        preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.AppTagMappings"), _appTagMappingsTextBox, AppStrings.Get("Settings.Caption.AppTagMappings")));
+
+        var appTagPanel = new StackPanel { Spacing = 12 };
+        appTagPanel.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Label.AppTagMappings"), FontWeight = FontWeights.SemiBold, FontSize = 14 });
+        appTagPanel.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Caption.AppTagMappings"), TextWrapping = TextWrapping.Wrap, Opacity = 0.72, FontSize = 12 });
+        var addAppRow = new Grid { ColumnSpacing = 8 };
+        addAppRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        addAppRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        addAppRow.Children.Add(_appTagNewAppTextBox);
+        var addAppButton = new Button { Content = AppStrings.Get("Settings.Button.AddAppTagTarget"), Padding = new Thickness(16, 8, 16, 8) };
+        addAppButton.Click += (_, _) => AddManualAppTagTarget();
+        Grid.SetColumn(addAppButton, 1);
+        addAppRow.Children.Add(addAppButton);
+        appTagPanel.Children.Add(addAppRow);
+        appTagPanel.Children.Add(_appTagSearchTextBox);
+        appTagPanel.Children.Add(_appTagSummaryTextBlock);
+        appTagPanel.Children.Add(_appTagAssignmentsPanel);
+        preferences.Children.Add(appTagPanel);
         root.Children.Add(CreateCard(preferences));
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Section.ExportTitle"), AppStrings.Get("Settings.Section.ExportSubtitle")));
@@ -188,7 +257,6 @@ public sealed class SettingsPage : UserControl
     {
         var settings = App.Current.Settings;
         var previousLanguage = settings.Language;
-        var previousMappings = settings.AppTagMappings.ToList();
         settings.StartWithWindows = _startWithWindowsCheckBox.IsChecked ?? false;
         settings.ThemeMode = _themeModeComboBox.SelectedValue as string ?? string.Empty;
         settings.Language = _languageComboBox.SelectedValue as string ?? string.Empty;
@@ -196,70 +264,304 @@ public sealed class SettingsPage : UserControl
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
-
-        var invalidLineCount = 0;
-        if (TryParseAppTagMappings(_appTagMappingsTextBox.Text, out var parsedMappings, out invalidLineCount))
-        {
-            settings.AppTagMappings = parsedMappings;
-        }
-        else
-        {
-            settings.AppTagMappings = previousMappings;
-        }
+        settings.AppTagMappings = _appTagEditors
+            .Where(item => item.Tags.Count > 0)
+            .Select(item => new AppTagMapping
+            {
+                AppName = item.AppName,
+                Tags = item.Tags.ToList()
+            })
+            .ToList();
 
         App.Current.SaveSettings();
         var languageChanged = !string.Equals(previousLanguage, settings.Language, StringComparison.OrdinalIgnoreCase);
         _restartNoticeTextBlock.Visibility = languageChanged ? Visibility.Visible : Visibility.Collapsed;
         App.Current.StatsStore.SetStatus(
-            invalidLineCount > 0
-                ? StatusText.InvalidAppTagMappings(invalidLineCount)
-                : languageChanged ? StatusText.LanguageChangeRequiresRestart() : StatusText.SettingsUpdated(),
+            languageChanged ? StatusText.LanguageChangeRequiresRestart() : StatusText.SettingsUpdated(),
             App.Current.StatsStore.CurrentAppName,
             App.Current.StatsStore.IsCurrentTargetSupported,
             App.Current.StatsStore.CurrentProcessName);
-
-        if (invalidLineCount == 0)
-        {
-            RefreshFromState();
-        }
-
-        _restartNoticeTextBlock.Visibility = languageChanged ? Visibility.Visible : Visibility.Collapsed;
+        RefreshFromState();
     }
 
-    private static bool TryParseAppTagMappings(string? rawText, out List<AppTagMapping> mappings, out int invalidLineCount)
+    private void RefreshAppTagEditorList()
     {
-        mappings = [];
-        invalidLineCount = 0;
+        _appTagAssignmentsPanel.Children.Clear();
 
-        foreach (var line in (rawText ?? string.Empty).Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        var filter = (_appTagSearchTextBox.Text ?? string.Empty).Trim();
+        var visibleEditors = _appTagEditors
+            .Where(item => string.IsNullOrWhiteSpace(filter)
+                || item.AppName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+                || item.Tags.Any(tag => tag.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+            .OrderByDescending(item => item.Tags.Count > 0)
+            .ThenByDescending(item => item.TodayCount)
+            .ThenByDescending(item => item.TotalCount)
+            .ThenBy(item => item.AppName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var taggedCount = _appTagEditors.Count(item => item.Tags.Count > 0);
+        _appTagSummaryTextBlock.Text = AppStrings.Format(
+            "Settings.AppTagMappings.Summary",
+            visibleEditors.Count,
+            _appTagEditors.Count,
+            taggedCount,
+            GetKnownTags().Count);
+
+        if (visibleEditors.Count == 0)
         {
-            var parts = line.Split(':', 2, StringSplitOptions.TrimEntries);
-            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]))
+            _appTagAssignmentsPanel.Children.Add(new TextBlock
             {
-                invalidLineCount++;
-                continue;
-            }
-
-            var tags = parts[1]
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-            if (tags.Count == 0)
-            {
-                invalidLineCount++;
-                continue;
-            }
-
-            mappings.Add(new AppTagMapping
-            {
-                AppName = parts[0],
-                Tags = tags
+                Text = AppStrings.Get("Settings.AppTagMappings.Empty"),
+                TextWrapping = TextWrapping.Wrap,
+                Opacity = 0.72
             });
+            return;
         }
 
-        mappings = new AppSettings { AppTagMappings = mappings }.GetNormalizedTagMappings().ToList();
-        return invalidLineCount == 0;
+        foreach (var editor in visibleEditors)
+        {
+            _appTagAssignmentsPanel.Children.Add(CreateAppTagEditorRow(editor));
+        }
+    }
+
+    private void AddManualAppTagTarget()
+    {
+        var appName = (_appTagNewAppTextBox.Text ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            return;
+        }
+
+        if (_appTagEditors.Any(item => string.Equals(item.AppName, appName, StringComparison.OrdinalIgnoreCase)))
+        {
+            _appTagSearchTextBox.Text = appName;
+            _appTagNewAppTextBox.Text = string.Empty;
+            RefreshAppTagEditorList();
+            return;
+        }
+
+        _appTagEditors.Add(new AppTagEditorState
+        {
+            AppName = appName,
+            TodayCount = 0,
+            SessionCount = 0,
+            TotalCount = 0,
+            Tags = []
+        });
+        _appTagNewAppTextBox.Text = string.Empty;
+        _appTagSearchTextBox.Text = appName;
+        RefreshAppTagEditorList();
+    }
+
+    private Border CreateAppTagEditorRow(AppTagEditorState editor)
+    {
+        var root = new StackPanel { Spacing = 10 };
+
+        var header = new Grid { ColumnSpacing = 12 };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        header.Children.Add(CreateAppIconBadge(editor.AppName));
+
+        var body = new StackPanel { Spacing = 4 };
+        body.Children.Add(new TextBlock
+        {
+            Text = editor.AppName,
+            FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+        body.Children.Add(new TextBlock
+        {
+            Text = AppStrings.Format("Settings.AppTagMappings.RowCounts", editor.TodayCount, editor.SessionCount, editor.TotalCount),
+            Opacity = 0.72,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12
+        });
+
+        var tagsPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        if (editor.Tags.Count == 0)
+        {
+            tagsPanel.Children.Add(new TextBlock
+            {
+                Text = AppStrings.Get("Settings.AppTagMappings.NoTags"),
+                Opacity = 0.68,
+                FontSize = 12
+            });
+        }
+        else
+        {
+            foreach (var tag in editor.Tags)
+            {
+                tagsPanel.Children.Add(CreateTagChip(tag, () => RemoveTag(editor, tag)));
+            }
+        }
+
+        body.Children.Add(tagsPanel);
+
+        var addRow = new Grid { ColumnSpacing = 8 };
+        addRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        addRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var tagInput = new AutoSuggestBox
+        {
+            PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagInput"),
+            MinWidth = 220,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        tagInput.TextChanged += (_, args) =>
+        {
+            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                return;
+            }
+
+            var suggestions = BuildTagSuggestions(tagInput.Text, editor).ToList();
+            tagInput.ItemsSource = suggestions;
+            tagInput.IsSuggestionListOpen = suggestions.Count > 0;
+        };
+        tagInput.SuggestionChosen += (_, args) =>
+        {
+            if (args.SelectedItem is string selectedTag)
+            {
+                tagInput.Text = selectedTag;
+            }
+        };
+        tagInput.QuerySubmitted += (_, _) =>
+        {
+            if (TryAddTag(editor, tagInput.Text))
+            {
+                tagInput.Text = string.Empty;
+            }
+        };
+        addRow.Children.Add(tagInput);
+
+        var addButton = new Button
+        {
+            Content = AppStrings.Get("Settings.Button.AddTag"),
+            Padding = new Thickness(16, 8, 16, 8)
+        };
+        addButton.Click += (_, _) =>
+        {
+            if (TryAddTag(editor, tagInput.Text))
+            {
+                tagInput.Text = string.Empty;
+            }
+        };
+        Grid.SetColumn(addButton, 1);
+        addRow.Children.Add(addButton);
+
+        body.Children.Add(addRow);
+        body.Children.Add(new TextBlock
+        {
+            Text = AppStrings.Get("Settings.Caption.AppTagInput"),
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.68,
+            FontSize = 12
+        });
+
+        Grid.SetColumn(body, 1);
+        header.Children.Add(body);
+        root.Children.Add(header);
+
+        var card = new Border
+        {
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(14),
+            BorderThickness = new Thickness(1),
+            BorderBrush = ThemeBrushes.GetCardBorderBrush(),
+            Background = ThemeBrushes.GetSubtleSurfaceBrush(),
+            Child = root
+        };
+        return card;
+    }
+
+    private UIElement CreateAppIconBadge(string appName)
+    {
+        var iconSource = AppPresentationService.TryGetIconSource([appName]);
+        return new Border
+        {
+            Width = 36,
+            Height = 36,
+            CornerRadius = new CornerRadius(12),
+            Background = ThemeBrushes.GetCardBackgroundBrush(true),
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = iconSource is not null
+                ? new Image
+                {
+                    Source = iconSource,
+                    Width = 20,
+                    Height = 20,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+                : new FontIcon
+                {
+                    Glyph = "\uE71D",
+                    FontFamily = new FontFamily("Segoe Fluent Icons"),
+                    FontSize = 14,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+        };
+    }
+
+    private Button CreateTagChip(string tag, Action removeAction)
+    {
+        var button = new Button
+        {
+            Content = $"{tag} ×",
+            Padding = new Thickness(10, 4, 10, 4),
+            MinWidth = 0,
+            Background = ThemeBrushes.GetAccentBadgeBackgroundBrush(),
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        button.Click += (_, _) => removeAction();
+        return button;
+    }
+
+    private IEnumerable<string> BuildTagSuggestions(string? rawText, AppTagEditorState editor)
+    {
+        var query = (rawText ?? string.Empty).Trim();
+        return GetKnownTags()
+            .Where(item => !editor.Tags.Contains(item, StringComparer.OrdinalIgnoreCase))
+            .Where(item => string.IsNullOrWhiteSpace(query) || item.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(8);
+    }
+
+    private IReadOnlyList<string> GetKnownTags()
+    {
+        return _appTagEditors
+            .SelectMany(item => item.Tags)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private bool TryAddTag(AppTagEditorState editor, string? rawTag)
+    {
+        var tag = (rawTag ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(tag) || editor.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        editor.Tags.Add(tag);
+        editor.Tags = editor.Tags
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        RefreshAppTagEditorList();
+        return true;
+    }
+
+    private void RemoveTag(AppTagEditorState editor, string tag)
+    {
+        editor.Tags = editor.Tags
+            .Where(item => !string.Equals(item, tag, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        RefreshAppTagEditorList();
     }
 
     private void ClearStoredStatistics()
@@ -327,5 +629,14 @@ public sealed class SettingsPage : UserControl
             Background = ThemeBrushes.Get("AccentFillColorDefaultBrush", "SystemFillColorSolidAccentBrush"),
             Foreground = ThemeBrushes.Get("TextOnAccentFillColorPrimaryBrush", "TextOnAccentFillColorPrimaryBrush")
         };
+    }
+
+    private sealed class AppTagEditorState
+    {
+        public required string AppName { get; init; }
+        public int TodayCount { get; set; }
+        public int SessionCount { get; set; }
+        public int TotalCount { get; set; }
+        public List<string> Tags { get; set; } = [];
     }
 }

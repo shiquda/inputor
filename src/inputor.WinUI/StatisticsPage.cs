@@ -423,10 +423,6 @@ public sealed class StatisticsPage : UserControl
             _ => AppStrings.Get(aggregateByTag ? "Statistics.Distribution.Caption.Tag.AllTime" : "Statistics.Distribution.Caption.App.AllTime")
         };
 
-        if (aggregateByTag)
-        {
-            _distributionCaptionTextBlock.Text += " " + AppStrings.Get("Statistics.Distribution.Caption.Tag.MultiTagNote");
-        }
     }
 
     private static IReadOnlyList<DistributionSlice> BuildDistributionData(DashboardSnapshot snapshot, int range, bool aggregateByTag)

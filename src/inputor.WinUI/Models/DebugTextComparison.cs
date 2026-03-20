@@ -13,6 +13,6 @@ public sealed class DebugTextComparison
     public required int CurrentSupportedCharacterCount { get; init; }
     public required int CurrentChineseCharacterCount { get; init; }
     public required int CurrentEnglishLetterCount { get; init; }
-    public required string PreviousPreviewMask { get; init; }
-    public required string CurrentPreviewMask { get; init; }
+    public required string PreviousText { get; init; }
+    public required string CurrentText { get; init; }
 }

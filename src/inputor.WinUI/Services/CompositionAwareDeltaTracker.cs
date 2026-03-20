@@ -212,74 +212,33 @@ public sealed class CompositionAwareDeltaTracker
             CurrentSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(currentChangedSegment),
             CurrentChineseCharacterCount = CharacterCountService.CountChineseCharacters(currentChangedSegment),
             CurrentEnglishLetterCount = CharacterCountService.CountEnglishLetters(currentChangedSegment),
-            PreviousPreviewMask = BuildMaskedPreview(previousChangedSegment),
-            CurrentPreviewMask = BuildMaskedPreview(currentChangedSegment)
+            PreviousText = TruncateForDisplay(previousChangedSegment),
+            CurrentText = TruncateForDisplay(currentChangedSegment)
         };
     }
 
-    private static string BuildMaskedPreview(string text)
+    private static string TruncateForDisplay(string text)
     {
         if (string.IsNullOrEmpty(text))
         {
             return "-";
         }
 
-        const int PreviewLimit = 18;
+        const int DisplayLimit = 80;
+        var runes = text.EnumerateRunes().ToList();
+        if (runes.Count <= DisplayLimit)
+        {
+            return text;
+        }
+
         var builder = new System.Text.StringBuilder();
-        foreach (var rune in text.EnumerateRunes().Take(PreviewLimit))
+        foreach (var rune in runes.Take(DisplayLimit))
         {
-            builder.Append(ClassifyRune(rune.Value));
+            builder.Append(rune.ToString());
         }
 
-        if (text.EnumerateRunes().Count() > PreviewLimit)
-        {
-            builder.Append("...");
-        }
-
+        builder.Append("…");
         return builder.ToString();
-    }
-
-    private static char ClassifyRune(int value)
-    {
-        if (!System.Text.Rune.TryCreate(value, out var rune))
-        {
-            return '?';
-        }
-
-        if (CharacterCountService.IsChineseRune(value))
-        {
-            return 'H';
-        }
-
-        if (CharacterCountService.IsEnglishLetter(value))
-        {
-            return 'A';
-        }
-
-        if (System.Text.Rune.IsDigit(rune))
-        {
-            return '0';
-        }
-
-        if (System.Text.Rune.IsWhiteSpace(rune))
-        {
-            return '_';
-        }
-
-        var category = System.Text.Rune.GetUnicodeCategory(rune);
-        return category is System.Globalization.UnicodeCategory.ConnectorPunctuation
-            or System.Globalization.UnicodeCategory.DashPunctuation
-            or System.Globalization.UnicodeCategory.ClosePunctuation
-            or System.Globalization.UnicodeCategory.FinalQuotePunctuation
-            or System.Globalization.UnicodeCategory.InitialQuotePunctuation
-            or System.Globalization.UnicodeCategory.OpenPunctuation
-            or System.Globalization.UnicodeCategory.OtherPunctuation
-            or System.Globalization.UnicodeCategory.CurrencySymbol
-            or System.Globalization.UnicodeCategory.MathSymbol
-            or System.Globalization.UnicodeCategory.ModifierSymbol
-            or System.Globalization.UnicodeCategory.OtherSymbol
-            ? '.'
-            : '?';
     }
 
     private static int GetCommonPrefixLength(string left, string right)

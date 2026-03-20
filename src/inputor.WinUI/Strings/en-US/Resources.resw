@@ -82,8 +82,18 @@
   <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>
   <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>Use comma-separated process names. Quick actions can add the current app for you.</value></data>
-  <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>App tag mappings</value></data>
-  <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>Use one mapping per line in the format process-name: tag1, tag2. An app can have multiple tags; apps without a mapping fall into Untagged.</value></data>
+  <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>App tags</value></data>
+  <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>Search an app, then add one or more tags to it. Tag input reuses existing tags when possible; apps without a mapping fall into Untagged.</value></data>
+  <data name="Settings.Placeholder.AppTagSearch" xml:space="preserve"><value>Search apps or existing tags</value></data>
+  <data name="Settings.Placeholder.AppTagNewApp" xml:space="preserve"><value>Manually add a process name that has not appeared yet</value></data>
+  <data name="Settings.Placeholder.AppTagInput" xml:space="preserve"><value>Type a new tag or pick an existing one</value></data>
+  <data name="Settings.Caption.AppTagInput" xml:space="preserve"><value>Press Enter or use Add tag to attach it to the current app. Existing tags appear as suggestions.</value></data>
+  <data name="Settings.AppTagMappings.Summary" xml:space="preserve"><value>Showing {0}/{1} apps • {2} already tagged • {3} reusable tags</value></data>
+  <data name="Settings.AppTagMappings.Empty" xml:space="preserve"><value>No apps match the current search.</value></data>
+  <data name="Settings.AppTagMappings.NoTags" xml:space="preserve"><value>No tags yet</value></data>
+  <data name="Settings.AppTagMappings.RowCounts" xml:space="preserve"><value>{0:N0} today • {1:N0} session • {2:N0} total</value></data>
+  <data name="Settings.Button.AddTag" xml:space="preserve"><value>Add tag</value></data>
+  <data name="Settings.Button.AddAppTagTarget" xml:space="preserve"><value>Add app</value></data>
   <data name="Settings.Export.Description" xml:space="preserve"><value>Export writes a CSV file into your local documents export folder and keeps raw text out of the file.</value></data>
   <data name="Settings.Button.ExportTodayCsv" xml:space="preserve"><value>Export today CSV</value></data>
   <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor always keeps privacy protections on: it stores counts, process names, and date buckets locally.</value></data>
@@ -171,8 +181,8 @@ Default statistics source: {1}</value></data>
   <data name="Debug.Label.Flags" xml:space="preserve"><value>Flags</value></data>
   <data name="Debug.Label.TextLengths" xml:space="preserve"><value>Text lengths</value></data>
   <data name="Debug.Label.TextChange" xml:space="preserve"><value>Diff range</value></data>
-  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>Before masked preview</value></data>
-  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>After masked preview</value></data>
+  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>Before text</value></data>
+  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>After text</value></data>
   <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>Before character mix</value></data>
   <data name="Debug.Label.AfterMix" xml:space="preserve"><value>After character mix</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} supported chars</value></data>

@@ -82,8 +82,18 @@
   <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>
   <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>使用逗号分隔进程名。快捷操作也可以将当前应用加入排除列表。</value></data>
-  <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>应用标签映射</value></data>
-  <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>每行一个映射，格式为 进程名: 标签1, 标签2。一个应用可拥有多个标签；未配置标签的应用会归入未标记。</value></data>
+  <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>应用标签</value></data>
+  <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>先搜索应用，再为它添加一个或多个标签。输入时会优先复用已有标签；未配置标签的应用会归入未标记。</value></data>
+  <data name="Settings.Placeholder.AppTagSearch" xml:space="preserve"><value>搜索应用名或已有标签</value></data>
+  <data name="Settings.Placeholder.AppTagNewApp" xml:space="preserve"><value>手动添加还没出现过的进程名</value></data>
+  <data name="Settings.Placeholder.AppTagInput" xml:space="preserve"><value>输入新标签，或选择已有标签</value></data>
+  <data name="Settings.Caption.AppTagInput" xml:space="preserve"><value>按 Enter 或点击添加即可保存到当前应用；支持复用已有标签。</value></data>
+  <data name="Settings.AppTagMappings.Summary" xml:space="preserve"><value>当前显示 {0}/{1} 个应用，其中 {2} 个已有标签，现有标签 {3} 个。</value></data>
+  <data name="Settings.AppTagMappings.Empty" xml:space="preserve"><value>没有匹配当前搜索条件的应用。</value></data>
+  <data name="Settings.AppTagMappings.NoTags" xml:space="preserve"><value>暂未添加标签</value></data>
+  <data name="Settings.AppTagMappings.RowCounts" xml:space="preserve"><value>今日 {0:N0} • 会话 {1:N0} • 累计 {2:N0}</value></data>
+  <data name="Settings.Button.AddTag" xml:space="preserve"><value>添加标签</value></data>
+  <data name="Settings.Button.AddAppTagTarget" xml:space="preserve"><value>添加应用</value></data>
   <data name="Settings.Export.Description" xml:space="preserve"><value>导出会把 CSV 文件写入本地文档导出目录，并确保原始文本不会出现在文件里。</value></data>
   <data name="Settings.Button.ExportTodayCsv" xml:space="preserve"><value>导出今日 CSV</value></data>
   <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor 始终保持隐私保护开启：它只在本地保存计数、进程名和日期分桶。</value></data>
@@ -171,8 +181,8 @@
   <data name="Debug.Label.Flags" xml:space="preserve"><value>标记</value></data>
   <data name="Debug.Label.TextLengths" xml:space="preserve"><value>前后文本长度</value></data>
   <data name="Debug.Label.TextChange" xml:space="preserve"><value>差异区间</value></data>
-  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>变更前掩码预览</value></data>
-  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>变更后掩码预览</value></data>
+  <data name="Debug.Label.BeforePreview" xml:space="preserve"><value>变更前文本</value></data>
+  <data name="Debug.Label.AfterPreview" xml:space="preserve"><value>变更后文本</value></data>
   <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>变更前字符构成</value></data>
   <data name="Debug.Label.AfterMix" xml:space="preserve"><value>变更后字符构成</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} 个受支持字符</value></data>

@@ -56,6 +56,27 @@ public sealed class AppSettings
             .ToList();
     }
 
+    public IReadOnlyList<string> GetTagsForApps(IEnumerable<string> processNames)
+    {
+        return processNames
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .SelectMany(GetTagsForApp)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public IReadOnlyList<string> GetKnownTags()
+    {
+        return AppTagMappings
+            .SelectMany(item => item.Tags)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public IReadOnlyList<AppTagMapping> GetNormalizedTagMappings()
     {
         return AppTagMappings

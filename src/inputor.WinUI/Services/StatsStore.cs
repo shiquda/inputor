@@ -274,8 +274,8 @@ public sealed class StatsStore : IDisposable
                                 CurrentSupportedCharacterCount = item.TextComparison.CurrentSupportedCharacterCount,
                                 CurrentChineseCharacterCount = item.TextComparison.CurrentChineseCharacterCount,
                                 CurrentEnglishLetterCount = item.TextComparison.CurrentEnglishLetterCount,
-                                PreviousPreviewMask = item.TextComparison.PreviousPreviewMask,
-                                CurrentPreviewMask = item.TextComparison.CurrentPreviewMask
+                                PreviousText = item.TextComparison.PreviousText,
+                                CurrentText = item.TextComparison.CurrentText
                             }
                     })
                     .ToList()

@@ -740,6 +740,17 @@ public sealed class MainWindow : Window
         var body = new StackPanel { Spacing = 4 };
         body.Children.Add(new TextBlock { Text = aggregate.DisplayName, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.WrapWholeWords });
         body.Children.Add(new TextBlock { Text = secondary, TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
+        var appTags = App.Current.Settings.GetTagsForApps(aggregate.ProcessNames);
+        if (!aggregate.GroupKey.StartsWith("tag:", StringComparison.OrdinalIgnoreCase) && appTags.Count > 0)
+        {
+            var tagsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            foreach (var tag in appTags)
+            {
+                tagsRow.Children.Add(CreateAppTagBadge(tag));
+            }
+
+            body.Children.Add(tagsRow);
+        }
         if (aggregate.ProcessNames.Count > 1)
         {
             body.Children.Add(new TextBlock
@@ -750,17 +761,6 @@ public sealed class MainWindow : Window
                 FontSize = 12
             });
         }
-        if (aggregate.GroupKey.StartsWith("tag:", StringComparison.OrdinalIgnoreCase))
-        {
-            body.Children.Add(new TextBlock
-            {
-                Text = AppStrings.Get("Main.Apps.TagAggregationHint"),
-                TextWrapping = TextWrapping.Wrap,
-                Opacity = 0.68,
-                FontSize = 12
-            });
-        }
-
         Grid.SetColumn(body, 1);
         layout.Children.Add(body);
 
@@ -778,6 +778,22 @@ public sealed class MainWindow : Window
             _trackedSurfaces.Add((border, true));
         }
         return border;
+    }
+
+    private static Border CreateAppTagBadge(string tag)
+    {
+        return new Border
+        {
+            Padding = new Thickness(8, 3, 8, 3),
+            CornerRadius = new CornerRadius(999),
+            Background = ThemeBrushes.GetAccentBadgeBackgroundBrush(),
+            Child = new TextBlock
+            {
+                Text = tag,
+                FontSize = 12,
+                TextWrapping = TextWrapping.NoWrap
+            }
+        };
     }
 
     private void ApplyWindowChrome()
