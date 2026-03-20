@@ -1,36 +1,21 @@
-using System;
-using System.Drawing;
-using System.IO;
 using Microsoft.UI.Dispatching;
-using Control = System.Windows.Forms.Control;
-using NotifyIcon = System.Windows.Forms.NotifyIcon;
-using MouseButtons = System.Windows.Forms.MouseButtons;
-using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
 
 namespace Inputor.WinUI;
 
 internal sealed class NotifyIconService : IDisposable
 {
-    private readonly NotifyIcon _notifyIcon;
     private readonly DispatcherQueue _dispatcherQueue;
+    private readonly TrayHostWindow _trayHostWindow;
     private bool _isDisposed;
 
     public NotifyIconService()
     {
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "inputor.ico");
-        _notifyIcon = new NotifyIcon
-        {
-            Icon = File.Exists(iconPath) ? new Icon(iconPath) : SystemIcons.Application,
-            Text = AppStrings.Get("App.Name"),
-            Visible = true
-        };
-        _notifyIcon.DoubleClick += (_, _) => App.Current.ShowMainWindow();
-        _notifyIcon.MouseUp += NotifyIcon_MouseUp;
+        _trayHostWindow = new TrayHostWindow();
 
         App.Current.StatsStore.Changed += StatsStore_Changed;
         UpdateState();
+        _trayHostWindow.Initialize();
     }
 
     public void Dispose()
@@ -42,45 +27,12 @@ internal sealed class NotifyIconService : IDisposable
 
         _isDisposed = true;
         App.Current.StatsStore.Changed -= StatsStore_Changed;
-        _notifyIcon.MouseUp -= NotifyIcon_MouseUp;
-        _notifyIcon.Visible = false;
-        _notifyIcon.Dispose();
+        _trayHostWindow.Dispose();
     }
 
     private void StatsStore_Changed(object? sender, EventArgs e)
     {
         QueueUpdateState();
-    }
-
-    private void UpdateState()
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        var snapshot = App.Current.StatsStore.GetSnapshot();
-        _notifyIcon.Text = TrimToolTip(AppStrings.Format(
-            "NotifyIcon.Tooltip",
-            AppStrings.Get("App.Name"),
-            snapshot.TotalToday,
-            snapshot.TotalSession,
-            snapshot.IsPaused ? AppStrings.Get("Common.Paused") : snapshot.CurrentAppName));
-    }
-
-    private void NotifyIcon_MouseUp(object? sender, MouseEventArgs e)
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        StartupDiagnostics.Log($"NotifyIcon mouse up: {e.Button}");
-
-        if (e.Button == MouseButtons.Right)
-        {
-            App.Current.ShowTrayMenu(Control.MousePosition.X, Control.MousePosition.Y);
-        }
     }
 
     private void QueueUpdateState()
@@ -96,15 +48,35 @@ internal sealed class NotifyIconService : IDisposable
             return;
         }
 
-        _dispatcherQueue.TryEnqueue(() =>
-        {
-            if (_isDisposed)
-            {
-                return;
-            }
+        _dispatcherQueue.TryEnqueue(UpdateState);
+    }
 
-            UpdateState();
-        });
+    private void UpdateState()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        var snapshot = App.Current.StatsStore.GetSnapshot();
+        var toolTip = TrimToolTip(AppStrings.Format(
+            "NotifyIcon.Tooltip",
+            AppStrings.Get("App.Name"),
+            snapshot.TotalToday,
+            snapshot.TotalSession,
+            snapshot.IsPaused ? AppStrings.Get("Common.Paused") : snapshot.CurrentAppName));
+        var pauseText = snapshot.IsPaused ? AppStrings.Get("Main.Button.ResumeMonitoring") : AppStrings.Get("Main.Button.PauseMonitoring");
+        var pauseGlyph = snapshot.IsPaused ? "\uF5B0" : "\uE769";
+        var excludeEnabled = CanExcludeCurrentApp();
+
+        _trayHostWindow.UpdateState(toolTip, pauseText, pauseGlyph, excludeEnabled);
+    }
+
+    private static bool CanExcludeCurrentApp()
+    {
+        var processName = App.Current.StatsStore.CurrentProcessName;
+        return !string.IsNullOrWhiteSpace(processName)
+            && !string.Equals(processName, "inputor.App", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string TrimToolTip(string value)

@@ -157,6 +157,7 @@
   <data name="Tray.ShowDashboard" xml:space="preserve"><value>显示仪表盘</value></data>
   <data name="Tray.OpenSettings" xml:space="preserve"><value>打开设置</value></data>
   <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>排除当前应用</value></data>
+  <data name="Tray.RestartInputor" xml:space="preserve"><value>重启 inputor</value></data>
   <data name="Tray.ExitInputor" xml:space="preserve"><value>退出 inputor</value></data>
   <data name="NotifyIcon.Tooltip" xml:space="preserve"><value>{0} | 今 {1:N0} | 会 {2:N0} | {3}</value></data>
   <data name="Status.MonitoringNotStartedYet" xml:space="preserve"><value>监控尚未开始。</value></data>

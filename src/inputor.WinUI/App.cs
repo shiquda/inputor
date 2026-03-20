@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using Inputor.App.Models;
 using Inputor.App.Services;
@@ -120,9 +121,7 @@ public sealed class App : Application, IXamlMetadataProvider
 
     public void ShowTrayMenu(int cursorX, int cursorY)
     {
-        StartupDiagnostics.Log($"ShowTrayMenu requested at {cursorX},{cursorY}.");
-        _trayMenuWindow ??= new TrayMenuWindow();
-        _trayMenuWindow.ShowAtCursor(cursorX, cursorY);
+        StartupDiagnostics.Log($"ShowTrayMenu requested at {cursorX},{cursorY}, but tray menu is handled by NotifyIconService.");
     }
 
     public void HideTrayMenu()
@@ -219,6 +218,25 @@ public sealed class App : Application, IXamlMetadataProvider
         _trayMenuWindow = null;
         PerformShutdownCleanup();
         MainWindow?.Close();
+    }
+
+    public void RestartApplication()
+    {
+        var processPath = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(processPath))
+        {
+            ExitApplication();
+            return;
+        }
+
+        StartupDiagnostics.Log($"RestartApplication relaunching {processPath}.");
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = processPath,
+            UseShellExecute = true
+        });
+
+        ExitApplication();
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)

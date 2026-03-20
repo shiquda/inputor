@@ -13,7 +13,7 @@ launch:
     if (!(Test-Path '{{exe}}')) { throw 'Build output not found. Run `just build` first.' }; $resolved = Resolve-Path '{{exe}}'; Start-Process -FilePath $resolved
 
 dev:
-    $running = Get-Process inputor.App -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 }; if ($running) { foreach ($process in $running) { try { Stop-Process -Id $process.Id -ErrorAction Stop } catch { Write-Host "Skipping process $($process.Id): $($_.Exception.Message)" } } }
+    $running = @(Get-Process inputor.App -ErrorAction SilentlyContinue | Where-Object MainWindowHandle -ne 0); foreach ($process in $running) { try { Stop-Process -Id $process.Id -ErrorAction Stop } catch { Write-Host "Skipping process $($process.Id)" } }; $global:LASTEXITCODE = 0; if (-not $?) { exit 0 }
     dotnet build inputor.sln
     if (!(Test-Path '{{exe}}')) { throw 'Build output not found after build.' }; $resolved = Resolve-Path '{{exe}}'; Start-Process -FilePath $resolved
 
