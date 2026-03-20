@@ -344,7 +344,10 @@ public sealed class MonitoringService : IDisposable
             var inputContext = ImmGetContext(foregroundWindow);
             if (inputContext == IntPtr.Zero)
             {
-                return false;
+                // TSF-based app or window without an IMM context.
+                // Conservatively treat as native mode so pending composition is not
+                // prematurely released as English while the user types Chinese preedit.
+                return true;
             }
 
             try
