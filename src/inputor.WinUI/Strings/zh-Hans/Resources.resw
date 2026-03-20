@@ -168,7 +168,7 @@
   <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>变更前字符构成</value></data>
   <data name="Debug.Label.AfterMix" xml:space="preserve"><value>变更后字符构成</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} 个受支持字符</value></data>
-  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>中文 {0} • 英文 {1} • 受支持 {2}</value></data>
+  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>中文 {0} • 英文 {1} • 其他 {2} • 受支持 {3}</value></data>
   <data name="Debug.TextLengthsLine" xml:space="preserve"><value>之前 {0} • 当前 {1}</value></data>
   <data name="Debug.TextChangeLine" xml:space="preserve"><value>起始索引 {0} • 变更长度 {1} → {2}</value></data>
   <data name="Debug.TextPreviewLine" xml:space="preserve"><value>{0}</value></data>

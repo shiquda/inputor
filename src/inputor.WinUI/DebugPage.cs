@@ -297,7 +297,7 @@ public sealed class DebugPage : UserControl
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.Status"), entry.StatusMessage));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.Delta"), AppStrings.Format("Debug.DeltaLine", entry.Delta)));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.InsertedSegmentLength"), entry.InsertedSegmentLength.ToString()));
-        detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.CharacterMix"), AppStrings.Format("Debug.CharacterMixLine", entry.InsertedChineseCharacterCount, entry.InsertedEnglishLetterCount, entry.InsertedSupportedCharacterCount)));
+        detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.CharacterMix"), AppStrings.Format("Debug.CharacterMixLine", entry.InsertedChineseCharacterCount, entry.InsertedEnglishLetterCount, entry.InsertedOtherSupportedCharacterCount, entry.InsertedSupportedCharacterCount)));
         detailsPanel.Children.Add(CreateMetricLine(AppStrings.Get("Debug.Label.Flags"), BuildFlagsSummary(entry)));
         if (entry.TextComparison is not null)
         {

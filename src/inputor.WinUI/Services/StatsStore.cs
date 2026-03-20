@@ -235,6 +235,7 @@ public sealed class StatsStore : IDisposable
                         InsertedSupportedCharacterCount = item.InsertedSupportedCharacterCount,
                         InsertedChineseCharacterCount = item.InsertedChineseCharacterCount,
                         InsertedEnglishLetterCount = item.InsertedEnglishLetterCount,
+                        InsertedOtherSupportedCharacterCount = item.InsertedOtherSupportedCharacterCount,
                         IsPendingComposition = item.IsPendingComposition,
                         IsPaste = item.IsPaste,
                         IsBulkContentLoad = item.IsBulkContentLoad,

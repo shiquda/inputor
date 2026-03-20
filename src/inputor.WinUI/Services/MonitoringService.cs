@@ -272,6 +272,7 @@ public sealed class MonitoringService : IDisposable
             InsertedSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(segment),
             InsertedChineseCharacterCount = CharacterCountService.CountChineseCharacters(segment),
             InsertedEnglishLetterCount = CharacterCountService.CountEnglishLetters(segment),
+            InsertedOtherSupportedCharacterCount = CharacterCountService.CountOtherSupportedCharacters(segment),
             IsPendingComposition = isPendingComposition,
             IsPaste = isPaste,
             IsBulkContentLoad = isBulkContentLoad,

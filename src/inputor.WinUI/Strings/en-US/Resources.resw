@@ -168,7 +168,7 @@
   <data name="Debug.Label.BeforeMix" xml:space="preserve"><value>Before character mix</value></data>
   <data name="Debug.Label.AfterMix" xml:space="preserve"><value>After character mix</value></data>
   <data name="Debug.DeltaLine" xml:space="preserve"><value>{0:+#;-#;0} supported chars</value></data>
-  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>Chinese {0} • English {1} • Supported {2}</value></data>
+  <data name="Debug.CharacterMixLine" xml:space="preserve"><value>Chinese {0} • English {1} • Other {2} • Supported {3}</value></data>
   <data name="Debug.TextLengthsLine" xml:space="preserve"><value>Before {0} • After {1}</value></data>
   <data name="Debug.TextChangeLine" xml:space="preserve"><value>Start index {0} • Changed length {1} -> {2}</value></data>
   <data name="Debug.TextPreviewLine" xml:space="preserve"><value>{0}</value></data>
