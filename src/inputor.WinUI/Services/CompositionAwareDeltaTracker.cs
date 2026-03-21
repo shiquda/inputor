@@ -23,6 +23,11 @@ public sealed class CompositionAwareDeltaTracker
     // Only applies when the IME is not in native Chinese mode.
     private static readonly TimeSpan PendingConfirmationDelay = TimeSpan.FromMilliseconds(700);
 
+    // How long to wait in native Chinese IME mode before releasing pending input as English.
+    // Uses last-activity time rather than composition-start time, so continuous typing
+    // never triggers this; only a genuine idle pause of this duration does.
+    private static readonly TimeSpan NativeImePendingConfirmationDelay = TimeSpan.FromSeconds(5);
+
     // Time window within which a text-restore after a sudden clear is treated as
     // a browser/app lifecycle event rather than genuine user input.
     private static readonly TimeSpan TransientClearWindow = TimeSpan.FromSeconds(5);
@@ -60,8 +65,11 @@ public sealed class CompositionAwareDeltaTracker
     {
         if (_lastSnapshotKey != snapshotKey)
         {
+            var flushedDelta = _pending?.LetterCount ?? 0;
             Reset(snapshotKey, rawText);
-            return DeltaResult.NoChange(false);
+            return flushedDelta > 0
+                ? new DeltaResult(flushedDelta, false, null, null)
+                : DeltaResult.NoChange(false);
         }
 
         var textComparison = includeTextComparison ? BuildTextComparison(_lastRawText, rawText) : null;
@@ -74,17 +82,27 @@ public sealed class CompositionAwareDeltaTracker
 
         if (_pending is not null && IsCompositionCommit(_lastRawText, rawText))
         {
-            return HandleCompositionCommit(rawText, insertedTextSegment, textComparison);
+            return HandleCompositionCommit(rawText, insertedTextSegment, textComparison, utcNow);
         }
 
         if (_pending is not null && IsEnglishDeletionOnly(_lastRawText, rawText))
         {
-            return HandleCompositionDeletion(rawText, insertedTextSegment, textComparison);
+            return HandleCompositionDeletion(rawText, insertedTextSegment, textComparison, utcNow);
         }
 
-        if (TryDetectNewCompositionLetters(_lastRawText, rawText, out var addedLetterCount))
+        if (TryDetectNewCompositionLetters(_lastRawText, rawText, isNativeImeInputMode, out var addedLetterCount))
         {
             return HandleCompositionExtension(rawText, addedLetterCount, utcNow, insertedTextSegment, textComparison);
+        }
+
+        if (_pending is not null && isNativeImeInputMode && IsOnlySpacesAdded(_lastRawText, rawText))
+        {
+            return HandlePinyinSeparator(rawText, insertedTextSegment, textComparison, utcNow);
+        }
+
+        if (_pending is not null && isNativeImeInputMode && IsOnlySpacesRemoved(_lastRawText, rawText))
+        {
+            return HandlePinyinSeparator(rawText, insertedTextSegment, textComparison, utcNow);
         }
 
         return HandleNormalEdit(rawText, utcNow, insertedTextSegment, textComparison);
@@ -101,15 +119,16 @@ public sealed class CompositionAwareDeltaTracker
 
     private DeltaResult HandleUnchangedText(DateTime utcNow, bool isNativeImeInputMode)
     {
-        if (_pending is not null
-            && !isNativeImeInputMode
-            && utcNow - _pending.StartedUtc >= PendingConfirmationDelay)
+        if (_pending is not null)
         {
-            // Timeout: release pending letters as confirmed English input.
-            var released = _pending.LetterCount;
-            _pending = null;
-            _lastCommittedCount += released;
-            return new DeltaResult(released, false, null, null);
+            var delay = isNativeImeInputMode ? NativeImePendingConfirmationDelay : PendingConfirmationDelay;
+            if (utcNow - _pending.LastUpdatedUtc >= delay)
+            {
+                var released = _pending.LetterCount;
+                _pending = null;
+                _lastCommittedCount += released;
+                return new DeltaResult(released, false, null, null);
+            }
         }
 
         return DeltaResult.NoChange(_pending is not null);
@@ -118,23 +137,43 @@ public sealed class CompositionAwareDeltaTracker
     private DeltaResult HandleCompositionCommit(
         string rawText,
         string? insertedTextSegment,
-        DebugTextComparison? textComparison)
+        DebugTextComparison? textComparison,
+        DateTime utcNow)
     {
         _transientClear = null;
-        // Count ALL supported characters gained, not only Chinese.
-        // _lastCommittedCount is the committed baseline from before composition began.
-        var committed = CharacterCountService.CountSupportedCharacters(rawText);
+        var trailingPreedit = CountTrailingPreeditSupportedChars(rawText);
+        var committed = CharacterCountService.CountSupportedCharacters(rawText) - trailingPreedit;
         var delta = Math.Max(0, committed - _lastCommittedCount);
-        _pending = null;
         _lastRawText = rawText;
         _lastCommittedCount = committed;
-        return new DeltaResult(delta, false, insertedTextSegment, textComparison);
+        _pending = trailingPreedit > 0 ? new PendingComposition(rawText, trailingPreedit, utcNow) : null;
+        return new DeltaResult(delta, trailingPreedit > 0, insertedTextSegment, textComparison);
+    }
+
+    private static int CountTrailingPreeditSupportedChars(string rawText)
+    {
+        var count = 0;
+        for (var i = rawText.Length - 1; i >= 0; i--)
+        {
+            var ch = rawText[i];
+            if (CharacterCountService.IsEnglishLetter(ch) || ch == '\'')
+            {
+                count++;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return count;
     }
 
     private DeltaResult HandleCompositionDeletion(
         string rawText,
         string? insertedTextSegment,
-        DebugTextComparison? textComparison)
+        DebugTextComparison? textComparison,
+        DateTime utcNow)
     {
         _transientClear = null;
         var deletedLetters = CharacterCountService.CountEnglishLetters(_lastRawText)
@@ -142,7 +181,7 @@ public sealed class CompositionAwareDeltaTracker
         var newLetterCount = Math.Max(0, _pending!.LetterCount - deletedLetters);
 
         _pending = newLetterCount > 0
-            ? _pending with { LetterCount = newLetterCount, RawText = rawText }
+            ? _pending with { LetterCount = newLetterCount, RawText = rawText, LastUpdatedUtc = utcNow }
             : null;
 
         var effectiveCommitted = CharacterCountService.CountSupportedCharacters(rawText) - newLetterCount;
@@ -174,7 +213,7 @@ public sealed class CompositionAwareDeltaTracker
         if (_pending is not null
             && rawText.Contains(_pending.RawText, StringComparison.Ordinal))
         {
-            _pending = _pending with { LetterCount = _pending.LetterCount + addedLetterCount, RawText = rawText };
+            _pending = _pending with { LetterCount = _pending.LetterCount + addedLetterCount, RawText = rawText, LastUpdatedUtc = utcNow };
         }
         else
         {
@@ -251,9 +290,89 @@ public sealed class CompositionAwareDeltaTracker
         return currOther == prevOther;
     }
 
+    private DeltaResult HandlePinyinSeparator(
+        string rawText,
+        string? insertedTextSegment,
+        DebugTextComparison? textComparison,
+        DateTime utcNow)
+    {
+        _transientClear = null;
+        if (_pending is not null)
+        {
+            var addedSupportedSeparators = CountAddedPinyinSeparatorSupportedChars(_lastRawText, rawText);
+            _pending = _pending with
+            {
+                RawText = rawText,
+                LetterCount = _pending.LetterCount + addedSupportedSeparators,
+                LastUpdatedUtc = utcNow,
+            };
+        }
+
+        _lastRawText = rawText;
+        return DeltaResult.NoChange(true);
+    }
+
+    private static int CountAddedPinyinSeparatorSupportedChars(string previousRawText, string currentRawText)
+    {
+        var prefixLength = GetCommonPrefixLength(previousRawText, currentRawText);
+        var suffixLength = GetCommonSuffixLength(previousRawText, currentRawText, prefixLength);
+
+        var addedLength = currentRawText.Length - prefixLength - suffixLength;
+        var removedLength = previousRawText.Length - prefixLength - suffixLength;
+
+        var addedSegment = addedLength > 0 ? currentRawText.Substring(prefixLength, addedLength) : string.Empty;
+        var removedSegment = removedLength > 0 ? previousRawText.Substring(prefixLength, removedLength) : string.Empty;
+
+        return CharacterCountService.CountSupportedCharacters(addedSegment)
+             - CharacterCountService.CountSupportedCharacters(removedSegment);
+    }
+
+    private static bool IsOnlySpacesAdded(string previousRawText, string currentRawText)
+    {
+        if (currentRawText.Length <= previousRawText.Length)
+        {
+            return false;
+        }
+
+        var prefixLength = GetCommonPrefixLength(previousRawText, currentRawText);
+        var suffixLength = GetCommonSuffixLength(previousRawText, currentRawText, prefixLength);
+        var previousChangedLength = previousRawText.Length - prefixLength - suffixLength;
+        if (previousChangedLength != 0)
+        {
+            return false;
+        }
+
+        var currentChangedLength = currentRawText.Length - prefixLength - suffixLength;
+        var changedSegment = currentRawText.Substring(prefixLength, currentChangedLength);
+        return changedSegment.Length > 0 && changedSegment.All(IsPinyinSeparator);
+    }
+
+    private static bool IsOnlySpacesRemoved(string previousRawText, string currentRawText)
+    {
+        if (currentRawText.Length >= previousRawText.Length)
+        {
+            return false;
+        }
+
+        var prefixLength = GetCommonPrefixLength(previousRawText, currentRawText);
+        var suffixLength = GetCommonSuffixLength(previousRawText, currentRawText, prefixLength);
+        var currentChangedLength = currentRawText.Length - prefixLength - suffixLength;
+        if (currentChangedLength != 0)
+        {
+            return false;
+        }
+
+        var previousChangedLength = previousRawText.Length - prefixLength - suffixLength;
+        var removedSegment = previousRawText.Substring(prefixLength, previousChangedLength);
+        return removedSegment.Length > 0 && removedSegment.All(IsPinyinSeparator);
+    }
+
+    private static bool IsPinyinSeparator(char ch) => ch == ' ' || ch == '\'';
+
     private static bool TryDetectNewCompositionLetters(
         string previousRawText,
         string currentRawText,
+        bool isNativeImeInputMode,
         out int newLetterCount)
     {
         newLetterCount = 0;
@@ -268,12 +387,12 @@ public sealed class CompositionAwareDeltaTracker
         }
 
         var changedSegment = currentRawText.Substring(prefixLength, currentChangedLength);
-        if (changedSegment.Any(ch => !CharacterCountService.IsEnglishLetter(ch)))
+        if (changedSegment.Any(ch => !CharacterCountService.IsEnglishLetter(ch) && !(isNativeImeInputMode && IsPinyinSeparator(ch))))
         {
             return false;
         }
 
-        newLetterCount = changedSegment.Count(ch => CharacterCountService.IsEnglishLetter(ch));
+        newLetterCount = CharacterCountService.CountSupportedCharacters(changedSegment);
         return newLetterCount > 0;
     }
 
@@ -414,7 +533,7 @@ public sealed class CompositionAwareDeltaTracker
             new(0, isPendingComposition, null, null);
     }
 
-    private sealed record PendingComposition(string RawText, int LetterCount, DateTime StartedUtc);
+    private sealed record PendingComposition(string RawText, int LetterCount, DateTime LastUpdatedUtc);
 
     private sealed record TransientClear(int PreClearCommittedCount, DateTime DetectedUtc);
 }
