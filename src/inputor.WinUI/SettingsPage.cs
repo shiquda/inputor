@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Inputor.App.Models;
 using Inputor.App.Services;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -25,8 +26,12 @@ public sealed class SettingsPage : UserControl
     private readonly TextBlock _headerNoteTextBlock;
     private readonly TextBlock _restartNoticeTextBlock;
     private readonly TextBlock _statisticsSourceStateTextBlock;
+    private readonly DispatcherQueueTimer _settingsSaveTimer;
     private readonly List<Border> _cards = [];
     private readonly List<AppTagEditorState> _appTagEditors = [];
+    private bool _isRefreshingFromState;
+    private bool _hasQueuedSettingsSave;
+    private bool _skipNextStatisticsSourceAutoApply;
 
     public SettingsPage()
     {
@@ -57,6 +62,16 @@ public sealed class SettingsPage : UserControl
         _headerNoteTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         _restartNoticeTextBlock = new TextBlock { Text = AppStrings.Get("Settings.RestartNotice"), TextWrapping = TextWrapping.Wrap, Opacity = 0.7, Visibility = Visibility.Collapsed };
         _statisticsSourceStateTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
+        _settingsSaveTimer = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().CreateTimer();
+        _settingsSaveTimer.Interval = TimeSpan.FromMilliseconds(450);
+        _settingsSaveTimer.Tick += SettingsSaveTimer_Tick;
+
+        _startWithWindowsCheckBox.Checked += (_, _) => SaveSettingsImmediately();
+        _startWithWindowsCheckBox.Unchecked += (_, _) => SaveSettingsImmediately();
+        _themeModeComboBox.SelectionChanged += (_, _) => SaveSettingsImmediately();
+        _languageComboBox.SelectionChanged += (_, _) => SaveSettingsImmediately();
+        _excludedAppsTextBox.TextChanged += (_, _) => QueueSettingsSave();
+        _statisticsSourcePathTextBox.LostFocus += (_, _) => AutoApplyStatisticsSource();
 
         _confirmClearStatisticsCheckBox.Checked += (_, _) => _clearStatisticsButton.IsEnabled = true;
         _confirmClearStatisticsCheckBox.Unchecked += (_, _) => _clearStatisticsButton.IsEnabled = false;
@@ -67,7 +82,7 @@ public sealed class SettingsPage : UserControl
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = BuildContent()
         };
-        Unloaded += (_, _) => ThemeBrushes.Changed -= ThemeBrushes_Changed;
+        Unloaded += SettingsPage_Unloaded;
         ThemeBrushes.Changed += ThemeBrushes_Changed;
         RefreshFromState();
     }
@@ -87,8 +102,16 @@ public sealed class SettingsPage : UserControl
         RefreshAppTagEditorList();
     }
 
+    private void SettingsPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        FlushPendingSettingsSave();
+        ThemeBrushes.Changed -= ThemeBrushes_Changed;
+    }
+
     public void RefreshFromState()
     {
+        _isRefreshingFromState = true;
+
         var settings = App.Current.Settings;
         var snapshot = App.Current.StatsStore.GetSnapshot();
 
@@ -111,6 +134,9 @@ public sealed class SettingsPage : UserControl
         RebuildAppTagEditors(snapshot, settings);
         _appTagNewAppTextBox.Text = string.Empty;
         RefreshAppTagEditorList();
+        _settingsSaveTimer.Stop();
+        _hasQueuedSettingsSave = false;
+        _isRefreshingFromState = false;
     }
 
     private void RebuildAppTagEditors(DashboardSnapshot snapshot, AppSettings settings)
@@ -230,8 +256,10 @@ public sealed class SettingsPage : UserControl
         var backupButton = CreatePrimaryButton(AppStrings.Get("Settings.Button.BackupStatisticsSource"));
         backupButton.Click += (_, _) => App.Current.BackupStatisticsSource();
         var switchSourceButton = new Button { Content = AppStrings.Get("Settings.Button.SwitchStatisticsSource"), Padding = new Thickness(20, 8, 20, 8) };
+        switchSourceButton.AddHandler(PointerPressedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _skipNextStatisticsSourceAutoApply = true), true);
         switchSourceButton.Click += (_, _) => SwitchStatisticsSource();
         var resetSourceButton = new Button { Content = AppStrings.Get("Settings.Button.UseDefaultStatisticsSource"), Padding = new Thickness(20, 8, 20, 8) };
+        resetSourceButton.AddHandler(PointerPressedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _skipNextStatisticsSourceAutoApply = true), true);
         resetSourceButton.Click += (_, _) => ResetStatisticsSource();
         sourceActions.Children.Add(backupButton);
         sourceActions.Children.Add(switchSourceButton);
@@ -241,29 +269,69 @@ public sealed class SettingsPage : UserControl
         dataManagement.Children.Add(_clearStatisticsButton);
         root.Children.Add(CreateCard(dataManagement));
 
-        var actions = new Grid { ColumnSpacing = 12 };
-        actions.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        actions.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var saveButton = CreatePrimaryButton(AppStrings.Get("Settings.Button.Save"));
-        saveButton.Click += (_, _) => Save();
-        Grid.SetColumn(saveButton, 1);
-        actions.Children.Add(saveButton);
-        root.Children.Add(actions);
-
         return root;
     }
 
-    private void Save()
+    private void SettingsSaveTimer_Tick(DispatcherQueueTimer sender, object args)
     {
+        sender.Stop();
+        _hasQueuedSettingsSave = false;
+        SaveSettingsFromInputs();
+    }
+
+    private void QueueSettingsSave()
+    {
+        if (_isRefreshingFromState)
+        {
+            return;
+        }
+
+        _settingsSaveTimer.Stop();
+        _hasQueuedSettingsSave = true;
+        _settingsSaveTimer.Start();
+    }
+
+    private void SaveSettingsImmediately()
+    {
+        if (_isRefreshingFromState)
+        {
+            return;
+        }
+
+        _settingsSaveTimer.Stop();
+        _hasQueuedSettingsSave = false;
+        SaveSettingsFromInputs();
+    }
+
+    private void FlushPendingSettingsSave()
+    {
+        if (_isRefreshingFromState || !_hasQueuedSettingsSave)
+        {
+            return;
+        }
+
+        _settingsSaveTimer.Stop();
+        _hasQueuedSettingsSave = false;
+        SaveSettingsFromInputs();
+    }
+
+    private void SaveSettingsFromInputs()
+    {
+        if (_isRefreshingFromState)
+        {
+            return;
+        }
+
         var settings = App.Current.Settings;
         var previousLanguage = settings.Language;
         settings.StartWithWindows = _startWithWindowsCheckBox.IsChecked ?? false;
         settings.ThemeMode = _themeModeComboBox.SelectedValue as string ?? string.Empty;
         settings.Language = _languageComboBox.SelectedValue as string ?? string.Empty;
-        settings.ExcludedApps = string.Join(", ", (_excludedAppsTextBox.Text ?? string.Empty)
+        var normalizedExcludedApps = string.Join(", ", (_excludedAppsTextBox.Text ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
+        settings.ExcludedApps = normalizedExcludedApps;
         settings.AppTagMappings = _appTagEditors
             .Where(item => item.Tags.Count > 0)
             .Select(item => new AppTagMapping
@@ -275,12 +343,44 @@ public sealed class SettingsPage : UserControl
 
         App.Current.SaveSettings();
         var languageChanged = !string.Equals(previousLanguage, settings.Language, StringComparison.OrdinalIgnoreCase);
-        _restartNoticeTextBlock.Visibility = languageChanged ? Visibility.Visible : Visibility.Collapsed;
+        var restartRequired = !string.Equals(AppStrings.ResolveLanguageTag(settings.Language), AppStrings.CurrentLanguageTag, StringComparison.OrdinalIgnoreCase);
+        _restartNoticeTextBlock.Visibility = restartRequired ? Visibility.Visible : Visibility.Collapsed;
         App.Current.StatsStore.SetStatus(
             languageChanged ? StatusText.LanguageChangeRequiresRestart() : StatusText.SettingsUpdated(),
             App.Current.StatsStore.CurrentAppName,
             App.Current.StatsStore.IsCurrentTargetSupported,
             App.Current.StatsStore.CurrentProcessName);
+
+        if (_excludedAppsTextBox.FocusState == FocusState.Unfocused
+            && !string.Equals(_excludedAppsTextBox.Text, normalizedExcludedApps, StringComparison.Ordinal))
+        {
+            _isRefreshingFromState = true;
+            _excludedAppsTextBox.Text = normalizedExcludedApps;
+            _isRefreshingFromState = false;
+        }
+    }
+
+    private void AutoApplyStatisticsSource()
+    {
+        if (_isRefreshingFromState)
+        {
+            return;
+        }
+
+        if (_skipNextStatisticsSourceAutoApply)
+        {
+            _skipNextStatisticsSourceAutoApply = false;
+            return;
+        }
+
+        var currentValue = _statisticsSourcePathTextBox.Text ?? string.Empty;
+        var savedValue = App.Current.Settings.StatisticsSourcePath;
+        if (string.Equals(currentValue, savedValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        App.Current.SwitchStatisticsSource(currentValue);
         RefreshFromState();
     }
 
@@ -552,6 +652,7 @@ public sealed class SettingsPage : UserControl
             .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
             .ToList();
         RefreshAppTagEditorList();
+        SaveSettingsImmediately();
         return true;
     }
 
@@ -562,6 +663,7 @@ public sealed class SettingsPage : UserControl
             .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
             .ToList();
         RefreshAppTagEditorList();
+        SaveSettingsImmediately();
     }
 
     private void ClearStoredStatistics()
