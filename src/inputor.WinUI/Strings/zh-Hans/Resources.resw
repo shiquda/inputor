@@ -74,6 +74,8 @@
   <data name="Settings.RestartNotice" xml:space="preserve"><value>语言更改会在下次重启应用后生效。</value></data>
   <data name="Settings.Section.PreferencesTitle" xml:space="preserve"><value>偏好设置</value></data>
   <data name="Settings.Section.PreferencesSubtitle" xml:space="preserve"><value>调整核心行为和日常默认选项。</value></data>
+  <data name="Settings.Section.VersionTitle" xml:space="preserve"><value>版本信息</value></data>
+  <data name="Settings.Section.VersionSubtitle" xml:space="preserve"><value>当前应用版本。</value></data>
   <data name="Settings.Section.ExportTitle" xml:space="preserve"><value>导出</value></data>
   <data name="Settings.Section.ExportSubtitle" xml:space="preserve"><value>当你需要共享记录时，导出当前统计为 CSV 快照。</value></data>
   <data name="Settings.Section.PrivacyTitle" xml:space="preserve"><value>隐私</value></data>
@@ -83,6 +85,12 @@
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>开机启动</value></data>
   <data name="Settings.Label.ThemeMode" xml:space="preserve"><value>主题</value></data>
   <data name="Settings.Caption.ThemeMode" xml:space="preserve"><value>让应用内容区和标题栏跟随系统，或者固定为浅色 / 深色。</value></data>
+  <data name="Settings.Label.Version" xml:space="preserve"><value>应用版本</value></data>
+  <data name="Settings.Caption.Version" xml:space="preserve"><value>用户看到的版本号。</value></data>
+  <data name="Settings.Label.Build" xml:space="preserve"><value>构建版本</value></data>
+  <data name="Settings.Caption.Build" xml:space="preserve"><value>内部构建号。</value></data>
+  <data name="Settings.Label.Channel" xml:space="preserve"><value>渠道</value></data>
+  <data name="Settings.Caption.Channel" xml:space="preserve"><value>当前应用渠道。</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>语言</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>
@@ -117,6 +125,8 @@
   <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>恢复默认统计源</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>清除已保存统计</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>保存设置</value></data>
+  <data name="Settings.Value.ChannelDevelopment" xml:space="preserve"><value>开发版</value></data>
+  <data name="Settings.Value.ChannelRelease" xml:space="preserve"><value>正式版</value></data>
   <data name="Statistics.Title" xml:space="preserve"><value>统计</value></data>
   <data name="Statistics.Subtitle" xml:space="preserve"><value>不离开主窗口，也能查看长期输入趋势、每日稳定性和应用占比。</value></data>
   <data name="Statistics.Summary.Empty" xml:space="preserve"><value>当 inputor 记录到多天活动后，这里就会开始显示统计内容。</value></data>

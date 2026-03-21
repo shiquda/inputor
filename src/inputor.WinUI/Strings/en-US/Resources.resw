@@ -74,6 +74,8 @@
   <data name="Settings.RestartNotice" xml:space="preserve"><value>Language changes apply after the next app restart.</value></data>
   <data name="Settings.Section.PreferencesTitle" xml:space="preserve"><value>Preferences</value></data>
   <data name="Settings.Section.PreferencesSubtitle" xml:space="preserve"><value>Core app behavior and day-to-day defaults.</value></data>
+  <data name="Settings.Section.VersionTitle" xml:space="preserve"><value>Version</value></data>
+  <data name="Settings.Section.VersionSubtitle" xml:space="preserve"><value>Current app version.</value></data>
   <data name="Settings.Section.ExportTitle" xml:space="preserve"><value>Export</value></data>
   <data name="Settings.Section.ExportSubtitle" xml:space="preserve"><value>Generate a CSV snapshot from the current totals when you need a shareable record.</value></data>
   <data name="Settings.Section.PrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
@@ -83,6 +85,12 @@
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
   <data name="Settings.Label.ThemeMode" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings.Caption.ThemeMode" xml:space="preserve"><value>Sync the app surface and title bar with the system, or force a light or dark theme.</value></data>
+  <data name="Settings.Label.Version" xml:space="preserve"><value>App version</value></data>
+  <data name="Settings.Caption.Version" xml:space="preserve"><value>User-facing version.</value></data>
+  <data name="Settings.Label.Build" xml:space="preserve"><value>Build version</value></data>
+  <data name="Settings.Caption.Build" xml:space="preserve"><value>Internal build number.</value></data>
+  <data name="Settings.Label.Channel" xml:space="preserve"><value>Channel</value></data>
+  <data name="Settings.Caption.Channel" xml:space="preserve"><value>Current app channel.</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
   <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>
@@ -117,6 +125,8 @@ Default statistics source: {1}</value></data>
   <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>Use default source</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>Clear stored statistics</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>Save settings</value></data>
+  <data name="Settings.Value.ChannelDevelopment" xml:space="preserve"><value>Development</value></data>
+  <data name="Settings.Value.ChannelRelease" xml:space="preserve"><value>Release</value></data>
   <data name="Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
   <data name="Statistics.Subtitle" xml:space="preserve"><value>Read long-term typing momentum, daily consistency, and app share without leaving the main window.</value></data>
   <data name="Statistics.Summary.Empty" xml:space="preserve"><value>Statistics will start filling in after inputor records activity across multiple days.</value></data>

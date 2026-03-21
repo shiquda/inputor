@@ -15,6 +15,9 @@ public sealed class SettingsPage : UserControl
     private readonly CheckBox _startWithWindowsCheckBox;
     private readonly ComboBox _themeModeComboBox;
     private readonly ComboBox _languageComboBox;
+    private readonly TextBlock _versionValueTextBlock;
+    private readonly TextBlock _buildValueTextBlock;
+    private readonly TextBlock _channelValueTextBlock;
     private readonly TextBox _excludedAppsTextBox;
     private readonly TextBox _appTagNewAppTextBox;
     private readonly TextBox _appTagSearchTextBox;
@@ -50,6 +53,9 @@ public sealed class SettingsPage : UserControl
             DisplayMemberPath = nameof(AppLanguageOption.DisplayName),
             SelectedValuePath = nameof(AppLanguageOption.Tag)
         };
+        _versionValueTextBlock = CreateReadOnlyValueTextBlock();
+        _buildValueTextBlock = CreateReadOnlyValueTextBlock();
+        _channelValueTextBlock = CreateReadOnlyValueTextBlock();
         _excludedAppsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
         _appTagNewAppTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagNewApp") };
         _appTagSearchTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagSearch") };
@@ -126,6 +132,9 @@ public sealed class SettingsPage : UserControl
             ? Visibility.Collapsed
             : Visibility.Visible;
         _headerNoteTextBlock.Text = AppStrings.Format("Settings.HeaderNote", snapshot.CurrentAppName, snapshot.TotalToday, snapshot.TotalSession);
+        _versionValueTextBlock.Text = VersionInfo.DisplayVersion;
+        _buildValueTextBlock.Text = VersionInfo.BuildVersion;
+        _channelValueTextBlock.Text = GetLocalizedChannel();
         _statisticsSourceStateTextBlock.Text = AppStrings.Format(
             "Settings.Data.SourceState",
             App.Current.StatsStore.CurrentSourcePath,
@@ -225,6 +234,13 @@ public sealed class SettingsPage : UserControl
         appTagPanel.Children.Add(_appTagAssignmentsPanel);
         preferences.Children.Add(appTagPanel);
         root.Children.Add(CreateCard(preferences));
+
+        root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Section.VersionTitle"), AppStrings.Get("Settings.Section.VersionSubtitle")));
+        var versionPanel = new StackPanel { Spacing = 16 };
+        versionPanel.Children.Add(CreateLabeledValue(AppStrings.Get("Settings.Label.Version"), _versionValueTextBlock, AppStrings.Get("Settings.Caption.Version")));
+        versionPanel.Children.Add(CreateLabeledValue(AppStrings.Get("Settings.Label.Build"), _buildValueTextBlock, AppStrings.Get("Settings.Caption.Build")));
+        versionPanel.Children.Add(CreateLabeledValue(AppStrings.Get("Settings.Label.Channel"), _channelValueTextBlock, AppStrings.Get("Settings.Caption.Channel")));
+        root.Children.Add(CreateCard(versionPanel));
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Section.ExportTitle"), AppStrings.Get("Settings.Section.ExportSubtitle")));
         var exportPanel = new StackPanel { Spacing = 12 };
@@ -697,6 +713,35 @@ public sealed class SettingsPage : UserControl
         panel.Children.Add(input);
         panel.Children.Add(new TextBlock { Text = caption, TextWrapping = TextWrapping.Wrap, Opacity = 0.7, FontSize = 12 });
         return panel;
+    }
+
+    private static UIElement CreateLabeledValue(string title, TextBlock value, string caption)
+    {
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 14 });
+        panel.Children.Add(value);
+        panel.Children.Add(new TextBlock { Text = caption, TextWrapping = TextWrapping.Wrap, Opacity = 0.7, FontSize = 12 });
+        return panel;
+    }
+
+    private static TextBlock CreateReadOnlyValueTextBlock()
+    {
+        return new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 15,
+            FontWeight = FontWeights.Medium
+        };
+    }
+
+    private static string GetLocalizedChannel()
+    {
+        return VersionInfo.Channel switch
+        {
+            "development" => AppStrings.Get("Settings.Value.ChannelDevelopment"),
+            "release" => AppStrings.Get("Settings.Value.ChannelRelease"),
+            _ => VersionInfo.Channel
+        };
     }
 
     private static UIElement CreateSectionHeader(string title, string subtitle)
