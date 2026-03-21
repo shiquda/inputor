@@ -121,6 +121,22 @@ function New-ZipArchive {
     }
 }
 
+function Copy-RequiredPublishResources {
+    param(
+        [string]$AssemblyName,
+        [string]$BuildOutputDirectory,
+        [string]$PublishDirectory
+    )
+
+    $appPriFileName = "$AssemblyName.pri"
+    $appPriPath = Join-Path $BuildOutputDirectory $appPriFileName
+    if (!(Test-Path $appPriPath)) {
+        throw "Expected WinUI PRI file was not found at $appPriPath"
+    }
+
+    Copy-Item -Path $appPriPath -Destination (Join-Path $PublishDirectory $appPriFileName) -Force
+}
+
 function Remove-UnusedLocaleDirectories {
     param([string]$PublishDirectory)
 
@@ -142,11 +158,20 @@ function Remove-UnusedLocaleDirectories {
     }
 }
 
+[xml]$projectXml = Get-Content -Path $projectPath
 $resolvedArtifactVersionLabel = Get-ArtifactVersionLabel -ProjectPath $projectPath -ConfiguredPrefix $AppVersionPrefix -ConfiguredSuffix $AppVersionSuffix -ConfiguredLabel $ArtifactVersionLabel -HasConfiguredSuffix $PSBoundParameters.ContainsKey('AppVersionSuffix')
+$targetFramework = Get-ProjectPropertyValue -ProjectXml $projectXml -PropertyName 'TargetFramework'
+$assemblyName = Get-ProjectPropertyValue -ProjectXml $projectXml -PropertyName 'AssemblyName'
+$projectDirectory = Split-Path -Parent $projectPath
+$buildOutputDirectory = Join-Path $projectDirectory (Join-Path 'bin' (Join-Path $Configuration (Join-Path $targetFramework $Runtime)))
 $portableDirName = "inputor-$resolvedArtifactVersionLabel-portable-$Runtime"
 $portablePublishDir = Join-Path $portableRoot $portableDirName
 $portableZipPath = Join-Path $artifactsRoot "$portableDirName.zip"
 $installerPath = Join-Path $artifactsRoot "inputor-$resolvedArtifactVersionLabel-setup-$Runtime.exe"
+
+if ([string]::IsNullOrWhiteSpace($assemblyName)) {
+    throw 'Could not resolve AssemblyName from project file.'
+}
 
 Reset-Directory -Path $portableRoot
 
@@ -201,9 +226,11 @@ if (![string]::IsNullOrWhiteSpace($InformationalVersion)) {
 dotnet @publishArguments
 Exit-OnFailure
 
+Copy-RequiredPublishResources -AssemblyName $assemblyName -BuildOutputDirectory $buildOutputDirectory -PublishDirectory $portablePublishDir
+
 Remove-UnusedLocaleDirectories -PublishDirectory $portablePublishDir
 
-$publishedExe = Join-Path $portablePublishDir "inputor.App.exe"
+$publishedExe = Join-Path $portablePublishDir "$assemblyName.exe"
 if (!(Test-Path $publishedExe)) {
     throw "Expected published executable not found at $publishedExe"
 }
