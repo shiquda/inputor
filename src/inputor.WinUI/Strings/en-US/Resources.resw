@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <data name="App.Name" xml:space="preserve"><value>inputor</value></data>
-  <data name="App.Tagline" xml:space="preserve"><value>Private typing insights</value></data>
   <data name="Language.FollowSystem" xml:space="preserve"><value>Follow system</value></data>
   <data name="Theme.FollowSystem" xml:space="preserve"><value>Follow system</value></data>
   <data name="Theme.Light" xml:space="preserve"><value>Light</value></data>

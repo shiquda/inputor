@@ -347,7 +347,6 @@ public sealed class MainWindow : Window
     {
         var panel = new StackPanel { Spacing = 6, Margin = new Thickness(12, 8, 12, 12) };
         panel.Children.Add(new TextBlock { Text = AppStrings.Get("App.Name"), FontSize = 18, FontWeight = FontWeights.SemiBold });
-        panel.Children.Add(new TextBlock { Text = AppStrings.Get("App.Tagline"), FontSize = 12, Opacity = 0.72 });
         return panel;
     }
 
