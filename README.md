@@ -41,6 +41,26 @@ dotnet build inputor.sln
 dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj
 ```
 
+## Publish
+
+```bash
+just publish
+```
+
+This creates both release deliverables under `artifacts/publish/`:
+
+- `inputor-0.1.0-portable-win-x64.zip` - portable package
+- `inputor-0.1.0-setup-win-x64.exe` - Inno Setup installer with install-directory selection
+
+Requirements for installer output:
+
+- Inno Setup 6 must be installed
+- `ISCC.exe` must be available on `PATH`, or at `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`
+
+The installer defaults to `%LocalAppData%\Programs\inputor`, lets the user choose a different install directory, creates Start Menu shortcuts, optionally creates a desktop shortcut, and registers a per-user uninstall entry. It does not remove user statistics data under `%LocalAppData%\inputor` when uninstalling.
+
+Release publish currently prunes satellite resource folders down to Simplified Chinese and English (`zh-CN`/`zh-Hans`/`zh`, `en-US`/`en`) before creating the portable zip and installer.
+
 ## CLI probes
 
 ```bash

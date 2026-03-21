@@ -5,7 +5,12 @@ namespace Inputor.App.Services;
 public sealed class AutoStartService
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string AppName = "inputor";
+    private readonly string _appName;
+
+    public AutoStartService(string appName)
+    {
+        _appName = appName;
+    }
 
     public void Apply(bool enabled)
     {
@@ -17,12 +22,12 @@ public sealed class AutoStartService
             var processPath = Environment.ProcessPath;
             if (!string.IsNullOrWhiteSpace(processPath))
             {
-                key.SetValue(AppName, processPath);
+                key.SetValue(_appName, processPath);
             }
         }
         else
         {
-            key.DeleteValue(AppName, false);
+            key.DeleteValue(_appName, false);
         }
     }
 }

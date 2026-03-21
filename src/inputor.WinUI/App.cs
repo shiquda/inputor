@@ -24,9 +24,7 @@ public sealed class App : Application, IXamlMetadataProvider
     public App()
     {
         StartupDiagnostics.Log("App constructor entered.");
-        _dataDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "inputor");
+        _dataDirectory = AppVariant.GetDataDirectory();
         Directory.CreateDirectory(_dataDirectory);
 
         SettingsService = new AppSettingsService(_dataDirectory);
@@ -46,8 +44,8 @@ public sealed class App : Application, IXamlMetadataProvider
             StatsStore = new StatsStore(_dataDirectory);
             StatsStore.SetStatus(StatusText.StatisticsSourceFallbackToDefault(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
         }
-        Exporter = new CsvExportService();
-        AutoStartService = new AutoStartService();
+        Exporter = new CsvExportService(AppVariant.GetExportDirectory());
+        AutoStartService = new AutoStartService(AppVariant.AutoStartEntryName);
         AutoStartService.Apply(Settings.StartWithWindows);
         MonitoringService = new MonitoringService(StatsStore, Settings);
         StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
@@ -207,8 +205,7 @@ public sealed class App : Application, IXamlMetadataProvider
         try
         {
             var backupPath = StatsStore.BackupCurrentSource(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "inputor-backups"));
+                AppVariant.GetBackupDirectory()));
             StatsStore.SetStatus(StatusText.StatisticsBackupCreated(backupPath), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
         }
         catch (Exception exception)

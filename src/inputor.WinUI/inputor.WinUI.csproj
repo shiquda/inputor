@@ -4,6 +4,13 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <AppVersionPrefix>0.1.0</AppVersionPrefix>
+    <AppVersionSuffix></AppVersionSuffix>
+    <Version Condition="'$(AppVersionSuffix)' != ''">$(AppVersionPrefix)-$(AppVersionSuffix)</Version>
+    <Version Condition="'$(AppVersionSuffix)' == ''">$(AppVersionPrefix)</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -18,8 +25,12 @@
     <RootNamespace>Inputor.WinUI</RootNamespace>
     <AssemblyName>inputor.App</AssemblyName>
     <ApplicationIcon>Assets\inputor.ico</ApplicationIcon>
-    <DefineConstants>DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <StartupObject>Inputor.WinUI.Program</StartupObject>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);INPUTOR_DEV_CHANNEL</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

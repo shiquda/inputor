@@ -7,14 +7,18 @@ namespace Inputor.App.Services;
 
 public sealed class CsvExportService
 {
+    private readonly string _exportDirectory;
+
+    public CsvExportService(string exportDirectory)
+    {
+        _exportDirectory = exportDirectory;
+    }
+
     public string ExportToday(DashboardSnapshot snapshot)
     {
-        var exportDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "inputor-exports");
-        Directory.CreateDirectory(exportDirectory);
+        Directory.CreateDirectory(_exportDirectory);
 
-        var path = Path.Combine(exportDirectory, $"inputor-{snapshot.Today:yyyyMMdd}.csv");
+        var path = Path.Combine(_exportDirectory, $"inputor-{snapshot.Today:yyyyMMdd}.csv");
         using var writer = new StreamWriter(path, false);
         using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
 

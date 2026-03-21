@@ -9,6 +9,9 @@ default:
 build:
     dotnet build inputor.sln
 
+publish:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/publish/Publish.ps1"
+
 launch:
     if (!(Test-Path '{{exe}}')) { throw 'Build output not found. Run `just build` first.' }; $resolved = Resolve-Path '{{exe}}'; Start-Process -FilePath $resolved
 

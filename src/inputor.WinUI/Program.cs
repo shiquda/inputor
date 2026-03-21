@@ -93,6 +93,17 @@ internal static class Program
             return true;
         }
 
+        if (args.Length >= 1 && args[0] == "--print-storage-paths")
+        {
+            Console.WriteLine($"channel={AppVariant.ChannelName}");
+            Console.WriteLine($"data={AppVariant.GetDataDirectory()}");
+            Console.WriteLine($"exports={AppVariant.GetExportDirectory()}");
+            Console.WriteLine($"backups={AppVariant.GetBackupDirectory()}");
+            Console.WriteLine($"autostart={AppVariant.AutoStartEntryName}");
+            Console.WriteLine($"startup-log={StartupDiagnostics.GetLogPath()}");
+            return true;
+        }
+
         return false;
     }
 }
