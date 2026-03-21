@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Derive release version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+              throw "Tag '$tag' must look like v1.2.3 or v1.2.3-beta.1"
+          }
+
+          $appVersion = $Matches.version
+          $versionCore = $appVersion.Split('-')[0]
+          $parts = $versionCore.Split('.')
+          if ($parts.Length -ne 3) {
+              throw "Version core '$versionCore' must contain major.minor.patch"
+          }
+
+          $assemblyVersion = "{0}.{1}.{2}.{3}" -f $parts[0], $parts[1], $parts[2], $env:GITHUB_RUN_NUMBER
+          $shortSha = $env:GITHUB_SHA.Substring(0, 7).ToLowerInvariant()
+          $informationalVersion = "$appVersion+$($env:GITHUB_SHA.ToLowerInvariant())"
+          $isPrerelease = if ($appVersion.Contains('-')) { 'true' } else { 'false' }
+
+          "app_version=$appVersion" >> $env:GITHUB_OUTPUT
+          "assembly_version=$assemblyVersion" >> $env:GITHUB_OUTPUT
+          "file_version=$assemblyVersion" >> $env:GITHUB_OUTPUT
+          "informational_version=$informationalVersion" >> $env:GITHUB_OUTPUT
+          "artifact_version_label=$appVersion" >> $env:GITHUB_OUTPUT
+          "short_sha=$shortSha" >> $env:GITHUB_OUTPUT
+          "is_prerelease=$isPrerelease" >> $env:GITHUB_OUTPUT
+
+      - name: Build solution
+        shell: pwsh
+        run: dotnet build inputor.sln -c Release
+
+      - name: Publish release artifacts
+        shell: pwsh
+        run: |
+          # CI passes explicit version metadata into the publish script, so it calls the script directly instead of the just wrapper.
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "scripts/publish/Publish.ps1" `
+            -Configuration Release `
+            -Runtime win-x64 `
+            -AppVersionPrefix "${{ steps.version.outputs.app_version }}" `
+            -AppVersionSuffix "" `
+            -AssemblyVersion "${{ steps.version.outputs.assembly_version }}" `
+            -FileVersion "${{ steps.version.outputs.file_version }}" `
+            -InformationalVersion "${{ steps.version.outputs.informational_version }}" `
+            -ArtifactVersionLabel "${{ steps.version.outputs.artifact_version_label }}"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: inputor-${{ steps.version.outputs.app_version }}-win-x64
+          path: |
+            artifacts/publish/*.zip
+            artifacts/publish/*.exe
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ steps.version.outputs.is_prerelease }}
+          files: |
+            artifacts/publish/*.zip
+            artifacts/publish/*.exe
