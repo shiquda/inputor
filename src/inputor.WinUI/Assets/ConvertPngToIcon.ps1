@@ -1,10 +1,15 @@
 Add-Type -AssemblyName System.Drawing
 
 param(
-    [string]$SourcePng = "E:\Downloads\inputor.png"
+    [string]$SourcePng = ""
 )
 
 $assetDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+if ([string]::IsNullOrWhiteSpace($SourcePng)) {
+    $SourcePng = Join-Path $assetDirectory 'inputor.png'
+}
+
 $previewPath = Join-Path $assetDirectory 'inputor-preview.png'
 $iconPath = Join-Path $assetDirectory 'inputor.ico'
 

@@ -118,7 +118,7 @@
 Default statistics source: {1}</value></data>
   <data name="Settings.Label.StatisticsSourcePath" xml:space="preserve"><value>Statistics source path</value></data>
   <data name="Settings.Caption.StatisticsSourcePath" xml:space="preserve"><value>Leave empty to use the default LocalAppData source, or enter a JSON path and switch to it immediately.</value></data>
-  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>For example C:\Users\you\Documents\inputor-backups\inputor-stats-20260320-090000.json</value></data>
+  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>For example D:\inputor-backups\inputor-stats-20260320-090000.json</value></data>
   <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>I understand this permanently clears all stored statistics.</value></data>
   <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>Backup current source</value></data>
   <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>Switch to this source</value></data>

@@ -15,6 +15,7 @@ inputor **never records raw text** — only character counts and metadata — ke
 - **Per-app statistics** — track input volume separately for each application
 - **Trends & heatmap** — visualize how your input volume changes over time
 - **Chinese & English aware** — heuristic-based counting compatible with Microsoft Pinyin and other Chinese IMEs
+- **App tags & source management** — group apps with tags, back up the current statistics source, or switch to a specific JSON stats file
 - **System tray integration** — minimizes to tray, stays out of your way
 - **Privacy-first** — all data stays on your machine at `%LocalAppData%\inputor`, no network access
 

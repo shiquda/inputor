@@ -1,6 +1,6 @@
 # AGENTS.md - inputor agent guide
-This file is for coding agents working in `E:\repo\Others\inputor`.
-Prefer the source tree over older docs when they disagree; `README.md` is currently stale in a few places.
+This file is for coding agents working in this repository.
+Prefer the source tree over older docs when they disagree; `README.md` might be stale in a few places.
 
 ## Project snapshot
 - Product: Windows-first desktop app for privacy-safe Chinese and English input statistics.
