@@ -23,6 +23,19 @@ public sealed class CompositionAwareDeltaTracker
     // Only applies when the IME is not in native Chinese mode.
     private static readonly TimeSpan PendingConfirmationDelay = TimeSpan.FromMilliseconds(700);
 
+    // Time window within which a text-restore after a sudden clear is treated as
+    // a browser/app lifecycle event rather than genuine user input.
+    private static readonly TimeSpan TransientClearWindow = TimeSpan.FromSeconds(5);
+
+    // Minimum committed character count before a sudden drop to near-zero is
+    // considered a potential transient clear (not just the user deleting a short word).
+    private const int TransientClearSourceThreshold = 5;
+
+    // Minimum single-step delta required to identify a restore event inside the
+    // transient-clear window. This distinguishes a bulk restore (browser puts back
+    // the old text in one shot) from the user typing character by character.
+    private const int TransientClearRestoreThreshold = 4;
+
     private string? _lastSnapshotKey;
     private string _lastRawText = string.Empty;
 
@@ -32,6 +45,11 @@ public sealed class CompositionAwareDeltaTracker
 
     // Non-null while a Latin-letter IME preedit is in flight.
     private PendingComposition? _pending;
+
+    // Non-null after a sudden text clear on the same snapshot key. Used to detect
+    // whether the following large positive delta is a browser/app restoring old
+    // content rather than the user typing new characters.
+    private TransientClear? _transientClear;
 
     public DeltaResult ProcessSnapshot(
         string snapshotKey,
@@ -69,12 +87,13 @@ public sealed class CompositionAwareDeltaTracker
             return HandleCompositionExtension(rawText, addedLetterCount, utcNow, insertedTextSegment, textComparison);
         }
 
-        return HandleNormalEdit(rawText, insertedTextSegment, textComparison);
+        return HandleNormalEdit(rawText, utcNow, insertedTextSegment, textComparison);
     }
 
     public void Reset()
     {
         _pending = null;
+        _transientClear = null;
         _lastSnapshotKey = null;
         _lastRawText = string.Empty;
         _lastCommittedCount = 0;
@@ -101,6 +120,7 @@ public sealed class CompositionAwareDeltaTracker
         string? insertedTextSegment,
         DebugTextComparison? textComparison)
     {
+        _transientClear = null;
         // Count ALL supported characters gained, not only Chinese.
         // _lastCommittedCount is the committed baseline from before composition began.
         var committed = CharacterCountService.CountSupportedCharacters(rawText);
@@ -116,6 +136,7 @@ public sealed class CompositionAwareDeltaTracker
         string? insertedTextSegment,
         DebugTextComparison? textComparison)
     {
+        _transientClear = null;
         var deletedLetters = CharacterCountService.CountEnglishLetters(_lastRawText)
                            - CharacterCountService.CountEnglishLetters(rawText);
         var newLetterCount = Math.Max(0, _pending!.LetterCount - deletedLetters);
@@ -137,6 +158,19 @@ public sealed class CompositionAwareDeltaTracker
         string? insertedTextSegment,
         DebugTextComparison? textComparison)
     {
+        if (_transientClear is not null
+            && utcNow - _transientClear.DetectedUtc <= TransientClearWindow
+            && addedLetterCount >= TransientClearRestoreThreshold)
+        {
+            _transientClear = null;
+            _pending = null;
+            _lastRawText = rawText;
+            _lastCommittedCount = CharacterCountService.CountSupportedCharacters(rawText);
+            return DeltaResult.NoChange(false);
+        }
+
+        _transientClear = null;
+
         if (_pending is not null
             && rawText.Contains(_pending.RawText, StringComparison.Ordinal))
         {
@@ -156,12 +190,33 @@ public sealed class CompositionAwareDeltaTracker
 
     private DeltaResult HandleNormalEdit(
         string rawText,
+        DateTime utcNow,
         string? insertedTextSegment,
         DebugTextComparison? textComparison)
     {
         _pending = null;
         var committed = CharacterCountService.CountSupportedCharacters(rawText);
         var delta = committed - _lastCommittedCount;
+
+        if (_transientClear is not null)
+        {
+            if (utcNow - _transientClear.DetectedUtc <= TransientClearWindow
+                && delta >= TransientClearRestoreThreshold)
+            {
+                _transientClear = null;
+                _lastRawText = rawText;
+                _lastCommittedCount = committed;
+                return DeltaResult.NoChange(false);
+            }
+
+            _transientClear = null;
+        }
+
+        if (_lastCommittedCount >= TransientClearSourceThreshold && committed <= 1 && delta < 0)
+        {
+            _transientClear = new TransientClear(_lastCommittedCount, utcNow);
+        }
+
         _lastRawText = rawText;
         _lastCommittedCount = committed;
         return new DeltaResult(delta, false, insertedTextSegment, textComparison);
@@ -225,6 +280,7 @@ public sealed class CompositionAwareDeltaTracker
     private void Reset(string snapshotKey, string rawText)
     {
         _pending = null;
+        _transientClear = null;
         _lastSnapshotKey = snapshotKey;
         _lastRawText = rawText;
         _lastCommittedCount = CharacterCountService.CountSupportedCharacters(rawText);
@@ -359,4 +415,6 @@ public sealed class CompositionAwareDeltaTracker
     }
 
     private sealed record PendingComposition(string RawText, int LetterCount, DateTime StartedUtc);
+
+    private sealed record TransientClear(int PreClearCommittedCount, DateTime DetectedUtc);
 }
