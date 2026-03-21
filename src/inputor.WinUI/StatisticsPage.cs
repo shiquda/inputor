@@ -52,8 +52,10 @@ public sealed class StatisticsPage : UserControl
         _distributionRangeComboBox = new ComboBox
         {
             Width = 180,
-            ItemsSource = new[] { "Today", "Last 7 days", "Last 30 days", "All time" },
-            SelectedIndex = 0
+            ItemsSource = AppStrings.GetDistributionRangeOptions(),
+            DisplayMemberPath = nameof(AppRangeOption.DisplayName),
+            SelectedValuePath = nameof(AppRangeOption.Value),
+            SelectedValue = 0
         };
         _distributionRangeComboBox.SelectionChanged += (_, _) => Refresh(App.Current.StatsStore.GetSnapshot());
         _distributionAggregationComboBox = new ComboBox
@@ -208,7 +210,7 @@ public sealed class StatisticsPage : UserControl
             {
                 var label = new TextBlock
                 {
-                    Text = entry.Date.ToString("MM-dd"),
+                    Text = AppStrings.Format("Statistics.Trend.AxisDate", entry.Date),
                     FontSize = 11,
                     Opacity = 0.7
                 };
@@ -235,7 +237,7 @@ public sealed class StatisticsPage : UserControl
 
         var maxValue = Math.Max(1, data.Max(item => item.TotalCount));
         var busiestDay = data.OrderByDescending(item => item.TotalCount).First();
-        _heatmapDetailTextBlock.Text = $"Hover a cell to inspect a day. Peak in this view: {busiestDay.Date:yyyy-MM-dd} • {busiestDay.TotalCount:N0}.";
+        _heatmapDetailTextBlock.Text = AppStrings.Format("Statistics.Heatmap.Detail.Default", busiestDay.Date, busiestDay.TotalCount);
         foreach (var week in ChunkByWeek(data))
         {
             var weekColumn = new StackPanel { Spacing = 6 };
@@ -260,13 +262,13 @@ public sealed class StatisticsPage : UserControl
                     BeginInteraction();
                     cell.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush(true);
                     cell.Opacity = 0.94;
-                    _heatmapDetailTextBlock.Text = $"{entry.Date:yyyy-MM-dd} • {entry.TotalCount:N0} characters";
+                    _heatmapDetailTextBlock.Text = AppStrings.Format("Statistics.Heatmap.Detail.Entry", entry.Date, entry.TotalCount);
                 };
                 cell.PointerExited += (_, _) =>
                 {
                     cell.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush();
                     cell.Opacity = 1;
-                    _heatmapDetailTextBlock.Text = $"Hover a cell to inspect a day. Peak in this view: {busiestDay.Date:yyyy-MM-dd} • {busiestDay.TotalCount:N0}.";
+                    _heatmapDetailTextBlock.Text = AppStrings.Format("Statistics.Heatmap.Detail.Default", busiestDay.Date, busiestDay.TotalCount);
                     EndInteraction();
                 };
                 weekColumn.Children.Add(cell);
@@ -281,7 +283,7 @@ public sealed class StatisticsPage : UserControl
     private void RenderDistribution(DashboardSnapshot snapshot)
     {
         _distributionPanel.Children.Clear();
-        var range = _distributionRangeComboBox.SelectedIndex;
+        var range = _distributionRangeComboBox.SelectedValue is int selectedRange ? selectedRange : _distributionRangeComboBox.SelectedIndex;
         var aggregateByTag = (_distributionAggregationComboBox.SelectedValue as string) == "tag";
         var ordered = BuildDistributionData(snapshot, range, aggregateByTag)
             .OrderByDescending(item => item.Value)
@@ -335,7 +337,7 @@ public sealed class StatisticsPage : UserControl
         var palette = ThemeBrushes.GetDistributionPalette();
 
         var startAngle = -90.0;
-        _distributionDetailTextBlock.Text = "Hover or click a slice to inspect an app share.";
+        _distributionDetailTextBlock.Text = AppStrings.Get("Statistics.Distribution.Detail.Default");
         var defaultDetailText = _distributionDetailTextBlock.Text;
         Microsoft.UI.Xaml.Shapes.Path? selectedSlice = null;
         for (var index = 0; index < ordered.Count; index++)
@@ -346,7 +348,7 @@ public sealed class StatisticsPage : UserControl
             var slice = CreatePieSlice(PieSize / 2, PieSize / 2, PieSize / 2 - 6, startAngle, sweepAngle, palette[index % palette.Count]);
             ToolTipService.SetToolTip(slice, new ToolTip
             {
-                Content = $"{item.Aggregate.DisplayName}\n{item.Value:N0} • {share:P0}"
+                Content = AppStrings.Format("Statistics.Distribution.Tooltip", item.Aggregate.DisplayName, item.Value, share)
             });
 
             void SetSliceState(bool active)
@@ -358,7 +360,7 @@ public sealed class StatisticsPage : UserControl
             void UpdateSliceDetail(bool active)
             {
                 _distributionDetailTextBlock.Text = active
-                    ? $"{item.Aggregate.DisplayName} • {item.Value:N0} characters • {share:P0}"
+                    ? AppStrings.Format("Statistics.Distribution.Detail.Entry", item.Aggregate.DisplayName, item.Value, share)
                     : defaultDetailText;
             }
 
@@ -570,7 +572,7 @@ public sealed class StatisticsPage : UserControl
             Background = ThemeBrushes.GetSubtleSurfaceBrush(),
             Child = row
         };
-        var detail = $"{aggregate.DisplayName} • {value:N0} characters • {share:P0}";
+        var detail = AppStrings.Format("Statistics.Distribution.Detail.Entry", aggregate.DisplayName, value, share);
         container.PointerEntered += (_, _) =>
         {
             BeginInteraction();

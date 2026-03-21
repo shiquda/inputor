@@ -1,6 +1,7 @@
 using System.Globalization;
 using CsvHelper;
 using Inputor.App.Models;
+using Inputor.WinUI;
 
 namespace Inputor.App.Services;
 
@@ -17,9 +18,9 @@ public sealed class CsvExportService
         using var writer = new StreamWriter(path, false);
         using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
 
-        csv.WriteField("date");
-        csv.WriteField("app");
-        csv.WriteField("count");
+        csv.WriteField(AppStrings.Get("Export.Header.Date"));
+        csv.WriteField(AppStrings.Get("Export.Header.App"));
+        csv.WriteField(AppStrings.Get("Export.Header.Count"));
         csv.NextRecord();
 
         foreach (var stat in snapshot.AppStats.OrderByDescending(item => item.TodayCount))

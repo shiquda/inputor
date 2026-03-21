@@ -14,6 +14,10 @@
   <data name="Common.Session" xml:space="preserve"><value>本次会话</value></data>
   <data name="Common.AllTime" xml:space="preserve"><value>累计</value></data>
   <data name="Common.Name" xml:space="preserve"><value>名称</value></data>
+  <data name="Statistics.Range.Today" xml:space="preserve"><value>今日</value></data>
+  <data name="Statistics.Range.Last7Days" xml:space="preserve"><value>最近 7 天</value></data>
+  <data name="Statistics.Range.Last30Days" xml:space="preserve"><value>最近 30 天</value></data>
+  <data name="Statistics.Range.AllTime" xml:space="preserve"><value>累计</value></data>
   <data name="Aggregation.App" xml:space="preserve"><value>按应用</value></data>
   <data name="Aggregation.Tag" xml:space="preserve"><value>按标签</value></data>
   <data name="Aggregation.Untagged" xml:space="preserve"><value>未标记</value></data>
@@ -55,7 +59,9 @@
   <data name="Main.AdminReminder.Enabled" xml:space="preserve"><value>提权窗口和受保护界面仍可能无法通过 UIA 被监控。</value></data>
   <data name="Main.AdminReminder.Disabled" xml:space="preserve"><value>管理员提醒已关闭。</value></data>
   <data name="Main.RecentActivity.Empty" xml:space="preserve"><value>本次会话还没有记录到输入。</value></data>
-  <data name="Main.RecentActivity.Row" xml:space="preserve"><value>+{0} • {1:HH:mm:ss}</value></data>
+  <data name="Main.RecentActivity.Row" xml:space="preserve"><value>+{0} • {1}</value></data>
+  <data name="Main.RecentActivity.TimeSingle" xml:space="preserve"><value>{0:T}</value></data>
+  <data name="Main.RecentActivity.TimeRange" xml:space="preserve"><value>{0:T}-{1:T}</value></data>
   <data name="Main.TopApps.Row" xml:space="preserve"><value>{0:N0} 今日 • {1:0.#}%</value></data>
   <data name="Main.TopApps.Empty" xml:space="preserve"><value>还没有活动记录。</value></data>
   <data name="Main.Apps.NoMatch" xml:space="preserve"><value>没有应用匹配当前筛选条件。</value></data>
@@ -123,12 +129,19 @@
   <data name="Statistics.Section.DistributionTitle" xml:space="preserve"><value>应用分布</value></data>
   <data name="Statistics.Section.DistributionSubtitle" xml:space="preserve"><value>看看当前输入量主要集中在哪些应用里。</value></data>
   <data name="Statistics.Trend.Empty" xml:space="preserve"><value>还没有每日历史记录。</value></data>
+  <data name="Statistics.Trend.AxisDate" xml:space="preserve"><value>{0:M-d}</value></data>
   <data name="Statistics.Trend.Caption" xml:space="preserve"><value>最近 {0} 天峰值：{1:N0} 个受支持字符。</value></data>
   <data name="Statistics.Heatmap.Empty" xml:space="preserve"><value>还没有每日历史记录。</value></data>
+  <data name="Statistics.Heatmap.Detail.Default" xml:space="preserve"><value>悬停到任意单元格即可查看单日详情。当前视图峰值为 {0:yyyy-MM-dd} • {1:N0}。</value></data>
+  <data name="Statistics.Heatmap.Detail.Entry" xml:space="preserve"><value>{0:yyyy-MM-dd} • {1:N0} 个字符</value></data>
   <data name="Statistics.Heatmap.Tooltip" xml:space="preserve"><value>{0:yyyy-MM-dd}：{1:N0}</value></data>
   <data name="Statistics.Heatmap.Caption" xml:space="preserve"><value>颜色越深表示当天输入越多。历史起始于 {0:yyyy-MM-dd}。</value></data>
   <data name="Statistics.Distribution.Empty" xml:space="preserve"><value>还没有应用分布可展示，因为尚未记录任何受支持字符。</value></data>
   <data name="Statistics.Distribution.EmptyCaption" xml:space="preserve"><value>一旦有活动，这里会显示最主要的应用占比。</value></data>
+  <data name="Statistics.Distribution.Detail.Default" xml:space="preserve"><value>悬停或点击任意扇区即可查看应用占比。</value></data>
+  <data name="Statistics.Distribution.Detail.Entry" xml:space="preserve"><value>{0} • {1:N0} 个字符 • {2:P0}</value></data>
+  <data name="Statistics.Distribution.Tooltip" xml:space="preserve"><value>{0}
+{1:N0} • {2:P0}</value></data>
   <data name="Statistics.Distribution.Row" xml:space="preserve"><value>{0:N0} • {1:P0}</value></data>
   <data name="Statistics.Distribution.Today" xml:space="preserve"><value>当前分布基于今日计数。</value></data>
   <data name="Statistics.Distribution.AllTimeFallback" xml:space="preserve"><value>今天还没有记录到活动，因此分布回退到累计总量。</value></data>
@@ -154,6 +167,7 @@
   <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>临时诊断与隐私说明</value></data>
   <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>这里只缓存最近 {0} 条临时调试记录，全部仅保存在内存中；它们不会写入统计文件，也不会被导出或上传。</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>调试捕获默认关闭。仅在你需要排查为什么计数被记录或未记录时再开启。</value></data>
+  <data name="Debug.Summary.InspectionFrozen" xml:space="preserve"><value>捕获仍在进行中。由于你正在查看已展开记录，页面刷新已暂时冻结。</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>调试捕获已暂停。只有在你想检查为什么某次输入被记录或跳过时，再开始捕获。</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>调试捕获已关闭</value></data>
   <data name="Debug.Card.DisabledBody" xml:space="preserve"><value>启用后，这个页面会先展示紧凑摘要；然后你可以展开单条记录查看完整诊断细节。</value></data>
@@ -224,6 +238,7 @@
   <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>已切换统计源到 {0}</value></data>
   <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>统计源切换失败：{0}</value></data>
   <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>已检测到损坏的统计源配置，已回退到默认统计源。</value></data>
+  <data name="Status.StatisticsSourceJsonInvalid" xml:space="preserve"><value>统计源 JSON 无效。</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>调试捕获已开启。</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>调试捕获已关闭。</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>调试事件已清除。</value></data>
@@ -244,6 +259,9 @@
   <data name="Status.RecordedSupportedCharacters" xml:space="preserve"><value>已在 {1} 中记录 +{0} 个受支持字符。</value></data>
   <data name="Status.WaitingForComposition" xml:space="preserve"><value>正在监控 {0}；等待输入法合成确认。</value></data>
   <data name="Status.NoPositiveDelta" xml:space="preserve"><value>正在监控 {0}；未检测到正向增量。</value></data>
+  <data name="Export.Header.Date" xml:space="preserve"><value>日期</value></data>
+  <data name="Export.Header.App" xml:space="preserve"><value>应用</value></data>
+  <data name="Export.Header.Count" xml:space="preserve"><value>计数</value></data>
   <data name="AppPresentation.UnknownApp" xml:space="preserve"><value>未知应用</value></data>
   <data name="AppPresentation.GoogleChrome" xml:space="preserve"><value>Google Chrome</value></data>
   <data name="AppPresentation.MicrosoftEdge" xml:space="preserve"><value>Microsoft Edge</value></data>

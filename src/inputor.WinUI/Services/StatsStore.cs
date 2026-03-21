@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Inputor.App.Models;
+using Inputor.WinUI;
 
 namespace Inputor.App.Services;
 
@@ -382,7 +383,7 @@ public sealed class StatsStore : IDisposable
         }
 
         var persisted = JsonSerializer.Deserialize<PersistedStats>(json)
-            ?? throw new InvalidDataException("Statistics source JSON is invalid.");
+            ?? throw new InvalidDataException(AppStrings.Get("Status.StatisticsSourceJsonInvalid"));
 
         var stats = persisted.AppStats
             .ToDictionary(item => item.AppName, StringComparer.OrdinalIgnoreCase);

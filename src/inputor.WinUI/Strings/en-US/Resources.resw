@@ -14,6 +14,10 @@
   <data name="Common.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Common.AllTime" xml:space="preserve"><value>All time</value></data>
   <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Statistics.Range.Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Statistics.Range.Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="Statistics.Range.Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="Statistics.Range.AllTime" xml:space="preserve"><value>All time</value></data>
   <data name="Aggregation.App" xml:space="preserve"><value>By app</value></data>
   <data name="Aggregation.Tag" xml:space="preserve"><value>By tag</value></data>
   <data name="Aggregation.Untagged" xml:space="preserve"><value>Untagged</value></data>
@@ -55,7 +59,9 @@
   <data name="Main.AdminReminder.Enabled" xml:space="preserve"><value>Elevated windows and protected surfaces can still be unavailable to UIA monitoring.</value></data>
   <data name="Main.AdminReminder.Disabled" xml:space="preserve"><value>Admin reminder is turned off.</value></data>
   <data name="Main.RecentActivity.Empty" xml:space="preserve"><value>No recorded input yet in this session.</value></data>
-  <data name="Main.RecentActivity.Row" xml:space="preserve"><value>+{0} • {1:HH:mm:ss}</value></data>
+  <data name="Main.RecentActivity.Row" xml:space="preserve"><value>+{0} • {1}</value></data>
+  <data name="Main.RecentActivity.TimeSingle" xml:space="preserve"><value>{0:T}</value></data>
+  <data name="Main.RecentActivity.TimeRange" xml:space="preserve"><value>{0:T}-{1:T}</value></data>
   <data name="Main.TopApps.Row" xml:space="preserve"><value>{0:N0} today • {1:0.#}%</value></data>
   <data name="Main.TopApps.Empty" xml:space="preserve"><value>No activity yet.</value></data>
   <data name="Main.Apps.NoMatch" xml:space="preserve"><value>No apps match the current filter.</value></data>
@@ -123,12 +129,19 @@ Default statistics source: {1}</value></data>
   <data name="Statistics.Section.DistributionTitle" xml:space="preserve"><value>App distribution</value></data>
   <data name="Statistics.Section.DistributionSubtitle" xml:space="preserve"><value>See where the current typing volume is concentrated right now.</value></data>
   <data name="Statistics.Trend.Empty" xml:space="preserve"><value>No daily history yet.</value></data>
+  <data name="Statistics.Trend.AxisDate" xml:space="preserve"><value>{0:MM-dd}</value></data>
   <data name="Statistics.Trend.Caption" xml:space="preserve"><value>Peak over the last {0} days: {1:N0} supported characters.</value></data>
   <data name="Statistics.Heatmap.Empty" xml:space="preserve"><value>No daily history yet.</value></data>
+  <data name="Statistics.Heatmap.Detail.Default" xml:space="preserve"><value>Hover a cell to inspect a day. Peak in this view: {0:yyyy-MM-dd} • {1:N0}.</value></data>
+  <data name="Statistics.Heatmap.Detail.Entry" xml:space="preserve"><value>{0:yyyy-MM-dd} • {1:N0} characters</value></data>
   <data name="Statistics.Heatmap.Tooltip" xml:space="preserve"><value>{0:yyyy-MM-dd}: {1:N0}</value></data>
   <data name="Statistics.Heatmap.Caption" xml:space="preserve"><value>Darker cells represent stronger days. History begins on {0:yyyy-MM-dd}.</value></data>
   <data name="Statistics.Distribution.Empty" xml:space="preserve"><value>No app distribution is available yet because no supported characters have been recorded.</value></data>
   <data name="Statistics.Distribution.EmptyCaption" xml:space="preserve"><value>Once activity exists, this view will show the strongest app share.</value></data>
+  <data name="Statistics.Distribution.Detail.Default" xml:space="preserve"><value>Hover or click a slice to inspect an app share.</value></data>
+  <data name="Statistics.Distribution.Detail.Entry" xml:space="preserve"><value>{0} • {1:N0} characters • {2:P0}</value></data>
+  <data name="Statistics.Distribution.Tooltip" xml:space="preserve"><value>{0}
+{1:N0} • {2:P0}</value></data>
   <data name="Statistics.Distribution.Row" xml:space="preserve"><value>{0:N0} • {1:P0}</value></data>
   <data name="Statistics.Distribution.Today" xml:space="preserve"><value>Distribution currently reflects today's counts.</value></data>
   <data name="Statistics.Distribution.AllTimeFallback" xml:space="preserve"><value>No activity has been recorded today, so distribution falls back to all-time totals.</value></data>
@@ -154,6 +167,7 @@ Default statistics source: {1}</value></data>
   <data name="Debug.Card.PrivacyTitle" xml:space="preserve"><value>Temporary diagnostics and privacy</value></data>
   <data name="Debug.Card.PrivacyBody" xml:space="preserve"><value>This page buffers the most recent {0} temporary debug records in memory only. They never go into the statistics file and are never exported or uploaded.</value></data>
   <data name="Debug.Summary.Disabled" xml:space="preserve"><value>Debug capture is off by default. Turn it on only when you need to inspect why a count was or was not recorded.</value></data>
+  <data name="Debug.Summary.InspectionFrozen" xml:space="preserve"><value>Capture is still running. Refresh is temporarily frozen while you inspect expanded records.</value></data>
   <data name="Debug.Summary.Paused" xml:space="preserve"><value>Debug capture is paused. Start capture only when you want to inspect why a count was recorded or skipped.</value></data>
   <data name="Debug.Card.DisabledTitle" xml:space="preserve"><value>Debug capture is off</value></data>
   <data name="Debug.Card.DisabledBody" xml:space="preserve"><value>When enabled, this page will show a compact summary first. You can then expand individual records for the full diagnostic details.</value></data>
@@ -224,6 +238,7 @@ Default statistics source: {1}</value></data>
   <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>Switched the statistics source to {0}</value></data>
   <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>Statistics source switch failed: {0}</value></data>
   <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>A broken configured statistics source was detected, so inputor fell back to the default source.</value></data>
+  <data name="Status.StatisticsSourceJsonInvalid" xml:space="preserve"><value>Statistics source JSON is invalid.</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>Debug capture enabled.</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>Debug capture disabled.</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>Debug events cleared.</value></data>
@@ -244,6 +259,9 @@ Default statistics source: {1}</value></data>
   <data name="Status.RecordedSupportedCharacters" xml:space="preserve"><value>Recorded +{0} supported characters in {1}.</value></data>
   <data name="Status.WaitingForComposition" xml:space="preserve"><value>Monitoring {0}; waiting for composition confirmation.</value></data>
   <data name="Status.NoPositiveDelta" xml:space="preserve"><value>Monitoring {0}; no positive delta detected.</value></data>
+  <data name="Export.Header.Date" xml:space="preserve"><value>date</value></data>
+  <data name="Export.Header.App" xml:space="preserve"><value>app</value></data>
+  <data name="Export.Header.Count" xml:space="preserve"><value>count</value></data>
   <data name="AppPresentation.UnknownApp" xml:space="preserve"><value>Unknown app</value></data>
   <data name="AppPresentation.GoogleChrome" xml:space="preserve"><value>Google Chrome</value></data>
   <data name="AppPresentation.MicrosoftEdge" xml:space="preserve"><value>Microsoft Edge</value></data>
