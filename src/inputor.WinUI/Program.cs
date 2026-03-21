@@ -2,6 +2,7 @@ using System.Threading;
 using Inputor.App.Services;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.ApplicationModel.WindowsAppRuntime;
 
 namespace Inputor.WinUI;
 
@@ -30,6 +31,7 @@ internal static class Program
 
         WinRT.ComWrappersSupport.InitializeComWrappers();
         StartupDiagnostics.Log("COM wrappers initialized.");
+        EnsureWindowsAppRuntimeDeployed();
         try
         {
             Application.Start(_initParams =>
@@ -46,6 +48,25 @@ internal static class Program
         {
             StartupDiagnostics.Log($"Program.Main catch: {ex}");
             throw;
+        }
+    }
+
+    private static void EnsureWindowsAppRuntimeDeployed()
+    {
+        try
+        {
+            var status = DeploymentManager.GetStatus();
+            StartupDiagnostics.Log($"DeploymentManager.GetStatus: {status.Status}");
+            if (status.Status != DeploymentStatus.Ok)
+            {
+                StartupDiagnostics.Log("Windows App Runtime not fully deployed, calling Initialize...");
+                var result = DeploymentManager.Initialize();
+                StartupDiagnostics.Log($"DeploymentManager.Initialize: {result.Status}, error: {result.ExtendedError?.HResult:X8}");
+            }
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.Log($"DeploymentManager exception: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
