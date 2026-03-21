@@ -8,6 +8,8 @@
 
 inputor silently tracks how many Chinese and English characters you type in each application every day, helping you understand your input habits and work patterns. It **never records raw text** — only character counts and metadata are persisted.
 
+![Statistics screenshot](imgs/stats-page.png)
+
 ## Features
 
 - **Per-app statistics** — separate Chinese and English character counts for each application
