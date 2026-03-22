@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Inputor.App.Models;
+using Inputor.App.Services;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -18,6 +19,11 @@ public sealed class DebugPage : UserControl
     private readonly TextBlock _summaryTextBlock;
     private readonly Grid _summaryPanel;
     private readonly StackPanel _eventsPanel;
+    private readonly Button _diskLogPickFileButton;
+    private readonly TextBlock _diskLogPathLabel;
+    private readonly CheckBox _diskLogWriteToggle;
+    private readonly CheckBox _diskLogRawTextToggle;
+    private readonly TextBlock _diskLogPrivacyBody;
     private DashboardSnapshot? _pendingSnapshot;
     private int _interactionDepth;
     private readonly List<(Border Border, bool Subtle)> _cards = [];
@@ -63,6 +69,50 @@ public sealed class DebugPage : UserControl
         _summaryPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _eventsPanel = new StackPanel { Spacing = 12 };
 
+        _diskLogPickFileButton = new Button
+        {
+            Content = AppStrings.Get("Debug.DiskLog.Button.PickFile"),
+            Padding = new Thickness(16, 8, 16, 8)
+        };
+        _diskLogPickFileButton.Click += (_, _) =>
+        {
+            var path = App.Current.PickDebugDiskLogPath();
+            if (path is not null)
+            {
+                App.Current.SetDebugDiskLogPath(path);
+                App.Current.StatsStore.SetStatus(StatusText.DebugDiskLogPathSet(path), App.Current.StatsStore.CurrentAppName, App.Current.StatsStore.IsCurrentTargetSupported, App.Current.StatsStore.CurrentProcessName);
+            }
+        };
+
+        _diskLogPathLabel = new TextBlock
+        {
+            Text = AppStrings.Get("Debug.DiskLog.Label.NoPathSet"),
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.78
+        };
+
+        _diskLogWriteToggle = new CheckBox
+        {
+            Content = AppStrings.Get("Debug.DiskLog.Toggle.WriteEnabled"),
+            IsEnabled = false
+        };
+        _diskLogWriteToggle.Checked += (_, _) => App.Current.SetDebugDiskLogEnabled(true);
+        _diskLogWriteToggle.Unchecked += (_, _) => App.Current.SetDebugDiskLogEnabled(false);
+
+        _diskLogRawTextToggle = new CheckBox
+        {
+            Content = AppStrings.Get("Debug.DiskLog.Toggle.IncludeRawText")
+        };
+        _diskLogRawTextToggle.Checked += (_, _) => App.Current.SetDebugDiskLogIncludeRawText(true);
+        _diskLogRawTextToggle.Unchecked += (_, _) => App.Current.SetDebugDiskLogIncludeRawText(false);
+
+        _diskLogPrivacyBody = new TextBlock
+        {
+            Text = AppStrings.Get("Debug.DiskLog.Card.PrivacyBody"),
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.78
+        };
+
         Content = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -94,6 +144,25 @@ public sealed class DebugPage : UserControl
     {
         _captureButton.Content = snapshot.IsDebugCaptureEnabled ? AppStrings.Get("Debug.Button.PauseCapture") : AppStrings.Get("Debug.Button.StartCapture");
         _clearButton.IsEnabled = snapshot.DebugEvents.Count > 0;
+
+        var hasPath = !string.IsNullOrWhiteSpace(snapshot.DebugDiskLogPath);
+        _diskLogPathLabel.Text = hasPath
+            ? AppStrings.Format("Debug.DiskLog.Label.PathSet", snapshot.DebugDiskLogPath)
+            : AppStrings.Get("Debug.DiskLog.Label.NoPathSet");
+        _diskLogWriteToggle.IsEnabled = hasPath && snapshot.IsDebugCaptureEnabled;
+        if (_diskLogWriteToggle.IsChecked != snapshot.IsDebugDiskLogEnabled)
+        {
+            _diskLogWriteToggle.IsChecked = snapshot.IsDebugDiskLogEnabled;
+        }
+
+        if (_diskLogRawTextToggle.IsChecked != snapshot.DebugDiskLogIncludeRawText)
+        {
+            _diskLogRawTextToggle.IsChecked = snapshot.DebugDiskLogIncludeRawText;
+        }
+
+        _diskLogPrivacyBody.Text = snapshot.DebugDiskLogIncludeRawText
+            ? AppStrings.Get("Debug.DiskLog.Card.PrivacyBodyRawText")
+            : AppStrings.Get("Debug.DiskLog.Card.PrivacyBody");
 
         if (ShouldDeferRefresh())
         {
@@ -211,9 +280,29 @@ public sealed class DebugPage : UserControl
             AppStrings.Get("Debug.Card.PrivacyTitle"),
             AppStrings.Format("Debug.Card.PrivacyBody", 120)));
 
+        root.Children.Add(BuildDiskLogSection());
+
         root.Children.Add(_summaryPanel);
         root.Children.Add(_eventsPanel);
         return root;
+    }
+
+    private UIElement BuildDiskLogSection()
+    {
+        var content = new StackPanel { Spacing = 12 };
+
+        content.Children.Add(_diskLogPickFileButton);
+        content.Children.Add(_diskLogPathLabel);
+        content.Children.Add(_diskLogWriteToggle);
+        content.Children.Add(_diskLogRawTextToggle);
+
+        var privacyContent = new StackPanel { Spacing = 8 };
+        privacyContent.Children.Add(new TextBlock { Text = AppStrings.Get("Debug.DiskLog.Card.PrivacyTitle"), FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, FontSize = 14 });
+        privacyContent.Children.Add(_diskLogPrivacyBody);
+
+        content.Children.Add(CreateCard(privacyContent, ThemeBrushes.GetSubtleSurfaceBrush(), null, true));
+
+        return CreateInfoCard(AppStrings.Get("Debug.DiskLog.Card.Title"), content);
     }
 
     private IEnumerable<DebugEventEntry> ApplyFilter(IReadOnlyList<DebugEventEntry> events)
