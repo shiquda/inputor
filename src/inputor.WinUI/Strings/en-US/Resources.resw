@@ -13,6 +13,17 @@
   <data name="Common.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Common.AllTime" xml:space="preserve"><value>All time</value></data>
   <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="QuickActions.Button.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="QuickActions.Button.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="QuickActions.Menu.ExcludeApp" xml:space="preserve"><value>Hide app</value></data>
+  <data name="QuickActions.Menu.ExcludeAppMultiple" xml:space="preserve"><value>Hide {0} app processes</value></data>
+  <data name="QuickActions.Menu.EditAlias" xml:space="preserve"><value>Edit alias</value></data>
+  <data name="QuickActions.Menu.EditGrouping" xml:space="preserve"><value>Edit grouping</value></data>
+  <data name="QuickActions.Dialog.EditAlias.Title" xml:space="preserve"><value>Edit alias for {0}</value></data>
+  <data name="QuickActions.Dialog.EditAlias.Body" xml:space="preserve"><value>Leave this empty to use the default display name again. Applies to: {0}</value></data>
+  <data name="QuickActions.Dialog.EditGrouping.Title" xml:space="preserve"><value>Edit grouping for {0}</value></data>
+  <data name="QuickActions.Dialog.EditGrouping.Body" xml:space="preserve"><value>Use comma-separated tags. Saving here replaces the grouping tags for: {0}</value></data>
+  <data name="QuickActions.Dialog.EditGrouping.Placeholder" xml:space="preserve"><value>For example Browser, Writing</value></data>
   <data name="Statistics.Range.Today" xml:space="preserve"><value>Today</value></data>
   <data name="Statistics.Range.Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
   <data name="Statistics.Range.Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
@@ -33,7 +44,7 @@
   <data name="Main.Button.StartMonitoring" xml:space="preserve"><value>Start monitoring</value></data>
   <data name="Main.Button.ResumeMonitoring" xml:space="preserve"><value>Resume monitoring</value></data>
   <data name="Main.Button.PauseMonitoring" xml:space="preserve"><value>Pause monitoring</value></data>
-  <data name="Main.Button.ExcludeCurrentApp" xml:space="preserve"><value>Exclude current app</value></data>
+  <data name="Main.Button.ExcludeCurrentApp" xml:space="preserve"><value>Hide current app</value></data>
   <data name="Main.Button.ViewAllApps" xml:space="preserve"><value>View all apps</value></data>
   <data name="Main.Button.OpenStatistics" xml:space="preserve"><value>Open statistics</value></data>
   <data name="Main.Button.OpenSettings" xml:space="preserve"><value>Open settings</value></data>
@@ -93,8 +104,8 @@
   <data name="Settings.Caption.Channel" xml:space="preserve"><value>Current app channel.</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>Pick the language for app chrome and status messages. Changes apply after restart.</value></data>
-  <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Excluded apps</value></data>
-  <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>Use comma-separated process names. Quick actions can add the current app for you.</value></data>
+  <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>Hidden apps</value></data>
+  <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>Use comma-separated process names. Quick actions can add the current app to the hidden list for you.</value></data>
   <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>App tags</value></data>
   <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>Search an app, then add one or more tags to it. Tag input reuses existing tags when possible; apps without a mapping fall into Untagged.</value></data>
   <data name="Settings.Placeholder.AppTagSearch" xml:space="preserve"><value>Search apps or existing tags</value></data>
@@ -230,16 +241,16 @@ Default statistics source: {1}</value></data>
   <data name="Tray.MenuTitle" xml:space="preserve"><value>inputor tray menu</value></data>
   <data name="Tray.ShowDashboard" xml:space="preserve"><value>Show dashboard</value></data>
   <data name="Tray.OpenSettings" xml:space="preserve"><value>Open settings</value></data>
-  <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>Exclude current app</value></data>
+  <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>Hide current app</value></data>
   <data name="Tray.RestartInputor" xml:space="preserve"><value>Restart inputor</value></data>
   <data name="Tray.ExitInputor" xml:space="preserve"><value>Exit inputor</value></data>
   <data name="NotifyIcon.Tooltip" xml:space="preserve"><value>{0} | T {1:N0} | S {2:N0} | {3}</value></data>
   <data name="Status.MonitoringNotStartedYet" xml:space="preserve"><value>Monitoring has not started yet.</value></data>
   <data name="Status.MonitoringStarted" xml:space="preserve"><value>Monitoring started.</value></data>
   <data name="Status.SessionCountersReset" xml:space="preserve"><value>Session counters reset.</value></data>
-  <data name="Status.NoActiveAppAvailable" xml:space="preserve"><value>No active app is available for exclusion right now.</value></data>
-  <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} is already excluded.</value></data>
-  <data name="Status.AddedExcludedApp" xml:space="preserve"><value>Added {0} to excluded apps.</value></data>
+  <data name="Status.NoActiveAppAvailable" xml:space="preserve"><value>No active app is available to hide right now.</value></data>
+  <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} is already hidden.</value></data>
+  <data name="Status.AddedExcludedApp" xml:space="preserve"><value>Added {0} to the hidden apps list.</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>Exported CSV to {0}</value></data>
   <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>Backed up the statistics source to {0}</value></data>
   <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>Statistics source backup failed: {0}</value></data>
@@ -255,6 +266,12 @@ Default statistics source: {1}</value></data>
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>Debug capture enabled.</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>Debug capture disabled.</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>Debug events cleared.</value></data>
+  <data name="Status.AppQuickActionExcluded" xml:space="preserve"><value>Hid {1} app process(es) for {0}.</value></data>
+  <data name="Status.AppQuickActionAlreadyExcluded" xml:space="preserve"><value>{0} is already hidden.</value></data>
+  <data name="Status.AppAliasUpdated" xml:space="preserve"><value>Updated the alias for {0}.</value></data>
+  <data name="Status.AppAliasCleared" xml:space="preserve"><value>Cleared the alias for {0}.</value></data>
+  <data name="Status.AppGroupingUpdated" xml:space="preserve"><value>Updated grouping for {0} with {1} tag(s).</value></data>
+  <data name="Status.AppGroupingCleared" xml:space="preserve"><value>Cleared grouping for {0}.</value></data>
   <data name="Status.LanguageChangeRequiresRestart" xml:space="preserve"><value>Language changes will apply after restarting inputor.</value></data>
   <data name="Status.MonitoringPaused" xml:space="preserve"><value>Monitoring paused.</value></data>
   <data name="Status.MonitoringResumed" xml:space="preserve"><value>Monitoring resumed.</value></data>
@@ -262,7 +279,7 @@ Default statistics source: {1}</value></data>
   <data name="Status.NoForegroundWindow" xml:space="preserve"><value>No foreground window.</value></data>
   <data name="Status.UnableToResolveActiveProcess" xml:space="preserve"><value>Unable to resolve the active process.</value></data>
   <data name="Status.UnableToResolveActiveProcessName" xml:space="preserve"><value>Unable to resolve the active process name.</value></data>
-  <data name="Status.ProcessExcluded" xml:space="preserve"><value>{0} is excluded.</value></data>
+  <data name="Status.ProcessExcluded" xml:space="preserve"><value>{0} is hidden.</value></data>
   <data name="Status.SelfWindowActive" xml:space="preserve"><value>inputor window is active; monitoring external apps only.</value></data>
   <data name="Status.NoFocusedElement" xml:space="preserve"><value>{0}: no focused element.</value></data>
   <data name="Status.PasswordFieldSkipped" xml:space="preserve"><value>{0}: password field skipped.</value></data>

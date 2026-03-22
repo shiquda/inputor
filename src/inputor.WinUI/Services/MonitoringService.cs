@@ -141,7 +141,6 @@ public sealed class MonitoringService : IDisposable
         {
             var statusMessage = StatusText.ProcessExcluded(processName);
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, string.Empty, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }

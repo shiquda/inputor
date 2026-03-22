@@ -23,6 +23,12 @@ internal static class StatusText
     public static string StatisticsSourceFallbackToDefault() => AppStrings.Get("Status.StatisticsSourceFallbackToDefault");
     public static string DebugCaptureChanged(bool isEnabled) => AppStrings.Get(isEnabled ? "Status.DebugCaptureEnabled" : "Status.DebugCaptureDisabled");
     public static string DebugEventsCleared() => AppStrings.Get("Status.DebugEventsCleared");
+    public static string AppQuickActionExcluded(string displayName, int appCount) => AppStrings.Format("Status.AppQuickActionExcluded", displayName, appCount);
+    public static string AppQuickActionAlreadyExcluded(string displayName) => AppStrings.Format("Status.AppQuickActionAlreadyExcluded", displayName);
+    public static string AppAliasUpdated(string displayName) => AppStrings.Format("Status.AppAliasUpdated", displayName);
+    public static string AppAliasCleared(string displayName) => AppStrings.Format("Status.AppAliasCleared", displayName);
+    public static string AppGroupingUpdated(string displayName, int tagCount) => AppStrings.Format("Status.AppGroupingUpdated", displayName, tagCount);
+    public static string AppGroupingCleared(string displayName) => AppStrings.Format("Status.AppGroupingCleared", displayName);
     public static string LanguageChangeRequiresRestart() => AppStrings.Get("Status.LanguageChangeRequiresRestart");
     public static string MonitoringPauseChanged(bool isPaused) => AppStrings.Get(isPaused ? "Status.MonitoringPaused" : "Status.MonitoringResumed");
     public static string MonitoringError(string message) => AppStrings.Format("Status.MonitoringError", message);

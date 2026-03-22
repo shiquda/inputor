@@ -53,7 +53,7 @@ public sealed class DebugPage : UserControl
             },
             SelectedIndex = 0
         };
-        _filterComboBox.SelectionChanged += (_, _) => Refresh(App.Current.StatsStore.GetSnapshot());
+        _filterComboBox.SelectionChanged += (_, _) => Refresh(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
 
         _summaryTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.78 };
         _summaryPanel = new Grid { ColumnSpacing = 12, RowSpacing = 12 };

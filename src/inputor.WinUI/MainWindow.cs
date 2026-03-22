@@ -51,6 +51,8 @@ public sealed class MainWindow : Window
     private readonly List<(Border Border, bool Elevated)> _trackedSurfaces = [];
     private readonly AppWindow _appWindow;
     private bool _isClosed;
+    private int _interactionDepth;
+    private bool _hasPendingRefresh;
 
     public MainWindow()
     {
@@ -226,7 +228,7 @@ public sealed class MainWindow : Window
         _settingsPage.RefreshTheme();
         _statisticsPage.RefreshTheme();
         _debugPage.RefreshTheme();
-        Refresh();
+        QueueRefresh();
     }
 
     private void QueueRefresh()
@@ -243,6 +245,12 @@ public sealed class MainWindow : Window
             {
                 return;
             }
+
+             if (_interactionDepth > 0)
+             {
+                 _hasPendingRefresh = true;
+                 return;
+             }
 
             Refresh();
         }
@@ -521,7 +529,13 @@ public sealed class MainWindow : Window
 
     private void Refresh()
     {
-        var snapshot = App.Current.StatsStore.GetSnapshot();
+        if (_interactionDepth > 0)
+        {
+            _hasPendingRefresh = true;
+            return;
+        }
+
+        var snapshot = AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings);
         _todayTextBlock.Text = snapshot.TotalToday.ToString("N0");
         _sessionTextBlock.Text = snapshot.TotalSession.ToString("N0");
         _totalTextBlock.Text = snapshot.TotalAllTime.ToString("N0");
@@ -548,6 +562,27 @@ public sealed class MainWindow : Window
         {
             _debugPage.Refresh(snapshot);
         }
+
+        _hasPendingRefresh = false;
+    }
+
+    private void BeginInteraction()
+    {
+        _interactionDepth++;
+    }
+
+    private void EndInteraction()
+    {
+        if (_interactionDepth == 0)
+        {
+            return;
+        }
+
+        _interactionDepth--;
+        if (_interactionDepth == 0 && _hasPendingRefresh)
+        {
+            Refresh();
+        }
     }
 
     private void UpdateRecentActivity(DashboardSnapshot snapshot)
@@ -571,7 +606,7 @@ public sealed class MainWindow : Window
     private void UpdateTopApps(DashboardSnapshot snapshot)
     {
         _topAppsPanel.Children.Clear();
-        var topApps = AppPresentationService.BuildAggregates(snapshot.AppStats)
+        var topApps = AppPresentationService.BuildAggregates(snapshot.AppStats, App.Current.Settings)
             .OrderByDescending(item => item.TodayCount)
             .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
             .Take(5)
@@ -596,7 +631,7 @@ public sealed class MainWindow : Window
         var aggregateByTag = (_appsAggregationComboBox.SelectedValue as string) == "tag";
         IEnumerable<AppAggregate> stats = aggregateByTag
             ? AppPresentationService.BuildTagAggregates(snapshot.AppStats, App.Current.Settings)
-            : AppPresentationService.BuildAggregates(snapshot.AppStats);
+            : AppPresentationService.BuildAggregates(snapshot.AppStats, App.Current.Settings);
         stats = stats.Where(item => AppPresentationService.MatchesQuery(item, query));
 
         stats = _sortComboBox.SelectedIndex switch
@@ -789,6 +824,7 @@ public sealed class MainWindow : Window
             Child = layout
         };
         border.Background = ThemeBrushes.GetCardBackgroundBrush(true);
+        AppQuickActionService.AttachContextMenu(border, aggregate, BeginInteraction, EndInteraction);
         if (track)
         {
             _trackedSurfaces.Add((border, true));

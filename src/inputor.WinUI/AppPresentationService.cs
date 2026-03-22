@@ -51,7 +51,55 @@ internal static class AppPresentationService
 
     public static event EventHandler? IconsChanged;
 
-    public static IReadOnlyList<AppAggregate> BuildAggregates(IEnumerable<AppStat> stats)
+    public static string DescribeDisplayName(string processName)
+    {
+        return Describe(processName).DisplayName;
+    }
+
+    public static DashboardSnapshot CreateVisibleSnapshot(DashboardSnapshot snapshot, AppSettings settings)
+    {
+        var visibleAppStats = snapshot.AppStats
+            .Where(item => !settings.IsExcluded(item.AppName))
+            .ToList();
+
+        var visibleDailyAppHistory = snapshot.DailyAppHistory
+            .Where(item => !settings.IsExcluded(item.AppName))
+            .ToList();
+
+        var totalsByDate = visibleDailyAppHistory
+            .GroupBy(item => item.Date)
+            .ToDictionary(group => group.Key, group => group.Sum(item => item.TotalCount));
+
+        var visibleDailyHistory = snapshot.DailyHistory
+            .Select(item => new DailyTotalEntry
+            {
+                Date = item.Date,
+                TotalCount = totalsByDate.TryGetValue(item.Date, out var total) ? total : 0
+            })
+            .ToList();
+
+        return new DashboardSnapshot
+        {
+            Today = snapshot.Today,
+            SessionStartedAt = snapshot.SessionStartedAt,
+            StatusMessage = snapshot.StatusMessage,
+            CurrentAppName = snapshot.CurrentAppName,
+            IsCurrentTargetSupported = snapshot.IsCurrentTargetSupported,
+            IsPaused = snapshot.IsPaused,
+            IsDebugCaptureEnabled = snapshot.IsDebugCaptureEnabled,
+            AppStats = visibleAppStats,
+            DailyHistory = visibleDailyHistory,
+            DailyAppHistory = visibleDailyAppHistory,
+            RecentActivity = snapshot.RecentActivity
+                .Where(item => !settings.IsExcluded(item.AppName))
+                .ToList(),
+            DebugEvents = snapshot.DebugEvents
+                .Where(item => !settings.IsExcluded(item.AppName))
+                .ToList()
+        };
+    }
+
+    public static IReadOnlyList<AppAggregate> BuildAggregates(IEnumerable<AppStat> stats, AppSettings? settings = null)
     {
         return stats
             .GroupBy(item => Describe(item.AppName).GroupKey, StringComparer.OrdinalIgnoreCase)
@@ -67,7 +115,7 @@ internal static class AppPresentationService
                 return new AppAggregate
                 {
                     GroupKey = representative.GroupKey,
-                    DisplayName = representative.DisplayName,
+                    DisplayName = settings?.GetAliasForGroup(representative.GroupKey) ?? representative.DisplayName,
                     IconGlyph = representative.IconGlyph,
                     ProcessNames = processNames,
                     TodayCount = group.Sum(item => item.TodayCount),
