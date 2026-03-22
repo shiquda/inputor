@@ -379,6 +379,69 @@ public sealed class App : Application, IXamlMetadataProvider
         ApplyThemeMode();
     }
 
+    internal void ExcludeAppsForAggregate(AppAggregate aggregate)
+    {
+        var processNames = aggregate.ProcessNames
+            .Where(CanExclude)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (processNames.Count == 0)
+        {
+            StatsStore.SetStatus(StatusText.NoActiveAppAvailable(), StatsStore.CurrentAppName, false, StatsStore.CurrentProcessName);
+            return;
+        }
+
+        var addedCount = 0;
+        foreach (var processName in processNames)
+        {
+            if (Settings.AddExcludedApp(processName))
+            {
+                addedCount++;
+            }
+        }
+
+        if (addedCount == 0)
+        {
+            StatsStore.SetStatus(StatusText.AppQuickActionAlreadyExcluded(aggregate.DisplayName), aggregate.DisplayName, false, processNames[0]);
+            return;
+        }
+
+        SaveSettings();
+        StatsStore.SetStatus(StatusText.AppQuickActionExcluded(aggregate.DisplayName, addedCount), aggregate.DisplayName, false, processNames[0]);
+    }
+
+    internal void SetAliasForAggregate(AppAggregate aggregate, string? alias)
+    {
+        var changed = Settings.SetAliasForGroup(aggregate.GroupKey, alias);
+        if (!changed)
+        {
+            return;
+        }
+
+        SaveSettings();
+        var resolvedDisplayName = Settings.GetAliasForGroup(aggregate.GroupKey) ?? AppPresentationService.DescribeDisplayName(aggregate.ProcessNames[0]);
+        var statusMessage = string.IsNullOrWhiteSpace(alias)
+            ? StatusText.AppAliasCleared(resolvedDisplayName)
+            : StatusText.AppAliasUpdated(resolvedDisplayName);
+        StatsStore.SetStatus(statusMessage, resolvedDisplayName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+    }
+
+    internal void SetGroupingForAggregate(AppAggregate aggregate, IReadOnlyList<string> tags)
+    {
+        var changed = Settings.ReplaceTagsForApps(aggregate.ProcessNames, tags);
+        if (!changed)
+        {
+            return;
+        }
+
+        SaveSettings();
+        var statusMessage = tags.Count == 0
+            ? StatusText.AppGroupingCleared(aggregate.DisplayName)
+            : StatusText.AppGroupingUpdated(aggregate.DisplayName, tags.Count);
+        StatsStore.SetStatus(statusMessage, aggregate.DisplayName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+    }
+
     public void SetDebugCaptureEnabled(bool isEnabled)
     {
         Settings.DebugCaptureEnabled = isEnabled;

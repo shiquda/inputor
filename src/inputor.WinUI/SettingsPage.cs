@@ -125,7 +125,7 @@ public sealed class SettingsPage : UserControl
         _isRefreshingFromState = true;
 
         var settings = App.Current.Settings;
-        var snapshot = App.Current.StatsStore.GetSnapshot();
+        var snapshot = AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), settings);
 
         _startWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         _themeModeComboBox.SelectedValue = settings.ThemeMode;

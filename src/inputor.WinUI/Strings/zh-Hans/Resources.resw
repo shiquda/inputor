@@ -13,6 +13,17 @@
   <data name="Common.Session" xml:space="preserve"><value>本次会话</value></data>
   <data name="Common.AllTime" xml:space="preserve"><value>累计</value></data>
   <data name="Common.Name" xml:space="preserve"><value>名称</value></data>
+  <data name="QuickActions.Button.Save" xml:space="preserve"><value>保存</value></data>
+  <data name="QuickActions.Button.Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="QuickActions.Menu.ExcludeApp" xml:space="preserve"><value>隐藏应用</value></data>
+  <data name="QuickActions.Menu.ExcludeAppMultiple" xml:space="preserve"><value>隐藏 {0} 个应用进程</value></data>
+  <data name="QuickActions.Menu.EditAlias" xml:space="preserve"><value>编辑别名</value></data>
+  <data name="QuickActions.Menu.EditGrouping" xml:space="preserve"><value>编辑分组</value></data>
+  <data name="QuickActions.Dialog.EditAlias.Title" xml:space="preserve"><value>编辑 {0} 的别名</value></data>
+  <data name="QuickActions.Dialog.EditAlias.Body" xml:space="preserve"><value>留空即可恢复默认显示名。此次修改会作用于：{0}</value></data>
+  <data name="QuickActions.Dialog.EditGrouping.Title" xml:space="preserve"><value>编辑 {0} 的分组</value></data>
+  <data name="QuickActions.Dialog.EditGrouping.Body" xml:space="preserve"><value>使用逗号分隔多个标签。保存后会替换这些进程名当前的分组标签：{0}</value></data>
+  <data name="QuickActions.Dialog.EditGrouping.Placeholder" xml:space="preserve"><value>例如 浏览器, 写作</value></data>
   <data name="Statistics.Range.Today" xml:space="preserve"><value>今日</value></data>
   <data name="Statistics.Range.Last7Days" xml:space="preserve"><value>最近 7 天</value></data>
   <data name="Statistics.Range.Last30Days" xml:space="preserve"><value>最近 30 天</value></data>
@@ -33,7 +44,7 @@
   <data name="Main.Button.StartMonitoring" xml:space="preserve"><value>开始监控</value></data>
   <data name="Main.Button.ResumeMonitoring" xml:space="preserve"><value>继续监控</value></data>
   <data name="Main.Button.PauseMonitoring" xml:space="preserve"><value>暂停监控</value></data>
-  <data name="Main.Button.ExcludeCurrentApp" xml:space="preserve"><value>排除当前应用</value></data>
+  <data name="Main.Button.ExcludeCurrentApp" xml:space="preserve"><value>隐藏当前应用</value></data>
   <data name="Main.Button.ViewAllApps" xml:space="preserve"><value>查看全部应用</value></data>
   <data name="Main.Button.OpenStatistics" xml:space="preserve"><value>打开统计</value></data>
   <data name="Main.Button.OpenSettings" xml:space="preserve"><value>打开设置</value></data>
@@ -93,8 +104,8 @@
   <data name="Settings.Caption.Channel" xml:space="preserve"><value>当前应用渠道。</value></data>
   <data name="Settings.Label.Language" xml:space="preserve"><value>语言</value></data>
   <data name="Settings.Caption.Language" xml:space="preserve"><value>设置应用界面和状态文案使用的语言。更改后需重启生效。</value></data>
-  <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>排除应用</value></data>
-  <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>使用逗号分隔进程名。快捷操作也可以将当前应用加入排除列表。</value></data>
+  <data name="Settings.Label.ExcludedApps" xml:space="preserve"><value>隐藏应用</value></data>
+  <data name="Settings.Caption.ExcludedApps" xml:space="preserve"><value>使用逗号分隔进程名。快捷操作也可以将当前应用加入隐藏列表。</value></data>
   <data name="Settings.Label.AppTagMappings" xml:space="preserve"><value>应用标签</value></data>
   <data name="Settings.Caption.AppTagMappings" xml:space="preserve"><value>先搜索应用，再为它添加一个或多个标签。输入时会优先复用已有标签；未配置标签的应用会归入未标记。</value></data>
   <data name="Settings.Placeholder.AppTagSearch" xml:space="preserve"><value>搜索应用名或已有标签</value></data>
@@ -229,16 +240,16 @@
   <data name="Tray.MenuTitle" xml:space="preserve"><value>inputor 托盘菜单</value></data>
   <data name="Tray.ShowDashboard" xml:space="preserve"><value>显示仪表盘</value></data>
   <data name="Tray.OpenSettings" xml:space="preserve"><value>打开设置</value></data>
-  <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>排除当前应用</value></data>
+  <data name="Tray.ExcludeCurrentApp" xml:space="preserve"><value>隐藏当前应用</value></data>
   <data name="Tray.RestartInputor" xml:space="preserve"><value>重启 inputor</value></data>
   <data name="Tray.ExitInputor" xml:space="preserve"><value>退出 inputor</value></data>
   <data name="NotifyIcon.Tooltip" xml:space="preserve"><value>{0} | 今 {1:N0} | 会 {2:N0} | {3}</value></data>
   <data name="Status.MonitoringNotStartedYet" xml:space="preserve"><value>监控尚未开始。</value></data>
   <data name="Status.MonitoringStarted" xml:space="preserve"><value>监控已开始。</value></data>
   <data name="Status.SessionCountersReset" xml:space="preserve"><value>会话计数已重置。</value></data>
-  <data name="Status.NoActiveAppAvailable" xml:space="preserve"><value>当前没有可加入排除列表的活动应用。</value></data>
-  <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} 已经在排除列表中。</value></data>
-  <data name="Status.AddedExcludedApp" xml:space="preserve"><value>已将 {0} 加入排除列表。</value></data>
+  <data name="Status.NoActiveAppAvailable" xml:space="preserve"><value>当前没有可加入隐藏列表的活动应用。</value></data>
+  <data name="Status.ProcessAlreadyExcluded" xml:space="preserve"><value>{0} 已经在隐藏列表中。</value></data>
+  <data name="Status.AddedExcludedApp" xml:space="preserve"><value>已将 {0} 加入隐藏列表。</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>已将 CSV 导出到 {0}</value></data>
   <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>已将统计源备份到 {0}</value></data>
   <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>统计源备份失败：{0}</value></data>
@@ -262,6 +273,12 @@
   <data name="Status.DebugCaptureEnabled" xml:space="preserve"><value>调试捕获已开启。</value></data>
   <data name="Status.DebugCaptureDisabled" xml:space="preserve"><value>调试捕获已关闭。</value></data>
   <data name="Status.DebugEventsCleared" xml:space="preserve"><value>调试事件已清除。</value></data>
+  <data name="Status.AppQuickActionExcluded" xml:space="preserve"><value>已为 {0} 隐藏 {1} 个应用进程。</value></data>
+  <data name="Status.AppQuickActionAlreadyExcluded" xml:space="preserve"><value>{0} 已经处于隐藏状态。</value></data>
+  <data name="Status.AppAliasUpdated" xml:space="preserve"><value>已更新 {0} 的别名。</value></data>
+  <data name="Status.AppAliasCleared" xml:space="preserve"><value>已清除 {0} 的别名。</value></data>
+  <data name="Status.AppGroupingUpdated" xml:space="preserve"><value>已更新 {0} 的分组，共 {1} 个标签。</value></data>
+  <data name="Status.AppGroupingCleared" xml:space="preserve"><value>已清除 {0} 的分组。</value></data>
   <data name="Status.LanguageChangeRequiresRestart" xml:space="preserve"><value>语言更改会在重启 inputor 后生效。</value></data>
   <data name="Status.MonitoringPaused" xml:space="preserve"><value>监控已暂停。</value></data>
   <data name="Status.MonitoringResumed" xml:space="preserve"><value>监控已恢复。</value></data>
@@ -269,7 +286,7 @@
   <data name="Status.NoForegroundWindow" xml:space="preserve"><value>没有前台窗口。</value></data>
   <data name="Status.UnableToResolveActiveProcess" xml:space="preserve"><value>无法解析当前活动进程。</value></data>
   <data name="Status.UnableToResolveActiveProcessName" xml:space="preserve"><value>无法解析当前活动进程名称。</value></data>
-  <data name="Status.ProcessExcluded" xml:space="preserve"><value>{0} 已被排除。</value></data>
+  <data name="Status.ProcessExcluded" xml:space="preserve"><value>{0} 已被隐藏。</value></data>
   <data name="Status.SelfWindowActive" xml:space="preserve"><value>当前焦点在 inputor 窗口，只监控外部应用。</value></data>
   <data name="Status.NoFocusedElement" xml:space="preserve"><value>{0}：没有焦点元素。</value></data>
   <data name="Status.PasswordFieldSkipped" xml:space="preserve"><value>{0}：已跳过密码字段。</value></data>

@@ -57,7 +57,7 @@ public sealed class StatisticsPage : UserControl
             SelectedValuePath = nameof(AppRangeOption.Value),
             SelectedValue = 0
         };
-        _distributionRangeComboBox.SelectionChanged += (_, _) => Refresh(App.Current.StatsStore.GetSnapshot());
+        _distributionRangeComboBox.SelectionChanged += (_, _) => Refresh(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
         _distributionAggregationComboBox = new ComboBox
         {
             Width = 160,
@@ -66,7 +66,7 @@ public sealed class StatisticsPage : UserControl
             SelectedValuePath = nameof(AppAggregationOption.Tag),
             SelectedValue = "app"
         };
-        _distributionAggregationComboBox.SelectionChanged += (_, _) => Refresh(App.Current.StatsStore.GetSnapshot());
+        _distributionAggregationComboBox.SelectionChanged += (_, _) => Refresh(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
 
         Content = new ScrollViewer
         {
@@ -433,7 +433,7 @@ public sealed class StatisticsPage : UserControl
         {
             var groupedToday = aggregateByTag
                 ? AppPresentationService.BuildTagAggregates(snapshot.AppStats, App.Current.Settings)
-                : AppPresentationService.BuildAggregates(snapshot.AppStats);
+                : AppPresentationService.BuildAggregates(snapshot.AppStats, App.Current.Settings);
             return groupedToday
                 .Where(item => item.TodayCount > 0)
                 .Select(item => new DistributionSlice { Aggregate = item, Value = item.TodayCount })
@@ -444,7 +444,7 @@ public sealed class StatisticsPage : UserControl
         {
             var groupedAllTime = aggregateByTag
                 ? AppPresentationService.BuildTagAggregates(snapshot.AppStats, App.Current.Settings)
-                : AppPresentationService.BuildAggregates(snapshot.AppStats);
+                : AppPresentationService.BuildAggregates(snapshot.AppStats, App.Current.Settings);
             return groupedAllTime
                 .Where(item => item.TotalCount > 0)
                 .Select(item => new DistributionSlice { Aggregate = item, Value = item.TotalCount })
@@ -467,7 +467,7 @@ public sealed class StatisticsPage : UserControl
 
         var aggregates = aggregateByTag
             ? AppPresentationService.BuildTagAggregates(rawStats, App.Current.Settings)
-            : AppPresentationService.BuildAggregates(rawStats);
+            : AppPresentationService.BuildAggregates(rawStats, App.Current.Settings);
 
         return aggregates
             .Where(item => item.TodayCount > 0)
@@ -573,6 +573,7 @@ public sealed class StatisticsPage : UserControl
             Child = row
         };
         var detail = AppStrings.Format("Statistics.Distribution.Detail.Entry", aggregate.DisplayName, value, share);
+        AppQuickActionService.AttachContextMenu(container, aggregate, BeginInteraction, EndInteraction);
         container.PointerEntered += (_, _) =>
         {
             BeginInteraction();
