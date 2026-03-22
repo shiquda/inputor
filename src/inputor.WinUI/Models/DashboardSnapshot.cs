@@ -9,6 +9,9 @@ public sealed class DashboardSnapshot
     public required bool IsCurrentTargetSupported { get; init; }
     public required bool IsPaused { get; init; }
     public required bool IsDebugCaptureEnabled { get; init; }
+    public required bool IsDebugDiskLogEnabled { get; init; }
+    public required string DebugDiskLogPath { get; init; }
+    public required bool DebugDiskLogIncludeRawText { get; init; }
     public required IReadOnlyList<AppStat> AppStats { get; init; }
     public required IReadOnlyList<DailyTotalEntry> DailyHistory { get; init; }
     public required IReadOnlyList<DailyAppTotalEntry> DailyAppHistory { get; init; }
