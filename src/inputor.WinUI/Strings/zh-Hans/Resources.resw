@@ -123,6 +123,8 @@
   <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>备份当前统计源</value></data>
   <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>切换到此统计源</value></data>
   <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>恢复默认统计源</value></data>
+  <data name="Settings.Caption.ClearIconCache" xml:space="preserve"><value>当应用图标看起来过期、缺失，或你想手动重建图标缓存时，可清除本地缓存的应用图标。</value></data>
+  <data name="Settings.Button.ClearIconCache" xml:space="preserve"><value>清除图标缓存</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>清除已保存统计</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>保存设置</value></data>
   <data name="Settings.Value.ChannelDevelopment" xml:space="preserve"><value>开发版</value></data>
@@ -244,6 +246,8 @@
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>设置已更新。</value></data>
   <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>其他设置已保存，但应用标签映射里有 {0} 行格式无效，原有标签映射保持不变。</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>已清除已保存统计。</value></data>
+  <data name="Status.IconCacheCleared" xml:space="preserve"><value>已清除图标缓存。</value></data>
+  <data name="Status.IconCacheClearFailed" xml:space="preserve"><value>清除图标缓存失败：{0}</value></data>
   <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>已切换统计源到 {0}</value></data>
   <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>统计源切换失败：{0}</value></data>
   <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>已检测到损坏的统计源配置，已回退到默认统计源。</value></data>

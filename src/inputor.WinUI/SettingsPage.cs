@@ -26,6 +26,7 @@ public sealed class SettingsPage : UserControl
     private readonly TextBox _statisticsSourcePathTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
     private readonly Button _clearStatisticsButton;
+    private readonly Button _clearIconCacheButton;
     private readonly TextBlock _headerNoteTextBlock;
     private readonly TextBlock _restartNoticeTextBlock;
     private readonly TextBlock _statisticsSourceStateTextBlock;
@@ -65,6 +66,7 @@ public sealed class SettingsPage : UserControl
         _statisticsSourcePathTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.StatisticsSourcePath") };
         _confirmClearStatisticsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.ConfirmClearStatistics") };
         _clearStatisticsButton = new Button { Content = AppStrings.Get("Settings.Button.ClearStoredStatistics"), Padding = new Thickness(24, 8, 24, 8), IsEnabled = false };
+        _clearIconCacheButton = new Button { Content = AppStrings.Get("Settings.Button.ClearIconCache"), Padding = new Thickness(24, 8, 24, 8) };
         _headerNoteTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         _restartNoticeTextBlock = new TextBlock { Text = AppStrings.Get("Settings.RestartNotice"), TextWrapping = TextWrapping.Wrap, Opacity = 0.7, Visibility = Visibility.Collapsed };
         _statisticsSourceStateTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
@@ -82,6 +84,7 @@ public sealed class SettingsPage : UserControl
         _confirmClearStatisticsCheckBox.Checked += (_, _) => _clearStatisticsButton.IsEnabled = true;
         _confirmClearStatisticsCheckBox.Unchecked += (_, _) => _clearStatisticsButton.IsEnabled = false;
         _clearStatisticsButton.Click += (_, _) => ClearStoredStatistics();
+        _clearIconCacheButton.Click += (_, _) => ClearIconCache();
 
         Content = new ScrollViewer
         {
@@ -281,6 +284,8 @@ public sealed class SettingsPage : UserControl
         sourceActions.Children.Add(switchSourceButton);
         sourceActions.Children.Add(resetSourceButton);
         dataManagement.Children.Add(sourceActions);
+        dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Caption.ClearIconCache"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
+        dataManagement.Children.Add(_clearIconCacheButton);
         dataManagement.Children.Add(_confirmClearStatisticsCheckBox);
         dataManagement.Children.Add(_clearStatisticsButton);
         root.Children.Add(CreateCard(dataManagement));
@@ -692,6 +697,12 @@ public sealed class SettingsPage : UserControl
         App.Current.StatsStore.ClearAllStatistics();
         App.Current.StatsStore.SetStatus(StatusText.StoredStatisticsCleared(), App.Current.StatsStore.CurrentAppName, App.Current.StatsStore.IsCurrentTargetSupported, App.Current.StatsStore.CurrentProcessName);
         RefreshFromState();
+    }
+
+    private void ClearIconCache()
+    {
+        App.Current.ClearIconCache();
+        RefreshAppTagEditorList();
     }
 
     private void SwitchStatisticsSource()

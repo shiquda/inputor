@@ -15,9 +15,12 @@ namespace Inputor.WinUI;
 
 internal static class AppPresentationService
 {
+    private static readonly object IconCacheLock = new();
     private static readonly Dictionary<string, ImageSource> IconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, byte[]> IconBytesCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, bool> IconLoadsInFlight = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly string IconCacheDirectory = AppVariant.GetIconCacheDirectory();
+    private static int IconCacheGeneration;
 
     private static readonly Dictionary<string, AppPresentationDefinition> Definitions =
         new(StringComparer.OrdinalIgnoreCase)
@@ -125,11 +128,14 @@ internal static class AppPresentationService
 
     public static ImageSource? TryGetIconSource(IReadOnlyList<string> processNames)
     {
-        foreach (var processName in processNames)
+        lock (IconCacheLock)
         {
-            if (IconCache.TryGetValue(processName, out var iconSource))
+            foreach (var processName in processNames)
             {
-                return iconSource;
+                if (IconCache.TryGetValue(processName, out var iconSource))
+                {
+                    return iconSource;
+                }
             }
         }
 
@@ -140,22 +146,24 @@ internal static class AppPresentationService
     {
         foreach (var processName in processNames.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (IconCache.ContainsKey(processName) || IconLoadsInFlight.ContainsKey(processName))
+            if (HasLoadedIcon(processName) || IconLoadsInFlight.ContainsKey(processName))
             {
                 continue;
             }
+
+            var generation = IconCacheGeneration;
 
             if (!IconLoadsInFlight.TryAdd(processName, true))
             {
                 continue;
             }
 
-            _ = Task.Run(() => LoadIconBytes(processName))
+            _ = Task.Run(() => LoadIconBytes(processName, generation))
                 .ContinueWith(task =>
                 {
                     IconLoadsInFlight.TryRemove(processName, out _);
 
-                    if (task.Status != TaskStatus.RanToCompletion || task.Result is null)
+                    if (task.Status != TaskStatus.RanToCompletion || task.Result is null || generation != IconCacheGeneration)
                     {
                         return;
                     }
@@ -163,7 +171,7 @@ internal static class AppPresentationService
                     IconBytesCache[processName] = task.Result;
                     dispatcherQueue.TryEnqueue(() =>
                     {
-                        if (IconCache.ContainsKey(processName))
+                        if (HasLoadedIcon(processName))
                         {
                             return;
                         }
@@ -174,10 +182,49 @@ internal static class AppPresentationService
                             return;
                         }
 
-                        IconCache[processName] = iconSource;
+                        lock (IconCacheLock)
+                        {
+                            IconCache[processName] = iconSource;
+                        }
+
                         IconsChanged?.Invoke(null, EventArgs.Empty);
                     });
                 }, TaskScheduler.Default);
+        }
+    }
+
+    public static void ClearIconCache()
+    {
+        Exception? deleteException = null;
+
+        IconCacheGeneration++;
+
+        lock (IconCacheLock)
+        {
+            IconCache.Clear();
+        }
+
+        IconBytesCache.Clear();
+        IconLoadsInFlight.Clear();
+
+        try
+        {
+            if (Directory.Exists(IconCacheDirectory))
+            {
+                Directory.Delete(IconCacheDirectory, recursive: true);
+            }
+        }
+        catch (Exception exception)
+        {
+            deleteException = exception;
+            StartupDiagnostics.Log($"ClearIconCache failed to delete disk cache: {exception}");
+        }
+
+        IconsChanged?.Invoke(null, EventArgs.Empty);
+
+        if (deleteException is not null)
+        {
+            throw deleteException;
         }
     }
 
@@ -209,11 +256,42 @@ internal static class AppPresentationService
         return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(normalized.ToLowerInvariant());
     }
 
-    private static byte[]? LoadIconBytes(string processName)
+    private static byte[]? LoadIconBytes(string processName, int generation)
     {
+        if (generation != IconCacheGeneration)
+        {
+            return null;
+        }
+
         if (IconBytesCache.TryGetValue(processName, out var cachedBytes))
         {
             return cachedBytes;
+        }
+
+        var cacheFilePath = GetIconCacheFilePath(processName);
+        if (cacheFilePath is not null)
+        {
+            try
+            {
+                if (File.Exists(cacheFilePath))
+                {
+                    var diskBytes = File.ReadAllBytes(cacheFilePath);
+                    if (diskBytes.Length > 0)
+                    {
+                        if (generation != IconCacheGeneration)
+                        {
+                            return null;
+                        }
+
+                        IconBytesCache[processName] = diskBytes;
+                        return diskBytes;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                StartupDiagnostics.Log($"LoadIconBytes failed to read cached icon for {processName}: {exception}");
+            }
         }
 
         try
@@ -244,7 +322,15 @@ internal static class AppPresentationService
                     using var bitmap = icon.ToBitmap();
                     using var stream = new MemoryStream();
                     bitmap.Save(stream, ImageFormat.Png);
-                    return stream.ToArray();
+                    var iconBytes = stream.ToArray();
+
+                    if (generation != IconCacheGeneration)
+                    {
+                        return null;
+                    }
+
+                    TryPersistIconBytes(cacheFilePath, iconBytes, generation);
+                    return iconBytes;
                 }
             }
         }
@@ -275,6 +361,59 @@ internal static class AppPresentationService
         catch
         {
             return null;
+        }
+    }
+
+    private static bool HasLoadedIcon(string processName)
+    {
+        lock (IconCacheLock)
+        {
+            return IconCache.ContainsKey(processName);
+        }
+    }
+
+    private static string? GetIconCacheFilePath(string processName)
+    {
+        if (string.IsNullOrWhiteSpace(processName))
+        {
+            return null;
+        }
+
+        var invalidFileNameChars = Path.GetInvalidFileNameChars();
+        var safeFileName = new string(processName
+            .Trim()
+            .Select(character => invalidFileNameChars.Contains(character) ? '_' : character)
+            .ToArray());
+
+        if (string.IsNullOrWhiteSpace(safeFileName))
+        {
+            return null;
+        }
+
+        return Path.Combine(IconCacheDirectory, $"{safeFileName}.png");
+    }
+
+    private static void TryPersistIconBytes(string? cacheFilePath, byte[] iconBytes, int generation)
+    {
+        if (cacheFilePath is null || iconBytes.Length == 0 || generation != IconCacheGeneration)
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(IconCacheDirectory);
+
+            if (generation != IconCacheGeneration)
+            {
+                return;
+            }
+
+            File.WriteAllBytes(cacheFilePath, iconBytes);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"TryPersistIconBytes failed for {cacheFilePath}: {exception}");
         }
     }
 

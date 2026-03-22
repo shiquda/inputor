@@ -38,4 +38,11 @@ internal static class AppVariant
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             BackupDirectoryName);
     }
+
+    public static string GetIconCacheDirectory()
+    {
+        return Path.Combine(
+            GetDataDirectory(),
+            "icons");
+    }
 }

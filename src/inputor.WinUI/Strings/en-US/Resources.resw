@@ -123,6 +123,8 @@ Default statistics source: {1}</value></data>
   <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>Backup current source</value></data>
   <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>Switch to this source</value></data>
   <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>Use default source</value></data>
+  <data name="Settings.Caption.ClearIconCache" xml:space="preserve"><value>Clear the locally cached app icons when an icon looks stale, missing, or you want to rebuild the cache.</value></data>
+  <data name="Settings.Button.ClearIconCache" xml:space="preserve"><value>Clear icon cache</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>Clear stored statistics</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>Save settings</value></data>
   <data name="Settings.Value.ChannelDevelopment" xml:space="preserve"><value>Development</value></data>
@@ -244,6 +246,8 @@ Default statistics source: {1}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>Settings updated.</value></data>
   <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>Other settings were saved, but {0} app tag mapping lines were invalid, so the existing tag mappings were left unchanged.</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>Stored statistics cleared.</value></data>
+  <data name="Status.IconCacheCleared" xml:space="preserve"><value>Icon cache cleared.</value></data>
+  <data name="Status.IconCacheClearFailed" xml:space="preserve"><value>Icon cache clear failed: {0}</value></data>
   <data name="Status.StatisticsSourceSwitched" xml:space="preserve"><value>Switched the statistics source to {0}</value></data>
   <data name="Status.StatisticsSourceSwitchFailed" xml:space="preserve"><value>Statistics source switch failed: {0}</value></data>
   <data name="Status.StatisticsSourceFallbackToDefault" xml:space="preserve"><value>A broken configured statistics source was detected, so inputor fell back to the default source.</value></data>

@@ -215,6 +215,20 @@ public sealed class App : Application, IXamlMetadataProvider
         }
     }
 
+    public void ClearIconCache()
+    {
+        try
+        {
+            AppPresentationService.ClearIconCache();
+            StatsStore.SetStatus(StatusText.IconCacheCleared(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"ClearIconCache failed: {exception}");
+            StatsStore.SetStatus(StatusText.IconCacheClearFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+    }
+
     public void SwitchStatisticsSource(string? sourcePath)
     {
         var previousSourcePath = StatsStore.CurrentSourcePath;

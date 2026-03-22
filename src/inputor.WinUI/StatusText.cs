@@ -16,6 +16,8 @@ internal static class StatusText
     public static string SettingsUpdated() => AppStrings.Get("Status.SettingsUpdated");
     public static string InvalidAppTagMappings(int invalidLineCount) => AppStrings.Format("Status.InvalidAppTagMappings", invalidLineCount);
     public static string StoredStatisticsCleared() => AppStrings.Get("Status.StoredStatisticsCleared");
+    public static string IconCacheCleared() => AppStrings.Get("Status.IconCacheCleared");
+    public static string IconCacheClearFailed(string message) => AppStrings.Format("Status.IconCacheClearFailed", message);
     public static string StatisticsSourceSwitched(string path) => AppStrings.Format("Status.StatisticsSourceSwitched", path);
     public static string StatisticsSourceSwitchFailed(string message) => AppStrings.Format("Status.StatisticsSourceSwitchFailed", message);
     public static string StatisticsSourceFallbackToDefault() => AppStrings.Get("Status.StatisticsSourceFallbackToDefault");
