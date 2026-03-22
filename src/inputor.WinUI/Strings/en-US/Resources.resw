@@ -321,4 +321,18 @@
   <data name="AppPresentation.MicrosoftWord" xml:space="preserve"><value>Microsoft Word</value></data>
   <data name="AppPresentation.MicrosoftExcel" xml:space="preserve"><value>Microsoft Excel</value></data>
   <data name="AppPresentation.MicrosoftPowerPoint" xml:space="preserve"><value>Microsoft PowerPoint</value></data>
+  <data name="Debug.DiskLog.Card.Title" xml:space="preserve"><value>Write debug log to disk</value></data>
+  <data name="Debug.DiskLog.Card.PrivacyTitle" xml:space="preserve"><value>Disk log privacy notice</value></data>
+  <data name="Debug.DiskLog.Card.PrivacyBody" xml:space="preserve"><value>The disk log records app names, character counts, and control state — never raw text unless you explicitly enable the raw-text sub-option. The log file is stored locally and never uploaded. Delete it when you are done.</value></data>
+  <data name="Debug.DiskLog.Card.PrivacyBodyRawText" xml:space="preserve"><value>Raw-text logging is ON. Actual typed characters are written to the log file. Delete the file when you are done.</value></data>
+  <data name="Debug.DiskLog.Button.PickFile" xml:space="preserve"><value>Choose file location…</value></data>
+  <data name="Debug.DiskLog.Label.NoPathSet" xml:space="preserve"><value>No file selected. Choose a location before enabling disk logging.</value></data>
+  <data name="Debug.DiskLog.Label.PathSet" xml:space="preserve"><value>Log file: {0}</value></data>
+  <data name="Debug.DiskLog.Toggle.WriteEnabled" xml:space="preserve"><value>Write to file</value></data>
+  <data name="Debug.DiskLog.Toggle.IncludeRawText" xml:space="preserve"><value>Include raw input text (high risk)</value></data>
+  <data name="Debug.DiskLog.Dialog.Title" xml:space="preserve"><value>Choose debug log file location</value></data>
+  <data name="Debug.DiskLog.Dialog.Filter" xml:space="preserve"><value>Text files (*.txt)|*.txt|All files (*.*)|*.*</value></data>
+  <data name="Status.DebugDiskLogEnabled" xml:space="preserve"><value>Disk log writing enabled.</value></data>
+  <data name="Status.DebugDiskLogDisabled" xml:space="preserve"><value>Disk log writing paused.</value></data>
+  <data name="Status.DebugDiskLogPathSet" xml:space="preserve"><value>Disk log path set to {0}</value></data>
 </root>

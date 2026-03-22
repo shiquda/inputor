@@ -26,6 +26,10 @@ public sealed class StatsStore : IDisposable
     private bool _isCurrentTargetSupported;
     private bool _isPaused;
     private bool _isDebugCaptureEnabled;
+    private Action<DebugEventEntry>? _debugDiskLogHook;
+    private bool _isDebugDiskLogEnabled;
+    private string _debugDiskLogPath = string.Empty;
+    private bool _debugDiskLogIncludeRawText;
 
     public StatsStore(string dataDirectory, string? sourcePath = null, bool strictSourceValidation = false)
     {
@@ -142,6 +146,7 @@ public sealed class StatsStore : IDisposable
 
     public void AddDebugEvent(DebugEventEntry entry)
     {
+        Action<DebugEventEntry>? hook;
         lock (_syncRoot)
         {
             _debugEvents.Insert(0, entry);
@@ -149,7 +154,12 @@ public sealed class StatsStore : IDisposable
             {
                 _debugEvents.RemoveRange(MaxDebugEventEntries, _debugEvents.Count - MaxDebugEventEntries);
             }
+
+            hook = _debugDiskLogHook;
         }
+
+        // Call hook outside the lock to avoid blocking I/O inside the critical section.
+        hook?.Invoke(entry);
 
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -159,6 +169,26 @@ public sealed class StatsStore : IDisposable
         lock (_syncRoot)
         {
             _isDebugCaptureEnabled = isEnabled;
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SetDebugDiskLogHook(Action<DebugEventEntry>? hook)
+    {
+        lock (_syncRoot)
+        {
+            _debugDiskLogHook = hook;
+        }
+    }
+
+    public void SetDebugDiskLogState(bool isEnabled, string path, bool includeRawText)
+    {
+        lock (_syncRoot)
+        {
+            _isDebugDiskLogEnabled = isEnabled;
+            _debugDiskLogPath = path;
+            _debugDiskLogIncludeRawText = includeRawText;
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
@@ -231,6 +261,9 @@ public sealed class StatsStore : IDisposable
                 IsCurrentTargetSupported = _isCurrentTargetSupported,
                 IsPaused = _isPaused,
                 IsDebugCaptureEnabled = _isDebugCaptureEnabled,
+                IsDebugDiskLogEnabled = _isDebugDiskLogEnabled,
+                DebugDiskLogPath = _debugDiskLogPath,
+                DebugDiskLogIncludeRawText = _debugDiskLogIncludeRawText,
                 DailyHistory = BuildDailyHistoryLocked(),
                 DailyAppHistory = BuildDailyAppHistoryLocked(),
                 AppStats = _stats.Values

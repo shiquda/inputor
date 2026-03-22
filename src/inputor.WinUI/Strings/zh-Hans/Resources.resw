@@ -321,4 +321,18 @@
   <data name="AppPresentation.MicrosoftWord" xml:space="preserve"><value>Microsoft Word</value></data>
   <data name="AppPresentation.MicrosoftExcel" xml:space="preserve"><value>Microsoft Excel</value></data>
   <data name="AppPresentation.MicrosoftPowerPoint" xml:space="preserve"><value>Microsoft PowerPoint</value></data>
+  <data name="Debug.DiskLog.Card.Title" xml:space="preserve"><value>将调试日志写入磁盘</value></data>
+  <data name="Debug.DiskLog.Card.PrivacyTitle" xml:space="preserve"><value>磁盘日志隐私说明</value></data>
+  <data name="Debug.DiskLog.Card.PrivacyBody" xml:space="preserve"><value>磁盘日志仅记录应用名称、字符计数和控件状态，除非你主动开启"包含原始输入文本"子选项，否则不会写入原始文字。日志文件仅存储在本地，不会上传。使用完毕后请手动删除。</value></data>
+  <data name="Debug.DiskLog.Card.PrivacyBodyRawText" xml:space="preserve"><value>原始文本记录已开启。实际输入的字符将被写入日志文件。完成后请手动删除该文件。</value></data>
+  <data name="Debug.DiskLog.Button.PickFile" xml:space="preserve"><value>选择文件位置…</value></data>
+  <data name="Debug.DiskLog.Label.NoPathSet" xml:space="preserve"><value>尚未选择文件。请先选择保存位置，再启用磁盘写入。</value></data>
+  <data name="Debug.DiskLog.Label.PathSet" xml:space="preserve"><value>日志文件：{0}</value></data>
+  <data name="Debug.DiskLog.Toggle.WriteEnabled" xml:space="preserve"><value>写入文件</value></data>
+  <data name="Debug.DiskLog.Toggle.IncludeRawText" xml:space="preserve"><value>包含原始输入文本（高风险）</value></data>
+  <data name="Debug.DiskLog.Dialog.Title" xml:space="preserve"><value>选择调试日志文件位置</value></data>
+  <data name="Debug.DiskLog.Dialog.Filter" xml:space="preserve"><value>文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*</value></data>
+  <data name="Status.DebugDiskLogEnabled" xml:space="preserve"><value>磁盘日志写入已启用。</value></data>
+  <data name="Status.DebugDiskLogDisabled" xml:space="preserve"><value>磁盘日志写入已暂停。</value></data>
+  <data name="Status.DebugDiskLogPathSet" xml:space="preserve"><value>磁盘日志路径已设为 {0}</value></data>
 </root>

@@ -23,6 +23,7 @@ public sealed class App : Application, IXamlMetadataProvider
     private NotifyIconService? _notifyIconService;
     private TrayMenuWindow? _trayMenuWindow;
     private XamlControlsXamlMetaDataProvider? _metadataProvider;
+    private readonly DebugDiskLogService _debugDiskLogService;
 
     public App()
     {
@@ -56,6 +57,11 @@ public sealed class App : Application, IXamlMetadataProvider
         AutoStartService.Apply(Settings.StartWithWindows);
         MonitoringService = new MonitoringService(StatsStore, Settings);
         StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+        _debugDiskLogService = new DebugDiskLogService();
+        StatsStore.SetDebugDiskLogHook(_debugDiskLogService.Write);
+        _debugDiskLogService.SetPath(Settings.DebugDiskLogPath);
+        _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
+        StatsStore.SetDebugDiskLogState(false, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
         UnhandledException += (_, args) =>
         {
             StartupDiagnostics.Log($"App.UnhandledException: {args.Exception}");
@@ -323,6 +329,9 @@ public sealed class App : Application, IXamlMetadataProvider
                 StatsStore.RestoreSource(string.Empty, payload.StatsJson);
                 MonitoringService.ResetTrackingState();
                 StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+                _debugDiskLogService.SetPath(Settings.DebugDiskLogPath);
+                _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
+                StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
                 StatsStore.SetStatus(StatusText.BackupArchiveRestored(dialog.FileName), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
             }
             catch
@@ -460,6 +469,56 @@ public sealed class App : Application, IXamlMetadataProvider
         StatsStore.SetStatus(StatusText.DebugEventsCleared(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
     }
 
+    public void SetDebugDiskLogEnabled(bool isEnabled)
+    {
+        _debugDiskLogService.SetEnabled(isEnabled);
+        Settings.DebugDiskLogPath = _debugDiskLogService.Path;
+        SaveSettings();
+        StatsStore.SetDebugDiskLogState(isEnabled, _debugDiskLogService.Path, _debugDiskLogService.IncludeRawText);
+        StatsStore.SetStatus(
+            StatusText.DebugDiskLogChanged(isEnabled),
+            StatsStore.CurrentAppName,
+            StatsStore.IsCurrentTargetSupported,
+            StatsStore.CurrentProcessName);
+    }
+
+    public string? PickDebugDiskLogPath()
+    {
+        using var dialog = new SaveFileDialog
+        {
+            AddExtension = true,
+            DefaultExt = "txt",
+            Filter = AppStrings.Get("Debug.DiskLog.Dialog.Filter"),
+            FileName = $"inputor-debug-{DateTime.Now:yyyyMMdd-HHmmss}.txt",
+            OverwritePrompt = false,
+            RestoreDirectory = true,
+            Title = AppStrings.Get("Debug.DiskLog.Dialog.Title")
+        };
+
+        if (dialog.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
+        {
+            return null;
+        }
+
+        return dialog.FileName;
+    }
+
+    public void SetDebugDiskLogPath(string path)
+    {
+        _debugDiskLogService.SetPath(path);
+        Settings.DebugDiskLogPath = path;
+        SaveSettings();
+        StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, path, _debugDiskLogService.IncludeRawText);
+    }
+
+    public void SetDebugDiskLogIncludeRawText(bool includeRawText)
+    {
+        _debugDiskLogService.SetIncludeRawText(includeRawText);
+        Settings.DebugDiskLogIncludeRawText = includeRawText;
+        SaveSettings();
+        StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, _debugDiskLogService.Path, includeRawText);
+    }
+
     public void ExitApplication()
     {
         StartupDiagnostics.Log("ExitApplication called.");
@@ -510,6 +569,7 @@ public sealed class App : Application, IXamlMetadataProvider
         _notifyIconService?.Dispose();
         _notifyIconService = null;
         MonitoringService.Dispose();
+        _debugDiskLogService.Dispose();
         StatsStore.Dispose();
     }
 
@@ -555,6 +615,8 @@ public sealed class App : Application, IXamlMetadataProvider
         Settings.StartWithWindows = settingsSnapshot.StartWithWindows;
         Settings.PrivacyMode = settingsSnapshot.PrivacyMode;
         Settings.DebugCaptureEnabled = settingsSnapshot.DebugCaptureEnabled;
+        Settings.DebugDiskLogPath = settingsSnapshot.DebugDiskLogPath;
+        Settings.DebugDiskLogIncludeRawText = settingsSnapshot.DebugDiskLogIncludeRawText;
         Settings.ThemeMode = settingsSnapshot.ThemeMode;
         Settings.StatisticsSourcePath = forceDefaultStatisticsSource ? string.Empty : settingsSnapshot.StatisticsSourcePath;
         Settings.Language = settingsSnapshot.Language;
@@ -577,6 +639,9 @@ public sealed class App : Application, IXamlMetadataProvider
             StatsStore.RestoreSource(previousStatsSourcePath, previousStatsJson);
             MonitoringService.ResetTrackingState();
             StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+            _debugDiskLogService.SetPath(Settings.DebugDiskLogPath);
+            _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
+            StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
         }
         catch (Exception rollbackException)
         {
@@ -591,6 +656,8 @@ public sealed class App : Application, IXamlMetadataProvider
             StartWithWindows = source.StartWithWindows,
             PrivacyMode = source.PrivacyMode,
             DebugCaptureEnabled = source.DebugCaptureEnabled,
+            DebugDiskLogPath = source.DebugDiskLogPath,
+            DebugDiskLogIncludeRawText = source.DebugDiskLogIncludeRawText,
             ThemeMode = source.ThemeMode,
             StatisticsSourcePath = source.StatisticsSourcePath,
             Language = source.Language,

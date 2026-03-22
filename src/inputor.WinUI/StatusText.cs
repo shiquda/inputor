@@ -31,6 +31,8 @@ internal static class StatusText
     public static string StatisticsSourceFallbackToDefault() => AppStrings.Get("Status.StatisticsSourceFallbackToDefault");
     public static string DebugCaptureChanged(bool isEnabled) => AppStrings.Get(isEnabled ? "Status.DebugCaptureEnabled" : "Status.DebugCaptureDisabled");
     public static string DebugEventsCleared() => AppStrings.Get("Status.DebugEventsCleared");
+    public static string DebugDiskLogChanged(bool isEnabled) => AppStrings.Get(isEnabled ? "Status.DebugDiskLogEnabled" : "Status.DebugDiskLogDisabled");
+    public static string DebugDiskLogPathSet(string path) => AppStrings.Format("Status.DebugDiskLogPathSet", path);
     public static string AppQuickActionExcluded(string displayName, int appCount) => AppStrings.Format("Status.AppQuickActionExcluded", displayName, appCount);
     public static string AppQuickActionAlreadyExcluded(string displayName) => AppStrings.Format("Status.AppQuickActionAlreadyExcluded", displayName);
     public static string AppAliasUpdated(string displayName) => AppStrings.Format("Status.AppAliasUpdated", displayName);
