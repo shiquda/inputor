@@ -23,19 +23,19 @@ public sealed class SettingsPage : UserControl
     private readonly TextBox _appTagSearchTextBox;
     private readonly StackPanel _appTagAssignmentsPanel;
     private readonly TextBlock _appTagSummaryTextBlock;
-    private readonly TextBox _statisticsSourcePathTextBox;
     private readonly CheckBox _confirmClearStatisticsCheckBox;
     private readonly Button _clearStatisticsButton;
     private readonly Button _clearIconCacheButton;
+    private readonly Button _openDataDirectoryButton;
+    private readonly Button _exportBackupArchiveButton;
+    private readonly Button _restoreBackupArchiveButton;
     private readonly TextBlock _headerNoteTextBlock;
     private readonly TextBlock _restartNoticeTextBlock;
-    private readonly TextBlock _statisticsSourceStateTextBlock;
     private readonly DispatcherQueueTimer _settingsSaveTimer;
     private readonly List<Border> _cards = [];
     private readonly List<AppTagEditorState> _appTagEditors = [];
     private bool _isRefreshingFromState;
     private bool _hasQueuedSettingsSave;
-    private bool _skipNextStatisticsSourceAutoApply;
 
     public SettingsPage()
     {
@@ -63,13 +63,14 @@ public sealed class SettingsPage : UserControl
         _appTagSearchTextBox.TextChanged += (_, _) => RefreshAppTagEditorList();
         _appTagAssignmentsPanel = new StackPanel { Spacing = 12 };
         _appTagSummaryTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.72 };
-        _statisticsSourcePathTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.StatisticsSourcePath") };
         _confirmClearStatisticsCheckBox = new CheckBox { Content = AppStrings.Get("Settings.Label.ConfirmClearStatistics") };
         _clearStatisticsButton = new Button { Content = AppStrings.Get("Settings.Button.ClearStoredStatistics"), Padding = new Thickness(24, 8, 24, 8), IsEnabled = false };
         _clearIconCacheButton = new Button { Content = AppStrings.Get("Settings.Button.ClearIconCache"), Padding = new Thickness(24, 8, 24, 8) };
+        _openDataDirectoryButton = new Button { Content = AppStrings.Get("Settings.Button.OpenDataDirectory"), Padding = new Thickness(20, 8, 20, 8) };
+        _exportBackupArchiveButton = CreatePrimaryButton(AppStrings.Get("Settings.Button.ExportBackupArchive"));
+        _restoreBackupArchiveButton = new Button { Content = AppStrings.Get("Settings.Button.RestoreBackupArchive"), Padding = new Thickness(20, 8, 20, 8) };
         _headerNoteTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         _restartNoticeTextBlock = new TextBlock { Text = AppStrings.Get("Settings.RestartNotice"), TextWrapping = TextWrapping.Wrap, Opacity = 0.7, Visibility = Visibility.Collapsed };
-        _statisticsSourceStateTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         _settingsSaveTimer = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().CreateTimer();
         _settingsSaveTimer.Interval = TimeSpan.FromMilliseconds(450);
         _settingsSaveTimer.Tick += SettingsSaveTimer_Tick;
@@ -79,12 +80,14 @@ public sealed class SettingsPage : UserControl
         _themeModeComboBox.SelectionChanged += (_, _) => SaveSettingsImmediately();
         _languageComboBox.SelectionChanged += (_, _) => SaveSettingsImmediately();
         _excludedAppsTextBox.TextChanged += (_, _) => QueueSettingsSave();
-        _statisticsSourcePathTextBox.LostFocus += (_, _) => AutoApplyStatisticsSource();
 
         _confirmClearStatisticsCheckBox.Checked += (_, _) => _clearStatisticsButton.IsEnabled = true;
         _confirmClearStatisticsCheckBox.Unchecked += (_, _) => _clearStatisticsButton.IsEnabled = false;
         _clearStatisticsButton.Click += (_, _) => ClearStoredStatistics();
         _clearIconCacheButton.Click += (_, _) => ClearIconCache();
+        _openDataDirectoryButton.Click += (_, _) => App.Current.OpenDataDirectory();
+        _exportBackupArchiveButton.Click += (_, _) => App.Current.ExportBackupArchive();
+        _restoreBackupArchiveButton.Click += (_, _) => RestoreBackupArchive();
 
         Content = new ScrollViewer
         {
@@ -128,7 +131,6 @@ public sealed class SettingsPage : UserControl
         _themeModeComboBox.SelectedValue = settings.ThemeMode;
         _languageComboBox.SelectedValue = settings.Language;
         _excludedAppsTextBox.Text = settings.ExcludedApps;
-        _statisticsSourcePathTextBox.Text = settings.StatisticsSourcePath;
         _confirmClearStatisticsCheckBox.IsChecked = false;
         _clearStatisticsButton.IsEnabled = false;
         _restartNoticeTextBlock.Visibility = string.Equals(AppStrings.ResolveLanguageTag(settings.Language), AppStrings.CurrentLanguageTag, StringComparison.OrdinalIgnoreCase)
@@ -138,10 +140,6 @@ public sealed class SettingsPage : UserControl
         _versionValueTextBlock.Text = VersionInfo.DisplayVersion;
         _buildValueTextBlock.Text = VersionInfo.BuildVersion;
         _channelValueTextBlock.Text = GetLocalizedChannel();
-        _statisticsSourceStateTextBlock.Text = AppStrings.Format(
-            "Settings.Data.SourceState",
-            App.Current.StatsStore.CurrentSourcePath,
-            App.Current.StatsStore.DefaultSourcePath);
 
         RebuildAppTagEditors(snapshot, settings);
         _appTagNewAppTextBox.Text = string.Empty;
@@ -269,21 +267,13 @@ public sealed class SettingsPage : UserControl
         var dataManagement = new StackPanel { Spacing = 12 };
         dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Data.Item1"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
         dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Data.Item2"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
-        dataManagement.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.StatisticsSourcePath"), _statisticsSourcePathTextBox, AppStrings.Get("Settings.Caption.StatisticsSourcePath")));
-        dataManagement.Children.Add(_statisticsSourceStateTextBlock);
-        var sourceActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        var backupButton = CreatePrimaryButton(AppStrings.Get("Settings.Button.BackupStatisticsSource"));
-        backupButton.Click += (_, _) => App.Current.BackupStatisticsSource();
-        var switchSourceButton = new Button { Content = AppStrings.Get("Settings.Button.SwitchStatisticsSource"), Padding = new Thickness(20, 8, 20, 8) };
-        switchSourceButton.AddHandler(PointerPressedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _skipNextStatisticsSourceAutoApply = true), true);
-        switchSourceButton.Click += (_, _) => SwitchStatisticsSource();
-        var resetSourceButton = new Button { Content = AppStrings.Get("Settings.Button.UseDefaultStatisticsSource"), Padding = new Thickness(20, 8, 20, 8) };
-        resetSourceButton.AddHandler(PointerPressedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => _skipNextStatisticsSourceAutoApply = true), true);
-        resetSourceButton.Click += (_, _) => ResetStatisticsSource();
-        sourceActions.Children.Add(backupButton);
-        sourceActions.Children.Add(switchSourceButton);
-        sourceActions.Children.Add(resetSourceButton);
-        dataManagement.Children.Add(sourceActions);
+        dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Caption.DataDirectory"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
+        dataManagement.Children.Add(_openDataDirectoryButton);
+        dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Caption.BackupArchive"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
+        var archiveActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        archiveActions.Children.Add(_exportBackupArchiveButton);
+        archiveActions.Children.Add(_restoreBackupArchiveButton);
+        dataManagement.Children.Add(archiveActions);
         dataManagement.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Caption.ClearIconCache"), TextWrapping = TextWrapping.Wrap, Opacity = 0.8 });
         dataManagement.Children.Add(_clearIconCacheButton);
         dataManagement.Children.Add(_confirmClearStatisticsCheckBox);
@@ -379,30 +369,6 @@ public sealed class SettingsPage : UserControl
             _excludedAppsTextBox.Text = normalizedExcludedApps;
             _isRefreshingFromState = false;
         }
-    }
-
-    private void AutoApplyStatisticsSource()
-    {
-        if (_isRefreshingFromState)
-        {
-            return;
-        }
-
-        if (_skipNextStatisticsSourceAutoApply)
-        {
-            _skipNextStatisticsSourceAutoApply = false;
-            return;
-        }
-
-        var currentValue = _statisticsSourcePathTextBox.Text ?? string.Empty;
-        var savedValue = App.Current.Settings.StatisticsSourcePath;
-        if (string.Equals(currentValue, savedValue, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        App.Current.SwitchStatisticsSource(currentValue);
-        RefreshFromState();
     }
 
     private void RefreshAppTagEditorList()
@@ -705,16 +671,11 @@ public sealed class SettingsPage : UserControl
         RefreshAppTagEditorList();
     }
 
-    private void SwitchStatisticsSource()
+    private void RestoreBackupArchive()
     {
-        App.Current.SwitchStatisticsSource(_statisticsSourcePathTextBox.Text);
+        App.Current.RestoreBackupArchive();
         RefreshFromState();
-    }
-
-    private void ResetStatisticsSource()
-    {
-        App.Current.SwitchStatisticsSource(string.Empty);
-        RefreshFromState();
+        RefreshAppTagEditorList();
     }
 
     private static UIElement CreateLabeledInput(string title, Control input, string caption)

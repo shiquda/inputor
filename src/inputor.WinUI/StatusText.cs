@@ -13,6 +13,14 @@ internal static class StatusText
     public static string ExportedCsv(string path) => AppStrings.Format("Status.ExportedCsv", path);
     public static string StatisticsBackupCreated(string path) => AppStrings.Format("Status.StatisticsBackupCreated", path);
     public static string StatisticsBackupFailed(string message) => AppStrings.Format("Status.StatisticsBackupFailed", message);
+    public static string DataDirectoryOpened(string path) => AppStrings.Format("Status.DataDirectoryOpened", path);
+    public static string DataDirectoryOpenFailed(string message) => AppStrings.Format("Status.DataDirectoryOpenFailed", message);
+    public static string BackupArchiveExported(string path) => AppStrings.Format("Status.BackupArchiveExported", path);
+    public static string BackupArchiveExportFailed(string message) => AppStrings.Format("Status.BackupArchiveExportFailed", message);
+    public static string BackupArchiveRestored(string path) => AppStrings.Format("Status.BackupArchiveRestored", path);
+    public static string BackupArchiveRestoreFailed(string message) => AppStrings.Format("Status.BackupArchiveRestoreFailed", message);
+    public static string LegacyStatisticsSourceMigratedToDefault(string path) => AppStrings.Format("Status.LegacyStatisticsSourceMigratedToDefault", path);
+    public static string LegacyStatisticsSourceMigrationFailed(string message) => AppStrings.Format("Status.LegacyStatisticsSourceMigrationFailed", message);
     public static string SettingsUpdated() => AppStrings.Get("Status.SettingsUpdated");
     public static string InvalidAppTagMappings(int invalidLineCount) => AppStrings.Format("Status.InvalidAppTagMappings", invalidLineCount);
     public static string StoredStatisticsCleared() => AppStrings.Get("Status.StoredStatisticsCleared");

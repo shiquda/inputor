@@ -317,6 +317,47 @@ public sealed class StatsStore : IDisposable
         }
     }
 
+    public void RestoreSource(string? targetPath, string json)
+    {
+        lock (_syncRoot)
+        {
+            var normalizedPath = NormalizeSourcePath(targetPath, _defaultStatsPath);
+            var parentDirectory = Path.GetDirectoryName(normalizedPath);
+            if (!string.IsNullOrWhiteSpace(parentDirectory))
+            {
+                Directory.CreateDirectory(parentDirectory);
+            }
+
+            var (today, stats, dailyHistory, dailyAppHistory) = LoadFromJson(json);
+            _statsPath = normalizedPath;
+            _today = today;
+            _stats.Clear();
+            foreach (var pair in stats)
+            {
+                _stats[pair.Key] = pair.Value;
+            }
+
+            _dailyHistory.Clear();
+            _dailyHistory.AddRange(dailyHistory);
+            _dailyAppHistory.Clear();
+            _dailyAppHistory.AddRange(dailyAppHistory);
+            _sessionStartedAt = DateTime.Now;
+            _recentActivity.Clear();
+            _debugEvents.Clear();
+            PersistLocked();
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ValidateSourceJson(string json)
+    {
+        lock (_syncRoot)
+        {
+            _ = LoadFromJson(json);
+        }
+    }
+
     public void SwitchSource(string? sourcePath)
     {
         lock (_syncRoot)
@@ -377,6 +418,11 @@ public sealed class StatsStore : IDisposable
         }
 
         var json = File.ReadAllText(path);
+        return LoadFromJson(json);
+    }
+
+    private (DateOnly Today, Dictionary<string, AppStat> Stats, List<DailyTotalEntry> DailyHistory, List<DailyAppTotalEntry> DailyAppHistory) LoadFromJson(string json)
+    {
         if (string.IsNullOrWhiteSpace(json))
         {
             return (DateOnly.FromDateTime(DateTime.Now), new Dictionary<string, AppStat>(StringComparer.OrdinalIgnoreCase), [], []);

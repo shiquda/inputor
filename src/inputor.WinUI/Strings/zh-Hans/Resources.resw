@@ -81,7 +81,7 @@
   <data name="Settings.Section.PrivacyTitle" xml:space="preserve"><value>隐私</value></data>
   <data name="Settings.Section.PrivacySubtitle" xml:space="preserve"><value>说明 inputor 会保存什么，以及它刻意忽略什么。</value></data>
   <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>数据管理</value></data>
-  <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>仅当你确定要永久移除本地统计数据时再使用。</value></data>
+  <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>在这里查看本地数据目录、导出便携备份、恢复历史归档，或清理本地数据。</value></data>
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>开机启动</value></data>
   <data name="Settings.Label.ThemeMode" xml:space="preserve"><value>主题</value></data>
   <data name="Settings.Caption.ThemeMode" xml:space="preserve"><value>让应用内容区和标题栏跟随系统，或者固定为浅色 / 深色。</value></data>
@@ -112,20 +112,19 @@
   <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor 始终保持隐私保护开启：它只在本地保存计数、进程名和日期分桶。</value></data>
   <data name="Settings.Privacy.Item2" xml:space="preserve"><value>原始文本只会暂存在内存里用于快照对比，不会写盘也不会导出。</value></data>
   <data name="Settings.Privacy.Item3" xml:space="preserve"><value>密码框、不受支持的控件和受保护窗口会按设计保持排除。</value></data>
-  <data name="Settings.Data.Item1" xml:space="preserve"><value>这会清除当前设备上保存的今日、会话和累计的各应用统计。</value></data>
-  <data name="Settings.Data.Item2" xml:space="preserve"><value>此操作不会修改隐私设置或排除应用偏好。</value></data>
-  <data name="Settings.Data.SourceState" xml:space="preserve"><value>当前统计源：{0}
-默认统计源：{1}</value></data>
-  <data name="Settings.Label.StatisticsSourcePath" xml:space="preserve"><value>统计源路径</value></data>
-  <data name="Settings.Caption.StatisticsSourcePath" xml:space="preserve"><value>留空表示使用默认 LocalAppData 统计源；填写一个 JSON 路径后可立即切换到该统计源。</value></data>
-  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>例如 D:\inputor-backups\inputor-stats-20260320-090000.json</value></data>
+  <data name="Settings.Data.Item1" xml:space="preserve"><value>你可以先打开应用数据目录，直接查看 inputor 当前正在使用的本地文件。</value></data>
+  <data name="Settings.Data.Item2" xml:space="preserve"><value>ZIP 备份会包含设置和已保存统计，但会刻意排除图标缓存。</value></data>
+  <data name="Settings.Caption.DataDirectory" xml:space="preserve"><value>打开当前应用数据目录，查看正在生效的设置文件、本地统计存储以及相关本地内容。</value></data>
+  <data name="Settings.Caption.BackupArchive" xml:space="preserve"><value>导出一个便于保存或迁移的 ZIP 备份，或在之后从 ZIP 归档恢复。恢复时会把其中的设置和统计写回默认本地存储。</value></data>
   <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>我已了解这会永久清除所有已保存的统计数据。</value></data>
-  <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>备份当前统计源</value></data>
-  <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>切换到此统计源</value></data>
-  <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>恢复默认统计源</value></data>
+  <data name="Settings.Button.OpenDataDirectory" xml:space="preserve"><value>打开应用数据目录</value></data>
+  <data name="Settings.Button.ExportBackupArchive" xml:space="preserve"><value>导出 ZIP 备份</value></data>
+  <data name="Settings.Button.RestoreBackupArchive" xml:space="preserve"><value>恢复 ZIP 备份</value></data>
   <data name="Settings.Caption.ClearIconCache" xml:space="preserve"><value>当应用图标看起来过期、缺失，或你想手动重建图标缓存时，可清除本地缓存的应用图标。</value></data>
   <data name="Settings.Button.ClearIconCache" xml:space="preserve"><value>清除图标缓存</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>清除已保存统计</value></data>
+  <data name="Settings.Dialog.ExportBackupArchiveTitle" xml:space="preserve"><value>导出 inputor ZIP 备份</value></data>
+  <data name="Settings.Dialog.RestoreBackupArchiveTitle" xml:space="preserve"><value>恢复 inputor ZIP 备份</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>保存设置</value></data>
   <data name="Settings.Value.ChannelDevelopment" xml:space="preserve"><value>开发版</value></data>
   <data name="Settings.Value.ChannelRelease" xml:space="preserve"><value>正式版</value></data>
@@ -243,6 +242,14 @@
   <data name="Status.ExportedCsv" xml:space="preserve"><value>已将 CSV 导出到 {0}</value></data>
   <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>已将统计源备份到 {0}</value></data>
   <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>统计源备份失败：{0}</value></data>
+  <data name="Status.DataDirectoryOpened" xml:space="preserve"><value>已打开应用数据目录：{0}</value></data>
+  <data name="Status.DataDirectoryOpenFailed" xml:space="preserve"><value>打开应用数据目录失败：{0}</value></data>
+  <data name="Status.BackupArchiveExported" xml:space="preserve"><value>已将 ZIP 备份导出到 {0}</value></data>
+  <data name="Status.BackupArchiveExportFailed" xml:space="preserve"><value>导出 ZIP 备份失败：{0}</value></data>
+  <data name="Status.BackupArchiveRestored" xml:space="preserve"><value>已从 {0} 恢复 ZIP 备份；设置和统计现已指向默认本地统计源。</value></data>
+  <data name="Status.BackupArchiveRestoreFailed" xml:space="preserve"><value>恢复 ZIP 备份失败：{0}</value></data>
+  <data name="Status.LegacyStatisticsSourceMigratedToDefault" xml:space="preserve"><value>已将旧的自定义统计源迁移到默认本地存储：{0}</value></data>
+  <data name="Status.LegacyStatisticsSourceMigrationFailed" xml:space="preserve"><value>迁移旧的自定义统计源失败：{0}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>设置已更新。</value></data>
   <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>其他设置已保存，但应用标签映射里有 {0} 行格式无效，原有标签映射保持不变。</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>已清除已保存统计。</value></data>

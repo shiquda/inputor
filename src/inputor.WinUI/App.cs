@@ -7,6 +7,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.XamlTypeInfo;
+using DialogResult = System.Windows.Forms.DialogResult;
+using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
+using SaveFileDialog = System.Windows.Forms.SaveFileDialog;
 using Windows.UI.ViewManagement;
 
 namespace Inputor.WinUI;
@@ -44,7 +47,11 @@ public sealed class App : Application, IXamlMetadataProvider
             StatsStore = new StatsStore(_dataDirectory);
             StatsStore.SetStatus(StatusText.StatisticsSourceFallbackToDefault(), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
         }
+
+        MigrateLegacyStatisticsSourceToDefault();
+
         Exporter = new CsvExportService(AppVariant.GetExportDirectory());
+        BackupArchives = new BackupArchiveService();
         AutoStartService = new AutoStartService(AppVariant.AutoStartEntryName);
         AutoStartService.Apply(Settings.StartWithWindows);
         MonitoringService = new MonitoringService(StatsStore, Settings);
@@ -65,6 +72,8 @@ public sealed class App : Application, IXamlMetadataProvider
     public StatsStore StatsStore { get; }
 
     public CsvExportService Exporter { get; }
+
+    public BackupArchiveService BackupArchives { get; }
 
     public AutoStartService AutoStartService { get; }
 
@@ -229,6 +238,106 @@ public sealed class App : Application, IXamlMetadataProvider
         }
     }
 
+    public void OpenDataDirectory()
+    {
+        try
+        {
+            var path = AppVariant.GetDataDirectory();
+            Directory.CreateDirectory(path);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+            StatsStore.SetStatus(StatusText.DataDirectoryOpened(path), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"OpenDataDirectory failed: {exception}");
+            StatsStore.SetStatus(StatusText.DataDirectoryOpenFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+    }
+
+    public void ExportBackupArchive()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppVariant.GetBackupDirectory());
+            using var dialog = new SaveFileDialog
+            {
+                AddExtension = true,
+                DefaultExt = "zip",
+                Filter = "ZIP archives (*.zip)|*.zip",
+                InitialDirectory = AppVariant.GetBackupDirectory(),
+                FileName = $"inputor-backup-{DateTime.Now:yyyyMMdd-HHmmss}.zip",
+                OverwritePrompt = true,
+                RestoreDirectory = true,
+                Title = AppStrings.Get("Settings.Dialog.ExportBackupArchiveTitle")
+            };
+
+            if (dialog.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
+            {
+                return;
+            }
+
+            var archivePath = BackupArchives.Export(dialog.FileName, Settings, StatsStore.CurrentSourcePath);
+            StatsStore.SetStatus(StatusText.BackupArchiveExported(archivePath), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"ExportBackupArchive failed: {exception}");
+            StatsStore.SetStatus(StatusText.BackupArchiveExportFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+    }
+
+    public void RestoreBackupArchive()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppVariant.GetBackupDirectory());
+            using var dialog = new OpenFileDialog
+            {
+                CheckFileExists = true,
+                Filter = "ZIP archives (*.zip)|*.zip",
+                InitialDirectory = AppVariant.GetBackupDirectory(),
+                RestoreDirectory = true,
+                Title = AppStrings.Get("Settings.Dialog.RestoreBackupArchiveTitle")
+            };
+
+            if (dialog.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
+            {
+                return;
+            }
+
+            var previousSettings = CloneSettings(Settings);
+            var previousStatsSourcePath = StatsStore.CurrentSourcePath;
+            var previousStatsJson = File.Exists(previousStatsSourcePath)
+                ? File.ReadAllText(previousStatsSourcePath)
+                : string.Empty;
+            var payload = BackupArchives.Load(dialog.FileName);
+            StatsStore.ValidateSourceJson(payload.StatsJson);
+
+            try
+            {
+                ApplySettingsSnapshot(payload.Settings, forceDefaultStatisticsSource: true);
+                StatsStore.RestoreSource(string.Empty, payload.StatsJson);
+                MonitoringService.ResetTrackingState();
+                StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+                StatsStore.SetStatus(StatusText.BackupArchiveRestored(dialog.FileName), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+            }
+            catch
+            {
+                RollbackRestoredBackup(previousSettings, previousStatsSourcePath, previousStatsJson);
+                throw;
+            }
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"RestoreBackupArchive failed: {exception}");
+            StatsStore.SetStatus(StatusText.BackupArchiveRestoreFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+    }
+
     public void SwitchStatisticsSource(string? sourcePath)
     {
         var previousSourcePath = StatsStore.CurrentSourcePath;
@@ -344,6 +453,93 @@ public sealed class App : Application, IXamlMetadataProvider
     private void ApplyThemeMode()
     {
         MainWindow?.ApplyThemeMode(AppStrings.ResolveThemeMode(Settings.ThemeMode));
+    }
+
+    private void MigrateLegacyStatisticsSourceToDefault()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.StatisticsSourcePath))
+        {
+            return;
+        }
+
+        var currentSourcePath = StatsStore.CurrentSourcePath;
+        var defaultSourcePath = StatsStore.DefaultSourcePath;
+        try
+        {
+            if (!string.Equals(Path.GetFullPath(currentSourcePath), Path.GetFullPath(defaultSourcePath), StringComparison.OrdinalIgnoreCase))
+            {
+                var legacyStatsJson = File.Exists(currentSourcePath)
+                    ? File.ReadAllText(currentSourcePath)
+                    : string.Empty;
+                StatsStore.ValidateSourceJson(legacyStatsJson);
+                StatsStore.RestoreSource(string.Empty, legacyStatsJson);
+            }
+
+            Settings.StatisticsSourcePath = string.Empty;
+            SettingsService.Save(Settings);
+            StartupDiagnostics.Log($"Migrated legacy statistics source to default local storage: {currentSourcePath} -> {defaultSourcePath}");
+            StatsStore.SetStatus(StatusText.LegacyStatisticsSourceMigratedToDefault(defaultSourcePath), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"Legacy statistics source migration failed: {exception}");
+            StatsStore.SetStatus(StatusText.LegacyStatisticsSourceMigrationFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        }
+    }
+
+    private void ApplySettingsSnapshot(AppSettings settingsSnapshot, bool forceDefaultStatisticsSource)
+    {
+        Settings.StartWithWindows = settingsSnapshot.StartWithWindows;
+        Settings.PrivacyMode = settingsSnapshot.PrivacyMode;
+        Settings.DebugCaptureEnabled = settingsSnapshot.DebugCaptureEnabled;
+        Settings.ThemeMode = settingsSnapshot.ThemeMode;
+        Settings.StatisticsSourcePath = forceDefaultStatisticsSource ? string.Empty : settingsSnapshot.StatisticsSourcePath;
+        Settings.Language = settingsSnapshot.Language;
+        Settings.ExcludedApps = settingsSnapshot.ExcludedApps;
+        Settings.AppTagMappings = settingsSnapshot.GetNormalizedTagMappings()
+            .Select(mapping => new AppTagMapping
+            {
+                AppName = mapping.AppName,
+                Tags = mapping.Tags.ToList()
+            })
+            .ToList();
+        SaveSettings();
+    }
+
+    private void RollbackRestoredBackup(AppSettings previousSettings, string previousStatsSourcePath, string previousStatsJson)
+    {
+        try
+        {
+            ApplySettingsSnapshot(previousSettings, forceDefaultStatisticsSource: false);
+            StatsStore.RestoreSource(previousStatsSourcePath, previousStatsJson);
+            MonitoringService.ResetTrackingState();
+            StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+        }
+        catch (Exception rollbackException)
+        {
+            StartupDiagnostics.Log($"RestoreBackupArchive rollback failed: {rollbackException}");
+        }
+    }
+
+    private static AppSettings CloneSettings(AppSettings source)
+    {
+        return new AppSettings
+        {
+            StartWithWindows = source.StartWithWindows,
+            PrivacyMode = source.PrivacyMode,
+            DebugCaptureEnabled = source.DebugCaptureEnabled,
+            ThemeMode = source.ThemeMode,
+            StatisticsSourcePath = source.StatisticsSourcePath,
+            Language = source.Language,
+            ExcludedApps = source.ExcludedApps,
+            AppTagMappings = source.GetNormalizedTagMappings()
+                .Select(mapping => new AppTagMapping
+                {
+                    AppName = mapping.AppName,
+                    Tags = mapping.Tags.ToList()
+                })
+                .ToList()
+        };
     }
 
     private void UiSettings_ColorValuesChanged(UISettings sender, object args)

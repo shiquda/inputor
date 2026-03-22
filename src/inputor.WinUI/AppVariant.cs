@@ -25,6 +25,20 @@ internal static class AppVariant
             DataDirectoryName);
     }
 
+    public static string GetSettingsPath()
+    {
+        return Path.Combine(
+            GetDataDirectory(),
+            "settings.json");
+    }
+
+    public static string GetDefaultStatsPath()
+    {
+        return Path.Combine(
+            GetDataDirectory(),
+            "stats.json");
+    }
+
     public static string GetExportDirectory()
     {
         return Path.Combine(

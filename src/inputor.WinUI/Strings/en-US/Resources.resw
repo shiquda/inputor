@@ -81,7 +81,7 @@
   <data name="Settings.Section.PrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
   <data name="Settings.Section.PrivacySubtitle" xml:space="preserve"><value>What inputor stores and what it intentionally ignores.</value></data>
   <data name="Settings.Section.DataManagementTitle" xml:space="preserve"><value>Data management</value></data>
-  <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>Use this only when you want to permanently remove stored local statistics.</value></data>
+  <data name="Settings.Section.DataManagementSubtitle" xml:space="preserve"><value>Inspect the local storage folder, create portable backups, restore archived data, or clean up local data.</value></data>
   <data name="Settings.Label.StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
   <data name="Settings.Label.ThemeMode" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings.Caption.ThemeMode" xml:space="preserve"><value>Sync the app surface and title bar with the system, or force a light or dark theme.</value></data>
@@ -112,20 +112,19 @@
   <data name="Settings.Privacy.Item1" xml:space="preserve"><value>inputor always keeps privacy protections on: it stores counts, process names, and date buckets locally.</value></data>
   <data name="Settings.Privacy.Item2" xml:space="preserve"><value>Raw text only exists in memory for snapshot diffing and is never written to disk or exported.</value></data>
   <data name="Settings.Privacy.Item3" xml:space="preserve"><value>Password fields, unsupported controls, and protected windows remain excluded by design.</value></data>
-  <data name="Settings.Data.Item1" xml:space="preserve"><value>This clears today, session, and all-time per-app counts stored on this device.</value></data>
-  <data name="Settings.Data.Item2" xml:space="preserve"><value>The action does not change privacy settings or excluded-app preferences.</value></data>
-  <data name="Settings.Data.SourceState" xml:space="preserve"><value>Current statistics source: {0}
-Default statistics source: {1}</value></data>
-  <data name="Settings.Label.StatisticsSourcePath" xml:space="preserve"><value>Statistics source path</value></data>
-  <data name="Settings.Caption.StatisticsSourcePath" xml:space="preserve"><value>Leave empty to use the default LocalAppData source, or enter a JSON path and switch to it immediately.</value></data>
-  <data name="Settings.Placeholder.StatisticsSourcePath" xml:space="preserve"><value>For example D:\inputor-backups\inputor-stats-20260320-090000.json</value></data>
+  <data name="Settings.Data.Item1" xml:space="preserve"><value>Use the app data folder to inspect the live local files that inputor maintains on this device.</value></data>
+  <data name="Settings.Data.Item2" xml:space="preserve"><value>Backup archives include settings and stored statistics, but intentionally exclude the icon cache.</value></data>
+  <data name="Settings.Caption.DataDirectory" xml:space="preserve"><value>Open the current app data folder to inspect the active settings file, local statistics storage, and related local artifacts.</value></data>
+  <data name="Settings.Caption.BackupArchive" xml:space="preserve"><value>Create a ZIP backup you can keep elsewhere, or restore one later. Restores write the archived settings and statistics back into the default local storage.</value></data>
   <data name="Settings.Label.ConfirmClearStatistics" xml:space="preserve"><value>I understand this permanently clears all stored statistics.</value></data>
-  <data name="Settings.Button.BackupStatisticsSource" xml:space="preserve"><value>Backup current source</value></data>
-  <data name="Settings.Button.SwitchStatisticsSource" xml:space="preserve"><value>Switch to this source</value></data>
-  <data name="Settings.Button.UseDefaultStatisticsSource" xml:space="preserve"><value>Use default source</value></data>
+  <data name="Settings.Button.OpenDataDirectory" xml:space="preserve"><value>Open app data folder</value></data>
+  <data name="Settings.Button.ExportBackupArchive" xml:space="preserve"><value>Export ZIP backup</value></data>
+  <data name="Settings.Button.RestoreBackupArchive" xml:space="preserve"><value>Restore ZIP backup</value></data>
   <data name="Settings.Caption.ClearIconCache" xml:space="preserve"><value>Clear the locally cached app icons when an icon looks stale, missing, or you want to rebuild the cache.</value></data>
   <data name="Settings.Button.ClearIconCache" xml:space="preserve"><value>Clear icon cache</value></data>
   <data name="Settings.Button.ClearStoredStatistics" xml:space="preserve"><value>Clear stored statistics</value></data>
+  <data name="Settings.Dialog.ExportBackupArchiveTitle" xml:space="preserve"><value>Export inputor ZIP backup</value></data>
+  <data name="Settings.Dialog.RestoreBackupArchiveTitle" xml:space="preserve"><value>Restore inputor ZIP backup</value></data>
   <data name="Settings.Button.Save" xml:space="preserve"><value>Save settings</value></data>
   <data name="Settings.Value.ChannelDevelopment" xml:space="preserve"><value>Development</value></data>
   <data name="Settings.Value.ChannelRelease" xml:space="preserve"><value>Release</value></data>
@@ -243,6 +242,14 @@ Default statistics source: {1}</value></data>
   <data name="Status.ExportedCsv" xml:space="preserve"><value>Exported CSV to {0}</value></data>
   <data name="Status.StatisticsBackupCreated" xml:space="preserve"><value>Backed up the statistics source to {0}</value></data>
   <data name="Status.StatisticsBackupFailed" xml:space="preserve"><value>Statistics source backup failed: {0}</value></data>
+  <data name="Status.DataDirectoryOpened" xml:space="preserve"><value>Opened the app data folder: {0}</value></data>
+  <data name="Status.DataDirectoryOpenFailed" xml:space="preserve"><value>Failed to open the app data folder: {0}</value></data>
+  <data name="Status.BackupArchiveExported" xml:space="preserve"><value>Exported ZIP backup to {0}</value></data>
+  <data name="Status.BackupArchiveExportFailed" xml:space="preserve"><value>ZIP backup export failed: {0}</value></data>
+  <data name="Status.BackupArchiveRestored" xml:space="preserve"><value>Restored ZIP backup from {0}. Settings and statistics now point to the default local source.</value></data>
+  <data name="Status.BackupArchiveRestoreFailed" xml:space="preserve"><value>ZIP backup restore failed: {0}</value></data>
+  <data name="Status.LegacyStatisticsSourceMigratedToDefault" xml:space="preserve"><value>Migrated an older custom statistics source into the default local storage: {0}</value></data>
+  <data name="Status.LegacyStatisticsSourceMigrationFailed" xml:space="preserve"><value>Could not migrate an older custom statistics source: {0}</value></data>
   <data name="Status.SettingsUpdated" xml:space="preserve"><value>Settings updated.</value></data>
   <data name="Status.InvalidAppTagMappings" xml:space="preserve"><value>Other settings were saved, but {0} app tag mapping lines were invalid, so the existing tag mappings were left unchanged.</value></data>
   <data name="Status.StoredStatisticsCleared" xml:space="preserve"><value>Stored statistics cleared.</value></data>
