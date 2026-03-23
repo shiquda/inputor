@@ -15,6 +15,8 @@ namespace Inputor.WinUI;
 
 internal static class AppPresentationService
 {
+    private const int MaxCachedIconBytes = 1024 * 1024;
+
     private static readonly object IconCacheLock = new();
     private static readonly Dictionary<string, ImageSource> IconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, byte[]> IconBytesCache = new(StringComparer.OrdinalIgnoreCase);
@@ -324,8 +326,20 @@ internal static class AppPresentationService
         {
             try
             {
-                if (File.Exists(cacheFilePath))
+                var cacheFileInfo = new FileInfo(cacheFilePath);
+                if (cacheFileInfo.Exists)
                 {
+                    if (cacheFileInfo.Length <= 0)
+                    {
+                        return null;
+                    }
+
+                    if (cacheFileInfo.Length > MaxCachedIconBytes)
+                    {
+                        StartupDiagnostics.Log($"LoadIconBytes ignored oversized cached icon for {processName}: {cacheFileInfo.Length} bytes.");
+                        return null;
+                    }
+
                     var diskBytes = File.ReadAllBytes(cacheFilePath);
                     if (diskBytes.Length > 0)
                     {
@@ -446,7 +460,7 @@ internal static class AppPresentationService
 
     private static void TryPersistIconBytes(string? cacheFilePath, byte[] iconBytes, int generation)
     {
-        if (cacheFilePath is null || iconBytes.Length == 0 || generation != IconCacheGeneration)
+        if (cacheFilePath is null || iconBytes.Length == 0 || iconBytes.Length > MaxCachedIconBytes || generation != IconCacheGeneration)
         {
             return;
         }
