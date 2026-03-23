@@ -15,7 +15,9 @@ inputor **never records raw text** — only character counts and metadata — ke
 - **Per-app statistics** — track input volume separately for each application
 - **Trends & heatmap** — visualize how your input volume changes over time
 - **Chinese & English aware** — heuristic-based counting compatible with Microsoft Pinyin and other Chinese IMEs
-- **App tags & source management** — group apps with tags, back up the current statistics source, or switch to a specific JSON stats file
+- **App tags & quick actions** — group apps with tags, and quickly hide noisy apps, edit aliases, or adjust grouping
+- **Backup restore & source management** — export ZIP backups, restore stats plus settings, or switch to a specific JSON stats file
+- **Debug log persistence** — the Debug page can append event streams to a local text file for troubleshooting
 - **System tray integration** — minimizes to tray, stays out of your way
 - **Privacy-first** — all data stays on your machine at `%LocalAppData%\inputor`, no network access
 
@@ -47,6 +49,12 @@ git clone https://github.com/shiquda/inputor.git
 cd inputor
 dotnet restore inputor.sln
 dotnet build inputor.sln
+just dev
+```
+
+If `just` is not available on your machine, fall back to:
+
+```bash
 dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj
 ```
 
@@ -67,9 +75,11 @@ See the [User Guide](./docs/user-guide.md).
 Zero raw-text persistence is a core design constraint:
 
 - Raw input text is used only transiently in memory for snapshot diffing
-- Disk, logs, and exports contain **only character counts, app names, and date-bucketed statistics**
+- Disk, logs, and exports normally contain **only character counts, app names, and date-bucketed statistics**
 - Password fields are automatically excluded
 - **No telemetry, no network access**
+
+> Exception: the Debug page can optionally write a local debug log file, and an extra opt-in switch can include raw input text. Both options are off by default and intended only for local troubleshooting.
 
 ## Known Limitations
 
