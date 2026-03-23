@@ -324,38 +324,16 @@ internal static class AppPresentationService
         var cacheFilePath = GetIconCacheFilePath(processName);
         if (cacheFilePath is not null)
         {
-            try
+            var diskBytes = TryReadCachedIconBytes(cacheFilePath, processName);
+            if (diskBytes is not null)
             {
-                var cacheFileInfo = new FileInfo(cacheFilePath);
-                if (cacheFileInfo.Exists)
+                if (generation != IconCacheGeneration)
                 {
-                    if (cacheFileInfo.Length <= 0)
-                    {
-                        return null;
-                    }
-
-                    if (cacheFileInfo.Length > MaxCachedIconBytes)
-                    {
-                        StartupDiagnostics.Log($"LoadIconBytes ignored oversized cached icon for {processName}: {cacheFileInfo.Length} bytes.");
-                        return null;
-                    }
-
-                    var diskBytes = File.ReadAllBytes(cacheFilePath);
-                    if (diskBytes.Length > 0)
-                    {
-                        if (generation != IconCacheGeneration)
-                        {
-                            return null;
-                        }
-
-                        IconBytesCache[processName] = diskBytes;
-                        return diskBytes;
-                    }
+                    return null;
                 }
-            }
-            catch (Exception exception)
-            {
-                StartupDiagnostics.Log($"LoadIconBytes failed to read cached icon for {processName}: {exception}");
+
+                IconBytesCache[processName] = diskBytes;
+                return diskBytes;
             }
         }
 
@@ -456,6 +434,62 @@ internal static class AppPresentationService
         }
 
         return Path.Combine(IconCacheDirectory, $"{safeFileName}.png");
+    }
+
+    private static byte[]? TryReadCachedIconBytes(string cacheFilePath, string processName)
+    {
+        try
+        {
+            using var stream = new FileStream(cacheFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (stream.Length <= 0)
+            {
+                return null;
+            }
+
+            if (stream.Length > MaxCachedIconBytes)
+            {
+                StartupDiagnostics.Log($"LoadIconBytes ignored oversized cached icon for {processName}: {stream.Length} bytes.");
+                return null;
+            }
+
+            var diskBytes = new byte[stream.Length];
+            var totalRead = 0;
+            while (totalRead < diskBytes.Length)
+            {
+                var bytesRead = stream.Read(diskBytes, totalRead, diskBytes.Length - totalRead);
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                totalRead += bytesRead;
+            }
+
+            if (totalRead == 0)
+            {
+                return null;
+            }
+
+            if (totalRead != diskBytes.Length)
+            {
+                Array.Resize(ref diskBytes, totalRead);
+            }
+
+            return diskBytes;
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"LoadIconBytes failed to read cached icon for {processName}: {exception}");
+            return null;
+        }
     }
 
     private static void TryPersistIconBytes(string? cacheFilePath, byte[] iconBytes, int generation)
