@@ -56,6 +56,56 @@ jobs:
           "short_sha=$shortSha" >> $env:GITHUB_OUTPUT
           "is_prerelease=$isPrerelease" >> $env:GITHUB_OUTPUT
 
+      - name: Extract release notes from CHANGELOG
+        id: changelog
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.app_version }}"
+          $headerPattern = "^## \[$([regex]::Escape($version))\](?:\s*-\s*.+)?$"
+          $lines = Get-Content "CHANGELOG.md"
+          $startIndex = -1
+
+          for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match $headerPattern) {
+              $startIndex = $i
+              break
+            }
+          }
+
+          if ($startIndex -lt 0) {
+            throw "Could not find CHANGELOG section for version $version"
+          }
+
+          $endIndex = $lines.Count
+          for ($i = $startIndex + 1; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match '^## \[') {
+              $endIndex = $i
+              break
+            }
+          }
+
+          $sectionLines = [System.Collections.Generic.List[string]]::new()
+          for ($i = $startIndex; $i -lt $endIndex; $i++) {
+            $sectionLines.Add($lines[$i])
+          }
+
+          while ($sectionLines.Count -gt 0 -and [string]::IsNullOrWhiteSpace($sectionLines[$sectionLines.Count - 1])) {
+            $sectionLines.RemoveAt($sectionLines.Count - 1)
+          }
+
+          $notesPath = Join-Path $env:RUNNER_TEMP "release-notes-$version.md"
+          $content = [string]::Join([Environment]::NewLine, $sectionLines)
+          $allTags = @(git tag --sort=-v:refname)
+          $currentTag = "v$version"
+          $previousTag = $allTags | Where-Object { $_ -ne $currentTag } | Select-Object -First 1
+
+          if (-not [string]::IsNullOrWhiteSpace($previousTag)) {
+            $content += "`r`n`r`n**Full Changelog**: https://github.com/${{ github.repository }}/compare/$previousTag...$currentTag"
+          }
+
+          Set-Content -Path $notesPath -Value $content -Encoding UTF8
+          "notes_file=$notesPath" >> $env:GITHUB_OUTPUT
+
       - name: Build solution
         shell: pwsh
         run: dotnet build inputor.sln -c Release
@@ -86,7 +136,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          generate_release_notes: true
+          body_path: ${{ steps.changelog.outputs.notes_file }}
           prerelease: ${{ steps.version.outputs.is_prerelease }}
           files: |
             artifacts/publish/*.zip
