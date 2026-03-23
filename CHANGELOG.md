@@ -6,6 +6,25 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-03-23
+
+### 新增
+
+- **ZIP 备份恢复**：设置页支持导出 ZIP 备份并从备份包恢复统计数据与设置。
+- **隐藏应用快捷操作**：概览页支持一键隐藏当前高噪声应用，减少首页干扰。
+- **磁盘调试日志**：调试页支持将调试事件实时追加写入本地文本文件，可选记录原始输入文本。
+
+### 改进
+
+- **应用图标缓存**：持久化应用图标并提供缓存清理操作，提升列表与托盘展示的一致性。
+- **文档与截图**：补充用户手册、截图与中英文 README，并澄清本地开发启动方式。
+
+### 修复
+
+- **输入统计启发式**：恢复并收紧组合输入启发式，保留拼音分隔符支持，减少回退与组合输入场景下的误差。
+- **TradingView / Document 误计数**：过滤动态文档类页面刷新噪声，减少 TradingView 这类展示区局部刷新被误记为真实输入。
+- **发布与启动稳定性**：修复 WinUI 资源在发布产物中的缺失问题，并在启动阶段更稳妥地处理 Windows App Runtime 初始化。
+
 ## [0.1.0] - 2026-03-21
 
 首个公开版本，完整的 WinUI 3 实现。
@@ -36,5 +55,6 @@
 - 管理员权限窗口无法被监控（UAC 限制）
 - 密码输入框自动排除
 
-[Unreleased]: https://github.com/shiquda/inputor/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/shiquda/inputor/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/shiquda/inputor/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/shiquda/inputor/releases/tag/v0.1.0
