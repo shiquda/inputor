@@ -59,6 +59,8 @@ dotnet build inputor.sln
 dotnet run --project src/inputor.WinUI/inputor.WinUI.csproj
 ```
 
+- If the repository provides a usable `just` startup recipe, prefer it first (for this repo, use `just dev`) and do not launch the exe directly, because Windows may open an installed build instead of the current worktree output.
+
 ## Test and lint reality
 - There is no dedicated test project in this repository today.
 - There is no lint command or StyleCop configuration in this repository today.
