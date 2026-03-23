@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Runtime.InteropServices;
+using Inputor.App.Models;
 using Inputor.App.Services;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -91,11 +92,15 @@ internal static class Program
 
         if (args.Length >= 5 && args[0] == "--simulate-bulk")
         {
+            var processName = args.Length >= 6 ? args[5] : "sample";
             var delta = int.Parse(args[1]);
             var inserted = args[2];
             var controlTypeName = args[3];
             var isPaste = bool.Parse(args[4]);
-            Console.WriteLine(BulkLoadDetectionService.LooksLikeBulkContentLoad(delta, inserted, controlTypeName, isPaste));
+            var textComparison = args.Length >= 8
+                ? BuildDebugTextComparison(args[6], args[7])
+                : null;
+            Console.WriteLine(BulkLoadDetectionService.LooksLikeBulkContentLoad(processName, delta, inserted, textComparison, controlTypeName, isPaste));
             return true;
         }
 
@@ -112,5 +117,69 @@ internal static class Program
         }
 
         return false;
+    }
+
+    private static DebugTextComparison? BuildDebugTextComparison(string previousRawText, string currentRawText)
+    {
+        if (previousRawText == currentRawText)
+        {
+            return null;
+        }
+
+        var prefixLength = GetCommonPrefixLength(previousRawText, currentRawText);
+        var suffixLength = GetCommonSuffixLength(previousRawText, currentRawText, prefixLength);
+        var previousChangedLength = previousRawText.Length - prefixLength - suffixLength;
+        var currentChangedLength = currentRawText.Length - prefixLength - suffixLength;
+        var previousChangedSegment = previousChangedLength > 0
+            ? previousRawText.Substring(prefixLength, previousChangedLength)
+            : string.Empty;
+        var currentChangedSegment = currentChangedLength > 0
+            ? currentRawText.Substring(prefixLength, currentChangedLength)
+            : string.Empty;
+
+        return new DebugTextComparison
+        {
+            ChangeStartIndex = prefixLength,
+            PreviousTextLength = previousRawText.Length,
+            CurrentTextLength = currentRawText.Length,
+            PreviousSegmentLength = previousChangedLength,
+            CurrentSegmentLength = currentChangedLength,
+            PreviousSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(previousChangedSegment),
+            PreviousChineseCharacterCount = CharacterCountService.CountChineseCharacters(previousChangedSegment),
+            PreviousEnglishLetterCount = CharacterCountService.CountEnglishLetters(previousChangedSegment),
+            CurrentSupportedCharacterCount = CharacterCountService.CountSupportedCharacters(currentChangedSegment),
+            CurrentChineseCharacterCount = CharacterCountService.CountChineseCharacters(currentChangedSegment),
+            CurrentEnglishLetterCount = CharacterCountService.CountEnglishLetters(currentChangedSegment),
+            PreviousText = previousChangedSegment,
+            CurrentText = currentChangedSegment,
+        };
+    }
+
+    private static int GetCommonPrefixLength(string left, string right)
+    {
+        var maxLength = Math.Min(left.Length, right.Length);
+        var index = 0;
+        while (index < maxLength && left[index] == right[index])
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static int GetCommonSuffixLength(string left, string right, int prefixLength)
+    {
+        var leftIndex = left.Length - 1;
+        var rightIndex = right.Length - 1;
+        var count = 0;
+
+        while (leftIndex >= prefixLength && rightIndex >= prefixLength && left[leftIndex] == right[rightIndex])
+        {
+            count++;
+            leftIndex--;
+            rightIndex--;
+        }
+
+        return count;
     }
 }
