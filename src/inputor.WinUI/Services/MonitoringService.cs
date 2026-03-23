@@ -202,7 +202,7 @@ public sealed class MonitoringService : IDisposable
                 _statsStore.SetStatus(statusMessage, processName, true, processName);
                 RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, result.IsPendingComposition, true, false, isNativeImeInputMode);
             }
-            else if (BulkLoadDetectionService.LooksLikeBulkContentLoad(result.Delta, result.InsertedTextSegment, controlTypeName, isPaste))
+            else if (BulkLoadDetectionService.LooksLikeBulkContentLoad(processName, result.Delta, result.InsertedTextSegment, result.TextComparison, controlTypeName, isPaste))
             {
                 var statusMessage = StatusText.BulkRefreshIgnored(processName);
                 _statsStore.SetStatus(statusMessage, processName, true, processName);
