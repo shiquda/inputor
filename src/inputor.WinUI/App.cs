@@ -24,6 +24,8 @@ public sealed class App : Application, IXamlMetadataProvider
     private TrayMenuWindow? _trayMenuWindow;
     private XamlControlsXamlMetaDataProvider? _metadataProvider;
     private readonly DebugDiskLogService _debugDiskLogService;
+    private readonly List<string> _lastExcludedApps = [];
+    private bool _hasShownTrayHint;
 
     public App()
     {
@@ -59,7 +61,7 @@ public sealed class App : Application, IXamlMetadataProvider
         StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
         _debugDiskLogService = new DebugDiskLogService();
         StatsStore.SetDebugDiskLogHook(_debugDiskLogService.Write);
-        _debugDiskLogService.SetPath(Settings.DebugDiskLogPath);
+        _debugDiskLogService.TrySetPath(Settings.DebugDiskLogPath, out _);
         _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
         StatsStore.SetDebugDiskLogState(false, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
         UnhandledException += (_, args) =>
@@ -87,6 +89,8 @@ public sealed class App : Application, IXamlMetadataProvider
 
     public MainWindow? MainWindow { get; private set; }
 
+    internal event EventHandler<UserFeedbackEventArgs>? FeedbackRequested;
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         StartupDiagnostics.Log("App.OnLaunched entered.");
@@ -109,7 +113,7 @@ public sealed class App : Application, IXamlMetadataProvider
         {
             _notifyIconService = new NotifyIconService();
             StartupDiagnostics.Log("NotifyIconService initialized successfully.");
-            WindowHelpers.RegisterHideOnClose(MainWindow, () => !_exitRequested && _notifyIconService is not null);
+            WindowHelpers.RegisterHideOnClose(MainWindow, () => !_exitRequested && _notifyIconService is not null, ShowTrayHint);
             StartupDiagnostics.Log("Hide-on-close registered because tray is available.");
         }
         catch (Exception exception)
@@ -148,6 +152,23 @@ public sealed class App : Application, IXamlMetadataProvider
         MainWindow.ShowSettingsPage();
     }
 
+    internal void ReportFeedback(
+        InfoBarSeverity severity,
+        string title,
+        string message,
+        string? actionLabel = null,
+        Action? action = null)
+    {
+        FeedbackRequested?.Invoke(this, new UserFeedbackEventArgs
+        {
+            Severity = severity,
+            Title = title,
+            Message = message,
+            ActionLabel = actionLabel,
+            Action = action
+        });
+    }
+
     public void ShowTrayMenu(int cursorX, int cursorY)
     {
         StartupDiagnostics.Log($"ShowTrayMenu requested at {cursorX},{cursorY}, but tray menu is handled by NotifyIconService.");
@@ -156,6 +177,19 @@ public sealed class App : Application, IXamlMetadataProvider
     public void HideTrayMenu()
     {
         _trayMenuWindow?.HideMenu();
+    }
+
+    private void ShowTrayHint()
+    {
+        if (_hasShownTrayHint)
+        {
+            return;
+        }
+
+        _hasShownTrayHint = true;
+        _notifyIconService?.ShowNotification(
+            AppStrings.Get("Tray.Hint.Title"),
+            AppStrings.Get("Tray.Hint.Body"));
     }
 
     internal void OnTrayMenuClosed(TrayMenuWindow trayMenuWindow)
@@ -201,12 +235,22 @@ public sealed class App : Application, IXamlMetadataProvider
         if (!Settings.AddExcludedApp(nonNullProcessName))
         {
             StatsStore.SetStatus(StatusText.ProcessAlreadyExcluded(nonNullProcessName), nonNullProcessName, false, nonNullProcessName);
+            ReportFeedback(
+                InfoBarSeverity.Informational,
+                AppStrings.Get("Feedback.Title.NoChanges"),
+                AppStrings.Format("Feedback.Exclusion.AlreadyHidden", nonNullProcessName));
             return;
         }
 
-        SettingsService.Save(Settings);
-        MainWindow?.ShowSettingsPage();
+        SaveSettings();
+        SetLastExcludedApps([nonNullProcessName]);
         StatsStore.SetStatus(StatusText.AddedExcludedApp(nonNullProcessName), nonNullProcessName, false, nonNullProcessName);
+        ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Exclusion.Hidden", nonNullProcessName),
+            AppStrings.Get("Feedback.Button.Undo"),
+            UndoLastAppExclusion);
     }
 
     public void ExportToday()
@@ -296,7 +340,7 @@ public sealed class App : Application, IXamlMetadataProvider
         }
     }
 
-    public void RestoreBackupArchive()
+    public string? PickBackupArchive()
     {
         try
         {
@@ -312,38 +356,75 @@ public sealed class App : Application, IXamlMetadataProvider
 
             if (dialog.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(dialog.FileName))
             {
-                return;
+                return null;
             }
 
-            var previousSettings = CloneSettings(Settings);
-            var previousStatsSourcePath = StatsStore.CurrentSourcePath;
-            var previousStatsJson = File.Exists(previousStatsSourcePath)
-                ? File.ReadAllText(previousStatsSourcePath)
-                : string.Empty;
-            var payload = BackupArchives.Load(dialog.FileName);
+            return dialog.FileName;
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"PickBackupArchive failed: {exception}");
+            ReportFeedback(
+                InfoBarSeverity.Error,
+                AppStrings.Get("Feedback.Title.RestoreFailed"),
+                AppStrings.Format("Feedback.Restore.Failed", exception.Message));
+            return null;
+        }
+    }
+
+    public BackupArchiveService.BackupPayload? LoadBackupArchive(string archivePath)
+    {
+        try
+        {
+            var payload = BackupArchives.Load(archivePath);
             StatsStore.ValidateSourceJson(payload.StatsJson);
+            return payload;
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"LoadBackupArchive failed: {exception}");
+            ReportFeedback(
+                InfoBarSeverity.Error,
+                AppStrings.Get("Feedback.Title.RestoreFailed"),
+                AppStrings.Format("Feedback.Restore.Failed", exception.Message));
+            return null;
+        }
+    }
 
-            try
-            {
-                ApplySettingsSnapshot(payload.Settings, forceDefaultStatisticsSource: true);
-                StatsStore.RestoreSource(string.Empty, payload.StatsJson);
-                MonitoringService.ResetTrackingState();
-                StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
-                _debugDiskLogService.SetPath(Settings.DebugDiskLogPath);
-                _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
-                StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
-                StatsStore.SetStatus(StatusText.BackupArchiveRestored(dialog.FileName), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
-            }
-            catch
-            {
-                RollbackRestoredBackup(previousSettings, previousStatsSourcePath, previousStatsJson);
-                throw;
-            }
+    public bool RestoreBackupArchive(string archivePath, BackupArchiveService.BackupPayload payload)
+    {
+        var previousSettings = CloneSettings(Settings);
+        var previousStatsSourcePath = StatsStore.CurrentSourcePath;
+        var previousStatsJson = File.Exists(previousStatsSourcePath)
+            ? File.ReadAllText(previousStatsSourcePath)
+            : string.Empty;
+
+        try
+        {
+            ApplySettingsSnapshot(payload.Settings, forceDefaultStatisticsSource: true);
+            StatsStore.RestoreSource(string.Empty, payload.StatsJson);
+            MonitoringService.ResetTrackingState();
+            StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
+            _debugDiskLogService.TrySetPath(Settings.DebugDiskLogPath, out _);
+            _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
+            StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
+            StatsStore.SetStatus(StatusText.BackupArchiveRestored(archivePath), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+            ReportFeedback(
+                InfoBarSeverity.Success,
+                AppStrings.Get("Feedback.Title.Restored"),
+                AppStrings.Get("Feedback.Restore.Completed"));
+            return true;
         }
         catch (Exception exception)
         {
             StartupDiagnostics.Log($"RestoreBackupArchive failed: {exception}");
+            RollbackRestoredBackup(previousSettings, previousStatsSourcePath, previousStatsJson);
             StatsStore.SetStatus(StatusText.BackupArchiveRestoreFailed(exception.Message), StatsStore.CurrentAppName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+            ReportFeedback(
+                InfoBarSeverity.Error,
+                AppStrings.Get("Feedback.Title.RestoreFailed"),
+                AppStrings.Format("Feedback.Restore.Failed", exception.Message));
+            return false;
         }
     }
 
@@ -381,11 +462,24 @@ public sealed class App : Application, IXamlMetadataProvider
         }
     }
 
-    public void SaveSettings()
+    public bool SaveSettings()
     {
-        SettingsService.Save(Settings);
-        AutoStartService.Apply(Settings.StartWithWindows);
-        ApplyThemeMode();
+        try
+        {
+            SettingsService.Save(Settings);
+            AutoStartService.Apply(Settings.StartWithWindows);
+            ApplyThemeMode();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"SaveSettings failed: {exception}");
+            ReportFeedback(
+                InfoBarSeverity.Error,
+                AppStrings.Get("Feedback.Title.SaveFailed"),
+                AppStrings.Format("Feedback.Settings.SaveFailed", exception.Message));
+            return false;
+        }
     }
 
     internal void ExcludeAppsForAggregate(AppAggregate aggregate)
@@ -401,23 +495,63 @@ public sealed class App : Application, IXamlMetadataProvider
             return;
         }
 
-        var addedCount = 0;
+        var addedApps = new List<string>();
         foreach (var processName in processNames)
         {
             if (Settings.AddExcludedApp(processName))
             {
-                addedCount++;
+                addedApps.Add(processName);
             }
         }
 
-        if (addedCount == 0)
+        if (addedApps.Count == 0)
         {
             StatsStore.SetStatus(StatusText.AppQuickActionAlreadyExcluded(aggregate.DisplayName), aggregate.DisplayName, false, processNames[0]);
+            ReportFeedback(
+                InfoBarSeverity.Informational,
+                AppStrings.Get("Feedback.Title.NoChanges"),
+                AppStrings.Format("Feedback.Exclusion.AlreadyHidden", aggregate.DisplayName));
             return;
         }
 
         SaveSettings();
-        StatsStore.SetStatus(StatusText.AppQuickActionExcluded(aggregate.DisplayName, addedCount), aggregate.DisplayName, false, processNames[0]);
+        SetLastExcludedApps(addedApps);
+        StatsStore.SetStatus(StatusText.AppQuickActionExcluded(aggregate.DisplayName, addedApps.Count), aggregate.DisplayName, false, processNames[0]);
+        ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Exclusion.Hidden", aggregate.DisplayName),
+            AppStrings.Get("Feedback.Button.Undo"),
+            UndoLastAppExclusion);
+    }
+
+    internal void UndoLastAppExclusion()
+    {
+        if (_lastExcludedApps.Count == 0)
+        {
+            return;
+        }
+
+        var restoredApps = _lastExcludedApps
+            .Where(Settings.RemoveExcludedApp)
+            .ToList();
+        _lastExcludedApps.Clear();
+        if (restoredApps.Count == 0)
+        {
+            return;
+        }
+
+        SaveSettings();
+        ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Exclusion.Restored", restoredApps.Count));
+    }
+
+    private void SetLastExcludedApps(IEnumerable<string> apps)
+    {
+        _lastExcludedApps.Clear();
+        _lastExcludedApps.AddRange(apps.Distinct(StringComparer.OrdinalIgnoreCase));
     }
 
     internal void SetAliasForAggregate(AppAggregate aggregate, string? alias)
@@ -425,6 +559,10 @@ public sealed class App : Application, IXamlMetadataProvider
         var changed = Settings.SetAliasForGroup(aggregate.GroupKey, alias);
         if (!changed)
         {
+            ReportFeedback(
+                InfoBarSeverity.Informational,
+                AppStrings.Get("Feedback.Title.NoChanges"),
+                AppStrings.Get("Feedback.Alias.Unchanged"));
             return;
         }
 
@@ -441,6 +579,10 @@ public sealed class App : Application, IXamlMetadataProvider
         var changed = Settings.ReplaceTagsForApps(aggregate.ProcessNames, tags);
         if (!changed)
         {
+            ReportFeedback(
+                InfoBarSeverity.Informational,
+                AppStrings.Get("Feedback.Title.NoChanges"),
+                AppStrings.Get("Feedback.Grouping.Unchanged"));
             return;
         }
 
@@ -449,6 +591,12 @@ public sealed class App : Application, IXamlMetadataProvider
             ? StatusText.AppGroupingCleared(aggregate.DisplayName)
             : StatusText.AppGroupingUpdated(aggregate.DisplayName, tags.Count);
         StatsStore.SetStatus(statusMessage, aggregate.DisplayName, StatsStore.IsCurrentTargetSupported, StatsStore.CurrentProcessName);
+        ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            tags.Count == 0
+                ? AppStrings.Format("Feedback.Grouping.Cleared", aggregate.DisplayName)
+                : AppStrings.Format("Feedback.Grouping.Updated", aggregate.DisplayName, tags.Count));
     }
 
     public void SetDebugCaptureEnabled(bool isEnabled)
@@ -503,12 +651,21 @@ public sealed class App : Application, IXamlMetadataProvider
         return dialog.FileName;
     }
 
-    public void SetDebugDiskLogPath(string path)
+    public bool SetDebugDiskLogPath(string path)
     {
-        _debugDiskLogService.SetPath(path);
+        if (!_debugDiskLogService.TrySetPath(path, out var errorMessage))
+        {
+            ReportFeedback(
+                InfoBarSeverity.Error,
+                AppStrings.Get("Feedback.Title.SaveFailed"),
+                AppStrings.Format("Feedback.DebugDiskLog.PathFailed", errorMessage ?? string.Empty));
+            return false;
+        }
+
         Settings.DebugDiskLogPath = path;
         SaveSettings();
         StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, path, _debugDiskLogService.IncludeRawText);
+        return true;
     }
 
     public void SetDebugDiskLogIncludeRawText(bool includeRawText)
@@ -628,6 +785,13 @@ public sealed class App : Application, IXamlMetadataProvider
                 Tags = mapping.Tags.ToList()
             })
             .ToList();
+        Settings.AppAliasMappings = settingsSnapshot.GetNormalizedAliasMappings()
+            .Select(mapping => new AppAliasMapping
+            {
+                GroupKey = mapping.GroupKey,
+                Alias = mapping.Alias
+            })
+            .ToList();
         SaveSettings();
     }
 
@@ -639,7 +803,7 @@ public sealed class App : Application, IXamlMetadataProvider
             StatsStore.RestoreSource(previousStatsSourcePath, previousStatsJson);
             MonitoringService.ResetTrackingState();
             StatsStore.SetDebugCaptureEnabled(Settings.DebugCaptureEnabled);
-            _debugDiskLogService.SetPath(Settings.DebugDiskLogPath);
+            _debugDiskLogService.TrySetPath(Settings.DebugDiskLogPath, out _);
             _debugDiskLogService.SetIncludeRawText(Settings.DebugDiskLogIncludeRawText);
             StatsStore.SetDebugDiskLogState(_debugDiskLogService.IsEnabled, Settings.DebugDiskLogPath, Settings.DebugDiskLogIncludeRawText);
         }
@@ -667,6 +831,13 @@ public sealed class App : Application, IXamlMetadataProvider
                 {
                     AppName = mapping.AppName,
                     Tags = mapping.Tags.ToList()
+                })
+                .ToList(),
+            AppAliasMappings = source.GetNormalizedAliasMappings()
+                .Select(mapping => new AppAliasMapping
+                {
+                    GroupKey = mapping.GroupKey,
+                    Alias = mapping.Alias
                 })
                 .ToList()
         };

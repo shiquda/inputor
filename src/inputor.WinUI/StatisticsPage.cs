@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
@@ -57,6 +58,7 @@ public sealed class StatisticsPage : UserControl
             SelectedValuePath = nameof(AppRangeOption.Value),
             SelectedValue = 0
         };
+        AutomationProperties.SetName(_distributionRangeComboBox, AppStrings.Get("Statistics.Range.Label"));
         _distributionRangeComboBox.SelectionChanged += (_, _) => Refresh(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
         _distributionAggregationComboBox = new ComboBox
         {
@@ -111,7 +113,7 @@ public sealed class StatisticsPage : UserControl
             return;
         }
 
-        var dailySeries = BuildDailySeries(snapshot).ToList();
+        var dailySeries = BuildDailySeries(snapshot, GetSelectedRangeDays()).ToList();
         var todayTotal = dailySeries.Count == 0 ? 0 : dailySeries[^1].TotalCount;
         var peakDay = dailySeries.OrderByDescending(item => item.TotalCount).First();
 
@@ -135,6 +137,7 @@ public sealed class StatisticsPage : UserControl
         var header = new StackPanel { Spacing = 8 };
         header.Children.Add(new TextBlock { Text = AppStrings.Get("Statistics.Title"), FontSize = 28, FontWeight = FontWeights.SemiBold });
         header.Children.Add(_summaryTextBlock);
+        header.Children.Add(_distributionRangeComboBox);
         root.Children.Add(header);
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Statistics.Section.TrendTitle"), AppStrings.Get("Statistics.Section.TrendSubtitle")));
@@ -154,7 +157,6 @@ public sealed class StatisticsPage : UserControl
         var distributionPanel = new StackPanel { Spacing = 12 };
         var distributionToolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         distributionToolbar.Children.Add(_distributionAggregationComboBox);
-        distributionToolbar.Children.Add(_distributionRangeComboBox);
         distributionPanel.Children.Add(distributionToolbar);
         distributionPanel.Children.Add(_distributionPanel);
         distributionPanel.Children.Add(_distributionDetailTextBlock);
@@ -244,7 +246,7 @@ public sealed class StatisticsPage : UserControl
             foreach (var entry in week)
             {
                 var intensity = (byte)(entry.TotalCount == 0 ? 32 : 64 + (int)Math.Round(entry.TotalCount * 191.0 / maxValue));
-                var cell = new Border
+                var cellVisual = new Border
                 {
                     Width = 18,
                     Height = 18,
@@ -253,6 +255,16 @@ public sealed class StatisticsPage : UserControl
                     BorderThickness = new Thickness(1),
                     BorderBrush = ThemeBrushes.GetHeatmapBorderBrush()
                 };
+                var cell = new Button
+                {
+                    Width = 18,
+                    Height = 18,
+                    Padding = new Thickness(0),
+                    Background = new SolidColorBrush(Colors.Transparent),
+                    BorderThickness = new Thickness(0),
+                    Content = cellVisual
+                };
+                AutomationProperties.SetName(cell, AppStrings.Format("Statistics.Heatmap.Tooltip", entry.Date, entry.TotalCount));
                 ToolTipService.SetToolTip(cell, new ToolTip
                 {
                     Content = AppStrings.Format("Statistics.Heatmap.Tooltip", entry.Date, entry.TotalCount)
@@ -260,17 +272,18 @@ public sealed class StatisticsPage : UserControl
                 cell.PointerEntered += (_, _) =>
                 {
                     BeginInteraction();
-                    cell.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush(true);
-                    cell.Opacity = 0.94;
+                    cellVisual.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush(true);
+                    cellVisual.Opacity = 0.94;
                     _heatmapDetailTextBlock.Text = AppStrings.Format("Statistics.Heatmap.Detail.Entry", entry.Date, entry.TotalCount);
                 };
                 cell.PointerExited += (_, _) =>
                 {
-                    cell.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush();
-                    cell.Opacity = 1;
+                    cellVisual.BorderBrush = ThemeBrushes.GetHeatmapBorderBrush();
+                    cellVisual.Opacity = 1;
                     _heatmapDetailTextBlock.Text = AppStrings.Format("Statistics.Heatmap.Detail.Default", busiestDay.Date, busiestDay.TotalCount);
                     EndInteraction();
                 };
+                cell.Click += (_, _) => _heatmapDetailTextBlock.Text = AppStrings.Format("Statistics.Heatmap.Detail.Entry", entry.Date, entry.TotalCount);
                 weekColumn.Children.Add(cell);
             }
 
@@ -283,7 +296,7 @@ public sealed class StatisticsPage : UserControl
     private void RenderDistribution(DashboardSnapshot snapshot)
     {
         _distributionPanel.Children.Clear();
-        var range = _distributionRangeComboBox.SelectedValue is int selectedRange ? selectedRange : _distributionRangeComboBox.SelectedIndex;
+        var range = GetSelectedRange();
         var aggregateByTag = (_distributionAggregationComboBox.SelectedValue as string) == "tag";
         var ordered = BuildDistributionData(snapshot, range, aggregateByTag)
             .OrderByDescending(item => item.Value)
@@ -565,14 +578,16 @@ public sealed class StatisticsPage : UserControl
         Grid.SetColumn(textPanel, 2);
         row.Children.Add(textPanel);
 
-        var container = new Border
+        var container = new Button
         {
             Padding = new Thickness(10, 8, 10, 8),
-            CornerRadius = new CornerRadius(10),
             Background = ThemeBrushes.GetSubtleSurfaceBrush(),
-            Child = row
+            BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Content = row
         };
         var detail = AppStrings.Format("Statistics.Distribution.Detail.Entry", aggregate.DisplayName, value, share);
+        AutomationProperties.SetName(container, detail);
         AppQuickActionService.AttachContextMenu(container, aggregate, BeginInteraction, EndInteraction);
         container.PointerEntered += (_, _) =>
         {
@@ -584,7 +599,7 @@ public sealed class StatisticsPage : UserControl
             updateDetail(defaultDetail);
             EndInteraction();
         };
-        container.Tapped += (_, _) => updateDetail(detail);
+        container.Click += (_, _) => updateDetail(detail);
         return container;
     }
 
@@ -625,11 +640,32 @@ public sealed class StatisticsPage : UserControl
         public required int Value { get; init; }
     }
 
-    private static IEnumerable<DailyTotalEntry> BuildDailySeries(DashboardSnapshot snapshot)
+    private int GetSelectedRange()
+    {
+        return _distributionRangeComboBox.SelectedValue is int selectedRange
+            ? selectedRange
+            : _distributionRangeComboBox.SelectedIndex;
+    }
+
+    private int? GetSelectedRangeDays()
+    {
+        return GetSelectedRange() switch
+        {
+            0 => 1,
+            1 => 7,
+            2 => 30,
+            _ => null
+        };
+    }
+
+    private static IEnumerable<DailyTotalEntry> BuildDailySeries(DashboardSnapshot snapshot, int? rangeDays)
     {
         var historyByDate = snapshot.DailyHistory.ToDictionary(item => item.Date, item => item.TotalCount);
-        var start = snapshot.Today.AddDays(-(HeatmapDays - 1));
-        for (var offset = 0; offset < HeatmapDays; offset++)
+        var start = rangeDays.HasValue
+            ? snapshot.Today.AddDays(-(rangeDays.Value - 1))
+            : historyByDate.Keys.DefaultIfEmpty(snapshot.Today).Min();
+        var days = snapshot.Today.DayNumber - start.DayNumber + 1;
+        for (var offset = 0; offset < days; offset++)
         {
             var date = start.AddDays(offset);
             yield return new DailyTotalEntry

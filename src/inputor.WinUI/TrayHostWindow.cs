@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using H.NotifyIcon;
+using H.NotifyIcon.Core;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -78,6 +79,11 @@ internal sealed class TrayHostWindow : Window, IDisposable
         TrayIcon.ToolTipText = toolTipText;
         _togglePauseItem.Text = pauseText;
         _togglePauseIcon.Glyph = pauseGlyph;
+    }
+
+    public void ShowNotification(string title, string message)
+    {
+        TrayIcon.ShowNotification(title, message, NotificationIcon.Info);
     }
 
     public void Dispose()

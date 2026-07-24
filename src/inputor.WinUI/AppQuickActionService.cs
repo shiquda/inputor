@@ -8,15 +8,50 @@ internal static class AppQuickActionService
 {
     public static void AttachContextMenu(FrameworkElement host, AppAggregate aggregate, Action? onOpened = null, Action? onClosed = null)
     {
-        if (aggregate.GroupKey.StartsWith("tag:", StringComparison.OrdinalIgnoreCase))
+        host.ContextFlyout = CreateContextMenu(host, aggregate, onOpened, onClosed);
+    }
+
+    public static Button? CreateMoreButton(FrameworkElement host, AppAggregate aggregate, Action? onOpened = null, Action? onClosed = null)
+    {
+        var menu = CreateContextMenu(host, aggregate, onOpened, onClosed);
+        if (menu is null)
         {
-            host.ContextFlyout = null;
-            return;
+            return null;
         }
 
+        var button = new Button
+        {
+            Content = new FontIcon
+            {
+                Glyph = "\uE712",
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
+                FontSize = 16
+            },
+            Padding = new Thickness(8),
+            MinWidth = 36,
+            MinHeight = 36,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            ContextFlyout = menu
+        };
+        ToolTipService.SetToolTip(button, AppStrings.Get("QuickActions.Tooltip.More"));
+        button.Click += (_, _) => button.ContextFlyout?.ShowAt(button);
+        return button;
+    }
+
+    private static MenuFlyout? CreateContextMenu(FrameworkElement host, AppAggregate aggregate, Action? onOpened, Action? onClosed)
+    {
         var menu = new MenuFlyout();
         menu.Opened += (_, _) => onOpened?.Invoke();
         menu.Closed += (_, _) => onClosed?.Invoke();
+
+        if (aggregate.GroupKey.StartsWith("tag:", StringComparison.OrdinalIgnoreCase))
+        {
+            var manageTagsItem = new MenuFlyoutItem { Text = AppStrings.Get("QuickActions.Menu.ManageTags") };
+            manageTagsItem.Click += (_, _) => App.Current.ShowSettingsPage();
+            menu.Items.Add(manageTagsItem);
+            return menu;
+        }
 
         var excludeItem = new MenuFlyoutItem
         {
@@ -35,7 +70,7 @@ internal static class AppQuickActionService
         groupingItem.Click += async (_, _) => await EditGroupingAsync(host, aggregate);
         menu.Items.Add(groupingItem);
 
-        host.ContextFlyout = menu;
+        return menu;
     }
 
     private static async Task EditAliasAsync(FrameworkElement host, AppAggregate aggregate)
@@ -72,38 +107,15 @@ internal static class AppQuickActionService
     private static async Task EditGroupingAsync(FrameworkElement host, AppAggregate aggregate)
     {
         var currentTags = App.Current.Settings.GetTagsForApps(aggregate.ProcessNames);
-        var input = new TextBox
-        {
-            Text = string.Join(", ", currentTags),
-            PlaceholderText = AppStrings.Get("QuickActions.Dialog.EditGrouping.Placeholder"),
-            AcceptsReturn = true,
-            MinHeight = 90,
-            TextWrapping = TextWrapping.Wrap,
-            MinWidth = 320
-        };
-
-        var dialog = new ContentDialog
-        {
-            XamlRoot = host.XamlRoot,
-            Title = AppStrings.Format("QuickActions.Dialog.EditGrouping.Title", aggregate.DisplayName),
-            Content = BuildDialogContent(
-                AppStrings.Format("QuickActions.Dialog.EditGrouping.Body", string.Join(", ", aggregate.ProcessNames)),
-                input),
-            PrimaryButtonText = AppStrings.Get("QuickActions.Button.Save"),
-            CloseButtonText = AppStrings.Get("QuickActions.Button.Cancel"),
-            DefaultButton = ContentDialogButton.Primary
-        };
-
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        var tags = await TagSelectionDialog.ShowAsync(
+            host,
+            AppStrings.Format("QuickActions.Dialog.EditGrouping.Title", aggregate.DisplayName),
+            currentTags,
+            App.Current.Settings.GetKnownTags());
+        if (tags is null)
         {
             return;
         }
-
-        var tags = (input.Text ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
-            .ToList();
 
         App.Current.SetGroupingForAggregate(aggregate, tags);
     }

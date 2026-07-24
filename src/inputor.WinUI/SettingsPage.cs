@@ -18,8 +18,9 @@ public sealed class SettingsPage : UserControl
     private readonly TextBlock _versionValueTextBlock;
     private readonly TextBlock _buildValueTextBlock;
     private readonly TextBlock _channelValueTextBlock;
-    private readonly TextBox _excludedAppsTextBox;
-    private readonly TextBox _appTagNewAppTextBox;
+    private readonly AutoSuggestBox _excludedAppsPicker;
+    private readonly StackPanel _excludedAppsPanel;
+    private readonly AutoSuggestBox _appTagNewAppTextBox;
     private readonly TextBox _appTagSearchTextBox;
     private readonly StackPanel _appTagAssignmentsPanel;
     private readonly TextBlock _appTagSummaryTextBlock;
@@ -31,9 +32,11 @@ public sealed class SettingsPage : UserControl
     private readonly Button _restoreBackupArchiveButton;
     private readonly TextBlock _headerNoteTextBlock;
     private readonly TextBlock _restartNoticeTextBlock;
+    private readonly Button _restartButton;
     private readonly DispatcherQueueTimer _settingsSaveTimer;
     private readonly List<Border> _cards = [];
     private readonly List<AppTagEditorState> _appTagEditors = [];
+    private IReadOnlyList<string> _knownApps = [];
     private bool _isRefreshingFromState;
     private bool _hasQueuedSettingsSave;
 
@@ -57,8 +60,50 @@ public sealed class SettingsPage : UserControl
         _versionValueTextBlock = CreateReadOnlyValueTextBlock();
         _buildValueTextBlock = CreateReadOnlyValueTextBlock();
         _channelValueTextBlock = CreateReadOnlyValueTextBlock();
-        _excludedAppsTextBox = new TextBox { AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
-        _appTagNewAppTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagNewApp") };
+        _excludedAppsPicker = new AutoSuggestBox
+        {
+            PlaceholderText = AppStrings.Get("Settings.Placeholder.ExcludedAppInput"),
+            MinWidth = 240,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        _excludedAppsPicker.GotFocus += (_, _) => UpdateExcludedAppSuggestions(_excludedAppsPicker.Text);
+        _excludedAppsPicker.TextChanged += (_, args) =>
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                UpdateExcludedAppSuggestions(_excludedAppsPicker.Text);
+            }
+        };
+        _excludedAppsPicker.SuggestionChosen += (_, args) =>
+        {
+            if (args.SelectedItem is string appName)
+            {
+                _excludedAppsPicker.Text = appName;
+            }
+        };
+        _excludedAppsPicker.QuerySubmitted += (_, _) => AddExcludedApp(_excludedAppsPicker.Text);
+        _excludedAppsPanel = new StackPanel { Spacing = 8 };
+        _appTagNewAppTextBox = new AutoSuggestBox
+        {
+            PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagNewApp"),
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        _appTagNewAppTextBox.GotFocus += (_, _) => UpdateAppTagTargetSuggestions(_appTagNewAppTextBox.Text);
+        _appTagNewAppTextBox.TextChanged += (_, args) =>
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                UpdateAppTagTargetSuggestions(_appTagNewAppTextBox.Text);
+            }
+        };
+        _appTagNewAppTextBox.SuggestionChosen += (_, args) =>
+        {
+            if (args.SelectedItem is string appName)
+            {
+                _appTagNewAppTextBox.Text = appName;
+            }
+        };
+        _appTagNewAppTextBox.QuerySubmitted += (_, _) => AddManualAppTagTarget();
         _appTagSearchTextBox = new TextBox { PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagSearch") };
         _appTagSearchTextBox.TextChanged += (_, _) => RefreshAppTagEditorList();
         _appTagAssignmentsPanel = new StackPanel { Spacing = 12 };
@@ -71,6 +116,8 @@ public sealed class SettingsPage : UserControl
         _restoreBackupArchiveButton = new Button { Content = AppStrings.Get("Settings.Button.RestoreBackupArchive"), Padding = new Thickness(20, 8, 20, 8) };
         _headerNoteTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = 0.7 };
         _restartNoticeTextBlock = new TextBlock { Text = AppStrings.Get("Settings.RestartNotice"), TextWrapping = TextWrapping.Wrap, Opacity = 0.7, Visibility = Visibility.Collapsed };
+        _restartButton = new Button { Content = AppStrings.Get("Settings.Button.RestartNow"), Padding = new Thickness(16, 8, 16, 8), Visibility = Visibility.Collapsed };
+        _restartButton.Click += (_, _) => App.Current.RestartApplication();
         _settingsSaveTimer = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().CreateTimer();
         _settingsSaveTimer.Interval = TimeSpan.FromMilliseconds(450);
         _settingsSaveTimer.Tick += SettingsSaveTimer_Tick;
@@ -79,7 +126,6 @@ public sealed class SettingsPage : UserControl
         _startWithWindowsCheckBox.Unchecked += (_, _) => SaveSettingsImmediately();
         _themeModeComboBox.SelectionChanged += (_, _) => SaveSettingsImmediately();
         _languageComboBox.SelectionChanged += (_, _) => SaveSettingsImmediately();
-        _excludedAppsTextBox.TextChanged += (_, _) => QueueSettingsSave();
 
         _confirmClearStatisticsCheckBox.Checked += (_, _) => _clearStatisticsButton.IsEnabled = true;
         _confirmClearStatisticsCheckBox.Unchecked += (_, _) => _clearStatisticsButton.IsEnabled = false;
@@ -130,18 +176,19 @@ public sealed class SettingsPage : UserControl
         _startWithWindowsCheckBox.IsChecked = settings.StartWithWindows;
         _themeModeComboBox.SelectedValue = settings.ThemeMode;
         _languageComboBox.SelectedValue = settings.Language;
-        _excludedAppsTextBox.Text = settings.ExcludedApps;
         _confirmClearStatisticsCheckBox.IsChecked = false;
         _clearStatisticsButton.IsEnabled = false;
         _restartNoticeTextBlock.Visibility = string.Equals(AppStrings.ResolveLanguageTag(settings.Language), AppStrings.CurrentLanguageTag, StringComparison.OrdinalIgnoreCase)
             ? Visibility.Collapsed
             : Visibility.Visible;
+        _restartButton.Visibility = _restartNoticeTextBlock.Visibility;
         _headerNoteTextBlock.Text = AppStrings.Format("Settings.HeaderNote", snapshot.CurrentAppName, snapshot.TotalToday, snapshot.TotalSession);
         _versionValueTextBlock.Text = VersionInfo.DisplayVersion;
         _buildValueTextBlock.Text = VersionInfo.BuildVersion;
         _channelValueTextBlock.Text = GetLocalizedChannel();
 
         RebuildAppTagEditors(snapshot, settings);
+        RefreshExcludedAppsEditor(snapshot);
         _appTagNewAppTextBox.Text = string.Empty;
         RefreshAppTagEditorList();
         _settingsSaveTimer.Stop();
@@ -205,6 +252,7 @@ public sealed class SettingsPage : UserControl
         });
         header.Children.Add(_headerNoteTextBlock);
         header.Children.Add(_restartNoticeTextBlock);
+        header.Children.Add(_restartButton);
         root.Children.Add(header);
 
         root.Children.Add(CreateSectionHeader(AppStrings.Get("Settings.Label.ThemeMode"), AppStrings.Get("Settings.Caption.ThemeMode")));
@@ -216,7 +264,20 @@ public sealed class SettingsPage : UserControl
         var preferences = new StackPanel { Spacing = 16 };
         preferences.Children.Add(_startWithWindowsCheckBox);
         preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.Language"), _languageComboBox, AppStrings.Get("Settings.Caption.Language")));
-        preferences.Children.Add(CreateLabeledInput(AppStrings.Get("Settings.Label.ExcludedApps"), _excludedAppsTextBox, AppStrings.Get("Settings.Caption.ExcludedApps")));
+        var excludedAppsPanel = new StackPanel { Spacing = 8 };
+        excludedAppsPanel.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Label.ExcludedApps"), FontWeight = FontWeights.SemiBold, FontSize = 14 });
+        excludedAppsPanel.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Caption.ExcludedApps"), TextWrapping = TextWrapping.Wrap, Opacity = 0.7, FontSize = 12 });
+        var excludedAppInputRow = new Grid { ColumnSpacing = 8 };
+        excludedAppInputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        excludedAppInputRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        excludedAppInputRow.Children.Add(_excludedAppsPicker);
+        var addExcludedAppButton = new Button { Content = AppStrings.Get("Settings.Button.AddExcludedApp"), Padding = new Thickness(16, 8, 16, 8) };
+        addExcludedAppButton.Click += (_, _) => AddExcludedApp(_excludedAppsPicker.Text);
+        Grid.SetColumn(addExcludedAppButton, 1);
+        excludedAppInputRow.Children.Add(addExcludedAppButton);
+        excludedAppsPanel.Children.Add(excludedAppInputRow);
+        excludedAppsPanel.Children.Add(_excludedAppsPanel);
+        preferences.Children.Add(excludedAppsPanel);
 
         var appTagPanel = new StackPanel { Spacing = 12 };
         appTagPanel.Children.Add(new TextBlock { Text = AppStrings.Get("Settings.Label.AppTagMappings"), FontWeight = FontWeights.SemiBold, FontSize = 14 });
@@ -338,11 +399,6 @@ public sealed class SettingsPage : UserControl
         settings.StartWithWindows = _startWithWindowsCheckBox.IsChecked ?? false;
         settings.ThemeMode = _themeModeComboBox.SelectedValue as string ?? string.Empty;
         settings.Language = _languageComboBox.SelectedValue as string ?? string.Empty;
-        var normalizedExcludedApps = string.Join(", ", (_excludedAppsTextBox.Text ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
-        settings.ExcludedApps = normalizedExcludedApps;
         settings.AppTagMappings = _appTagEditors
             .Where(item => item.Tags.Count > 0)
             .Select(item => new AppTagMapping
@@ -356,19 +412,13 @@ public sealed class SettingsPage : UserControl
         var languageChanged = !string.Equals(previousLanguage, settings.Language, StringComparison.OrdinalIgnoreCase);
         var restartRequired = !string.Equals(AppStrings.ResolveLanguageTag(settings.Language), AppStrings.CurrentLanguageTag, StringComparison.OrdinalIgnoreCase);
         _restartNoticeTextBlock.Visibility = restartRequired ? Visibility.Visible : Visibility.Collapsed;
+        _restartButton.Visibility = _restartNoticeTextBlock.Visibility;
         App.Current.StatsStore.SetStatus(
             languageChanged ? StatusText.LanguageChangeRequiresRestart() : StatusText.SettingsUpdated(),
             App.Current.StatsStore.CurrentAppName,
             App.Current.StatsStore.IsCurrentTargetSupported,
             App.Current.StatsStore.CurrentProcessName);
 
-        if (_excludedAppsTextBox.FocusState == FocusState.Unfocused
-            && !string.Equals(_excludedAppsTextBox.Text, normalizedExcludedApps, StringComparison.Ordinal))
-        {
-            _isRefreshingFromState = true;
-            _excludedAppsTextBox.Text = normalizedExcludedApps;
-            _isRefreshingFromState = false;
-        }
     }
 
     private void RefreshAppTagEditorList()
@@ -411,11 +461,134 @@ public sealed class SettingsPage : UserControl
         }
     }
 
+    private void RefreshExcludedAppsEditor(DashboardSnapshot snapshot)
+    {
+        _knownApps = snapshot.AppStats
+            .Select(item => item.AppName)
+            .Concat(_appTagEditors.Select(item => item.AppName))
+            .Concat(App.Current.Settings.GetExcludedApps())
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _excludedAppsPanel.Children.Clear();
+
+        foreach (var appName in App.Current.Settings.GetExcludedApps())
+        {
+            var isRequired = App.Current.Settings.IsAlwaysExcluded(appName);
+            var row = new Grid { ColumnSpacing = 8 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Children.Add(new TextBlock
+            {
+                Text = isRequired
+                    ? AppStrings.Format("Settings.ExcludedApps.Required", appName)
+                    : appName,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            if (!isRequired)
+            {
+                var removeButton = new Button
+                {
+                    Content = new FontIcon
+                    {
+                        Glyph = "\uE711",
+                        FontFamily = new FontFamily("Segoe Fluent Icons"),
+                        FontSize = 14
+                    },
+                    Padding = new Thickness(8),
+                    MinWidth = 32,
+                    MinHeight = 32
+                };
+                ToolTipService.SetToolTip(removeButton, AppStrings.Format("Settings.ExcludedApps.RemoveTooltip", appName));
+                removeButton.Click += (_, _) => RemoveExcludedApp(appName);
+                Grid.SetColumn(removeButton, 1);
+                row.Children.Add(removeButton);
+            }
+
+            _excludedAppsPanel.Children.Add(row);
+        }
+    }
+
+    private void UpdateExcludedAppSuggestions(string? rawQuery)
+    {
+        var query = (rawQuery ?? string.Empty).Trim();
+        var suggestions = _knownApps
+            .Where(app => !App.Current.Settings.IsExcluded(app))
+            .Where(app => string.IsNullOrWhiteSpace(query) || app.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToList();
+        _excludedAppsPicker.ItemsSource = suggestions;
+        _excludedAppsPicker.IsSuggestionListOpen = suggestions.Count > 0 && _excludedAppsPicker.FocusState != FocusState.Unfocused;
+    }
+
+    private void UpdateAppTagTargetSuggestions(string? rawQuery)
+    {
+        var query = (rawQuery ?? string.Empty).Trim();
+        var suggestions = _knownApps
+            .Where(app => string.IsNullOrWhiteSpace(query) || app.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToList();
+        _appTagNewAppTextBox.ItemsSource = suggestions;
+        _appTagNewAppTextBox.IsSuggestionListOpen = suggestions.Count > 0 && _appTagNewAppTextBox.FocusState != FocusState.Unfocused;
+    }
+
+    private void AddExcludedApp(string? rawAppName)
+    {
+        var appName = (rawAppName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            App.Current.ReportFeedback(
+                InfoBarSeverity.Warning,
+                AppStrings.Get("Feedback.Title.CheckInput"),
+                AppStrings.Get("Feedback.Exclusion.Empty"));
+            return;
+        }
+
+        if (!App.Current.Settings.AddExcludedApp(appName))
+        {
+            App.Current.ReportFeedback(
+                InfoBarSeverity.Informational,
+                AppStrings.Get("Feedback.Title.NoChanges"),
+                AppStrings.Format("Feedback.Exclusion.AlreadyHidden", appName));
+            return;
+        }
+
+        SaveSettingsImmediately();
+        _excludedAppsPicker.Text = string.Empty;
+        RefreshExcludedAppsEditor(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
+        App.Current.ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Exclusion.Hidden", appName));
+    }
+
+    private void RemoveExcludedApp(string appName)
+    {
+        if (!App.Current.Settings.RemoveExcludedApp(appName))
+        {
+            return;
+        }
+
+        SaveSettingsImmediately();
+        RefreshExcludedAppsEditor(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
+        App.Current.ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Exclusion.Removed", appName));
+    }
+
     private void AddManualAppTagTarget()
     {
         var appName = (_appTagNewAppTextBox.Text ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(appName))
         {
+            App.Current.ReportFeedback(
+                InfoBarSeverity.Warning,
+                AppStrings.Get("Feedback.Title.CheckInput"),
+                AppStrings.Get("Feedback.Exclusion.Empty"));
             return;
         }
 
@@ -494,6 +667,12 @@ public sealed class SettingsPage : UserControl
             PlaceholderText = AppStrings.Get("Settings.Placeholder.AppTagInput"),
             MinWidth = 220,
             HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        tagInput.GotFocus += (_, _) =>
+        {
+            var suggestions = BuildTagSuggestions(string.Empty, editor).ToList();
+            tagInput.ItemsSource = suggestions;
+            tagInput.IsSuggestionListOpen = suggestions.Count > 0;
         };
         tagInput.TextChanged += (_, args) =>
         {
@@ -628,8 +807,21 @@ public sealed class SettingsPage : UserControl
     private bool TryAddTag(AppTagEditorState editor, string? rawTag)
     {
         var tag = (rawTag ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(tag) || editor.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(tag))
         {
+            App.Current.ReportFeedback(
+                InfoBarSeverity.Warning,
+                AppStrings.Get("Feedback.Title.CheckInput"),
+                AppStrings.Get("Feedback.Tags.Empty"));
+            return false;
+        }
+
+        if (editor.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            App.Current.ReportFeedback(
+                InfoBarSeverity.Informational,
+                AppStrings.Get("Feedback.Title.NoChanges"),
+                AppStrings.Format("Feedback.Tags.Duplicate", tag));
             return false;
         }
 
@@ -640,6 +832,10 @@ public sealed class SettingsPage : UserControl
             .ToList();
         RefreshAppTagEditorList();
         SaveSettingsImmediately();
+        App.Current.ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Tags.Added", tag, editor.AppName));
         return true;
     }
 
@@ -651,6 +847,10 @@ public sealed class SettingsPage : UserControl
             .ToList();
         RefreshAppTagEditorList();
         SaveSettingsImmediately();
+        App.Current.ReportFeedback(
+            InfoBarSeverity.Success,
+            AppStrings.Get("Feedback.Title.Updated"),
+            AppStrings.Format("Feedback.Tags.Removed", tag, editor.AppName));
     }
 
     private void ClearStoredStatistics()
@@ -671,11 +871,45 @@ public sealed class SettingsPage : UserControl
         RefreshAppTagEditorList();
     }
 
-    private void RestoreBackupArchive()
+    private async void RestoreBackupArchive()
     {
-        App.Current.RestoreBackupArchive();
-        RefreshFromState();
-        RefreshAppTagEditorList();
+        var archivePath = App.Current.PickBackupArchive();
+        if (string.IsNullOrWhiteSpace(archivePath))
+        {
+            return;
+        }
+
+        var payload = App.Current.LoadBackupArchive(archivePath);
+        if (payload is null)
+        {
+            return;
+        }
+
+        var exportedAt = payload.Manifest is null
+            ? AppStrings.Get("Settings.Restore.UnknownBackupTime")
+            : payload.Manifest.ExportedAt.LocalDateTime.ToString("g");
+        var details = AppStrings.Format(
+            "Settings.Restore.ConfirmationBody",
+            exportedAt,
+            payload.Manifest?.ChannelName ?? AppStrings.Get("Settings.Restore.UnknownChannel"));
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = AppStrings.Get("Settings.Restore.ConfirmationTitle"),
+            Content = new TextBlock { Text = details, TextWrapping = TextWrapping.Wrap },
+            PrimaryButtonText = AppStrings.Get("Settings.Restore.ConfirmationButton"),
+            CloseButtonText = AppStrings.Get("QuickActions.Button.Cancel"),
+            DefaultButton = ContentDialogButton.Close
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        if (App.Current.RestoreBackupArchive(archivePath, payload))
+        {
+            RefreshFromState();
+        }
     }
 
     private static UIElement CreateLabeledInput(string title, Control input, string caption)

@@ -28,6 +28,7 @@
   <data name="Statistics.Range.Last7Days" xml:space="preserve"><value>最近 7 天</value></data>
   <data name="Statistics.Range.Last30Days" xml:space="preserve"><value>最近 30 天</value></data>
   <data name="Statistics.Range.AllTime" xml:space="preserve"><value>累计</value></data>
+  <data name="Statistics.Range.Label" xml:space="preserve"><value>统计范围</value></data>
   <data name="Aggregation.App" xml:space="preserve"><value>按应用</value></data>
   <data name="Aggregation.Tag" xml:space="preserve"><value>按标签</value></data>
   <data name="Aggregation.Untagged" xml:space="preserve"><value>未标记</value></data>
@@ -153,13 +154,13 @@
   <data name="Statistics.Trend.AxisDate" xml:space="preserve"><value>{0:M-d}</value></data>
   <data name="Statistics.Trend.Caption" xml:space="preserve"><value>最近 {0} 天峰值：{1:N0} 个受支持字符。</value></data>
   <data name="Statistics.Heatmap.Empty" xml:space="preserve"><value>还没有每日历史记录。</value></data>
-  <data name="Statistics.Heatmap.Detail.Default" xml:space="preserve"><value>悬停到任意单元格即可查看单日详情。当前视图峰值为 {0:yyyy-MM-dd} • {1:N0}。</value></data>
+  <data name="Statistics.Heatmap.Detail.Default" xml:space="preserve"><value>选择或悬停单元格即可查看单日详情。当前视图峰值为 {0:yyyy-MM-dd} • {1:N0}。</value></data>
   <data name="Statistics.Heatmap.Detail.Entry" xml:space="preserve"><value>{0:yyyy-MM-dd} • {1:N0} 个字符</value></data>
   <data name="Statistics.Heatmap.Tooltip" xml:space="preserve"><value>{0:yyyy-MM-dd}：{1:N0}</value></data>
   <data name="Statistics.Heatmap.Caption" xml:space="preserve"><value>颜色越深表示当天输入越多。历史起始于 {0:yyyy-MM-dd}。</value></data>
   <data name="Statistics.Distribution.Empty" xml:space="preserve"><value>还没有应用分布可展示，因为尚未记录任何受支持字符。</value></data>
   <data name="Statistics.Distribution.EmptyCaption" xml:space="preserve"><value>一旦有活动，这里会显示最主要的应用占比。</value></data>
-  <data name="Statistics.Distribution.Detail.Default" xml:space="preserve"><value>悬停或点击任意扇区即可查看应用占比。</value></data>
+  <data name="Statistics.Distribution.Detail.Default" xml:space="preserve"><value>选择、点击或悬停图例项即可查看应用占比。</value></data>
   <data name="Statistics.Distribution.Detail.Entry" xml:space="preserve"><value>{0} • {1:N0} 个字符 • {2:P0}</value></data>
   <data name="Statistics.Distribution.Tooltip" xml:space="preserve"><value>{0}
 {1:N0} • {2:P0}</value></data>
@@ -339,4 +340,54 @@
   <data name="Status.DebugDiskLogEnabled" xml:space="preserve"><value>磁盘日志写入已启用。</value></data>
   <data name="Status.DebugDiskLogDisabled" xml:space="preserve"><value>磁盘日志写入已暂停。</value></data>
   <data name="Status.DebugDiskLogPathSet" xml:space="preserve"><value>磁盘日志路径已设为 {0}</value></data>
+  <data name="TagPicker.Placeholder" xml:space="preserve"><value>搜索已有标签或输入新标签</value></data>
+  <data name="TagPicker.Description" xml:space="preserve"><value>直接勾选已有标签。输入一个新名称后点击添加，即可创建并选中它。</value></data>
+  <data name="TagPicker.Button.Add" xml:space="preserve"><value>添加并选中</value></data>
+  <data name="TagPicker.Feedback.Empty" xml:space="preserve"><value>先输入一个标签名称。</value></data>
+  <data name="TagPicker.Feedback.Created" xml:space="preserve"><value>已创建并选中“{0}”。</value></data>
+  <data name="TagPicker.Feedback.Selected" xml:space="preserve"><value>已选中“{0}”。</value></data>
+  <data name="QuickActions.Tooltip.More" xml:space="preserve"><value>更多应用操作</value></data>
+  <data name="QuickActions.Menu.ManageTags" xml:space="preserve"><value>管理标签映射</value></data>
+  <data name="Main.Apps.TagFilterTooltip" xml:space="preserve"><value>按标签“{0}”筛选</value></data>
+  <data name="Main.Apps.ClearSearchTooltip" xml:space="preserve"><value>清空应用搜索</value></data>
+  <data name="Main.Apps.ClearSearch" xml:space="preserve"><value>清空搜索</value></data>
+  <data name="Feedback.Title.Updated" xml:space="preserve"><value>已更新</value></data>
+  <data name="Feedback.Title.NoChanges" xml:space="preserve"><value>没有需要保存的更改</value></data>
+  <data name="Feedback.Title.CheckInput" xml:space="preserve"><value>请检查输入</value></data>
+  <data name="Feedback.Title.SaveFailed" xml:space="preserve"><value>设置未能完全保存</value></data>
+  <data name="Feedback.Title.RestoreFailed" xml:space="preserve"><value>无法恢复备份</value></data>
+  <data name="Feedback.Title.Restored" xml:space="preserve"><value>备份已恢复</value></data>
+  <data name="Feedback.Button.Undo" xml:space="preserve"><value>撤销</value></data>
+  <data name="Feedback.Exclusion.Hidden" xml:space="preserve"><value>已隐藏 {0}。</value></data>
+  <data name="Feedback.Exclusion.AlreadyHidden" xml:space="preserve"><value>{0} 已在隐藏列表中。</value></data>
+  <data name="Feedback.Exclusion.Restored" xml:space="preserve"><value>已恢复 {0} 个应用的统计。</value></data>
+  <data name="Feedback.Exclusion.Removed" xml:space="preserve"><value>已取消隐藏 {0}。</value></data>
+  <data name="Feedback.Exclusion.Empty" xml:space="preserve"><value>选择一个应用，或输入进程名。</value></data>
+  <data name="Feedback.Alias.Unchanged" xml:space="preserve"><value>别名没有变化。</value></data>
+  <data name="Feedback.Grouping.Unchanged" xml:space="preserve"><value>标签分组没有变化。</value></data>
+  <data name="Feedback.Grouping.Cleared" xml:space="preserve"><value>已清除 {0} 的标签分组。</value></data>
+  <data name="Feedback.Grouping.Updated" xml:space="preserve"><value>已更新 {0} 的 {1} 个标签。</value></data>
+  <data name="Feedback.Settings.SaveFailed" xml:space="preserve"><value>无法应用此设置：{0}</value></data>
+  <data name="Feedback.Restore.Failed" xml:space="preserve"><value>备份没有改变当前数据：{0}</value></data>
+  <data name="Feedback.Restore.Completed" xml:space="preserve"><value>设置和统计已恢复到默认本地统计源。</value></data>
+  <data name="Feedback.DebugDiskLog.PathFailed" xml:space="preserve"><value>选择的日志文件无法写入：{0}</value></data>
+  <data name="Feedback.Tags.Empty" xml:space="preserve"><value>先输入一个标签名称。</value></data>
+  <data name="Feedback.Tags.Duplicate" xml:space="preserve"><value>“{0}”已经添加到此应用。</value></data>
+  <data name="Feedback.Tags.Added" xml:space="preserve"><value>已将“{0}”添加到 {1}。</value></data>
+  <data name="Feedback.Tags.Removed" xml:space="preserve"><value>已从 {1} 移除“{0}”。</value></data>
+  <data name="Settings.Placeholder.ExcludedAppInput" xml:space="preserve"><value>选择已有应用，或输入进程名</value></data>
+  <data name="Settings.Button.AddExcludedApp" xml:space="preserve"><value>隐藏应用</value></data>
+  <data name="Settings.ExcludedApps.Required" xml:space="preserve"><value>{0}（内置排除）</value></data>
+  <data name="Settings.ExcludedApps.RemoveTooltip" xml:space="preserve"><value>取消隐藏 {0}</value></data>
+  <data name="Settings.Button.RestartNow" xml:space="preserve"><value>立即重启并应用</value></data>
+  <data name="Settings.Restore.UnknownBackupTime" xml:space="preserve"><value>未知时间</value></data>
+  <data name="Settings.Restore.UnknownChannel" xml:space="preserve"><value>未知渠道</value></data>
+  <data name="Settings.Restore.ConfirmationTitle" xml:space="preserve"><value>恢复并覆盖当前数据？</value></data>
+  <data name="Settings.Restore.ConfirmationBody" xml:space="preserve"><value>备份时间：{0}\n渠道：{1}\n\n继续会覆盖当前设置、统计和调试配置。此操作会将统计恢复到默认本地统计源。</value></data>
+  <data name="Settings.Restore.ConfirmationButton" xml:space="preserve"><value>恢复并覆盖</value></data>
+  <data name="Debug.DiskLog.RawTextConfirmation.Title" xml:space="preserve"><value>允许将原始输入文本写入磁盘？</value></data>
+  <data name="Debug.DiskLog.RawTextConfirmation.Body" xml:space="preserve"><value>开启后，实际输入的字符可能持续写入你选择的本地日志文件。请仅在排查问题时短暂开启，并在完成后关闭并删除日志文件。</value></data>
+  <data name="Debug.DiskLog.RawTextConfirmation.Enable" xml:space="preserve"><value>允许写入原始文本</value></data>
+  <data name="Tray.Hint.Title" xml:space="preserve"><value>inputor 仍在后台运行</value></data>
+  <data name="Tray.Hint.Body" xml:space="preserve"><value>窗口已隐藏到系统托盘。可右键托盘图标暂停监控或退出 inputor。</value></data>
 </root>

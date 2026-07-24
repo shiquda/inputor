@@ -39,7 +39,8 @@ public sealed class MainWindow : Window
     private readonly Button _pauseButton;
     private readonly TextBlock _appsSummaryTextBlock;
     private readonly TextBlock _paneStatusTextBlock;
-    private readonly TextBox _searchBox;
+    private readonly AutoSuggestBox _searchBox;
+    private readonly Button _clearSearchButton;
     private readonly ComboBox _sortComboBox;
     private readonly ComboBox _appsAggregationComboBox;
     private readonly StackPanel _recentActivityPanel;
@@ -47,6 +48,7 @@ public sealed class MainWindow : Window
     private readonly StackPanel _allAppsPanel;
     private readonly Border _titleBarHost;
     private readonly Grid _titleBarDragRegion;
+    private readonly InfoBar _feedbackBar;
     private Border? _titleBarGlyphHost;
     private readonly List<(Border Border, bool Elevated)> _trackedSurfaces = [];
     private readonly AppWindow _appWindow;
@@ -78,8 +80,31 @@ public sealed class MainWindow : Window
         };
         _appsSummaryTextBlock = new TextBlock();
         _paneStatusTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12, Opacity = 0.7 };
-        _searchBox = new TextBox { PlaceholderText = AppStrings.Get("Main.Placeholder.SearchApps"), Width = 240 };
-        _searchBox.TextChanged += (_, _) => Refresh();
+        _searchBox = new AutoSuggestBox { PlaceholderText = AppStrings.Get("Main.Placeholder.SearchApps"), Width = 260 };
+        _searchBox.TextChanged += SearchBox_TextChanged;
+        _searchBox.GotFocus += (_, _) => UpdateSearchSuggestions(_searchBox.Text);
+        _searchBox.SuggestionChosen += (_, args) =>
+        {
+            if (args.SelectedItem is string suggestion)
+            {
+                _searchBox.Text = suggestion;
+            }
+        };
+        _clearSearchButton = new Button
+        {
+            Content = new FontIcon
+            {
+                Glyph = "\uE711",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 14
+            },
+            Padding = new Thickness(8),
+            MinWidth = 36,
+            MinHeight = 36,
+            IsEnabled = false
+        };
+        ToolTipService.SetToolTip(_clearSearchButton, AppStrings.Get("Main.Apps.ClearSearchTooltip"));
+        _clearSearchButton.Click += (_, _) => _searchBox.Text = string.Empty;
         _sortComboBox = new ComboBox
         {
             Width = 160,
@@ -155,8 +180,20 @@ public sealed class MainWindow : Window
 
         _titleBarHost = CreateTitleBarHost();
         _titleBarDragRegion = (Grid)_titleBarHost.Child;
+        _feedbackBar = new InfoBar
+        {
+            IsOpen = false,
+            IsClosable = true,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(16, 50, 16, 0),
+            MaxWidth = 760
+        };
         _appWindow = WindowHelpers.GetAppWindow(this);
-        Content = BuildWindowShell();
+        var windowContent = new Grid();
+        windowContent.Children.Add(BuildWindowShell());
+        windowContent.Children.Add(_feedbackBar);
+        Content = windowContent;
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(_titleBarDragRegion);
         ApplyThemeMode(AppStrings.ResolveThemeMode(App.Current.Settings.ThemeMode));
@@ -165,6 +202,7 @@ public sealed class MainWindow : Window
         _appWindow.Changed += AppWindow_Changed;
         ThemeBrushes.Changed += ThemeBrushes_Changed;
         App.Current.StatsStore.Changed += StatsStore_Changed;
+        App.Current.FeedbackRequested += App_FeedbackRequested;
         AppPresentationService.IconsChanged += AppPresentationService_IconsChanged;
         Closed += MainWindow_Closed;
         Refresh();
@@ -180,6 +218,78 @@ public sealed class MainWindow : Window
         QueueRefresh();
     }
 
+    private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        _clearSearchButton.IsEnabled = !string.IsNullOrWhiteSpace(sender.Text);
+        if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+        {
+            UpdateSearchSuggestions(sender.Text);
+        }
+
+        Refresh();
+    }
+
+    private void UpdateSearchSuggestions(string? rawQuery)
+    {
+        var query = (rawQuery ?? string.Empty).Trim();
+        var snapshot = AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings);
+        var suggestions = AppPresentationService.BuildAggregates(snapshot.AppStats, App.Current.Settings)
+            .SelectMany(aggregate => new[] { aggregate.DisplayName }
+                .Concat(aggregate.ProcessNames)
+                .Concat(App.Current.Settings.GetTagsForApps(aggregate.ProcessNames)))
+            .Where(item => string.IsNullOrWhiteSpace(query) || item.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(item => item, StringComparer.OrdinalIgnoreCase)
+            .Take(8)
+            .ToList();
+        _searchBox.ItemsSource = suggestions;
+        _searchBox.IsSuggestionListOpen = suggestions.Count > 0 && _searchBox.FocusState != FocusState.Unfocused;
+    }
+
+    private void App_FeedbackRequested(object? sender, UserFeedbackEventArgs args)
+    {
+        if (_isClosed)
+        {
+            return;
+        }
+
+        if (_dispatcherQueue.HasThreadAccess)
+        {
+            ShowFeedback(args);
+            return;
+        }
+
+        _dispatcherQueue.TryEnqueue(() => ShowFeedback(args));
+    }
+
+    private void ShowFeedback(UserFeedbackEventArgs feedback)
+    {
+        if (_isClosed)
+        {
+            return;
+        }
+
+        _feedbackBar.IsOpen = false;
+        _feedbackBar.Severity = feedback.Severity;
+        _feedbackBar.Title = feedback.Title;
+        _feedbackBar.Message = feedback.Message;
+        _feedbackBar.ActionButton = feedback.Action is null || string.IsNullOrWhiteSpace(feedback.ActionLabel)
+            ? null
+            : CreateFeedbackActionButton(feedback.ActionLabel, feedback.Action);
+        _feedbackBar.IsOpen = true;
+    }
+
+    private Button CreateFeedbackActionButton(string text, Action action)
+    {
+        var button = new Button { Content = text };
+        button.Click += (_, _) =>
+        {
+            _feedbackBar.IsOpen = false;
+            action();
+        };
+        return button;
+    }
+
     private void RootNavigation_ActualThemeChanged(FrameworkElement sender, object args)
     {
         ThemeBrushes.NotifyChanged();
@@ -192,6 +302,7 @@ public sealed class MainWindow : Window
         _appWindow.Changed -= AppWindow_Changed;
         ThemeBrushes.Changed -= ThemeBrushes_Changed;
         App.Current.StatsStore.Changed -= StatsStore_Changed;
+        App.Current.FeedbackRequested -= App_FeedbackRequested;
         AppPresentationService.IconsChanged -= AppPresentationService_IconsChanged;
     }
 
@@ -442,6 +553,7 @@ public sealed class MainWindow : Window
 
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         toolbar.Children.Add(_searchBox);
+        toolbar.Children.Add(_clearSearchButton);
         toolbar.Children.Add(_appsAggregationComboBox);
         toolbar.Children.Add(_sortComboBox);
         var toolbarCard = CreateCard(toolbar, null, true);
@@ -654,6 +766,19 @@ public sealed class MainWindow : Window
             : AppStrings.Format("Main.Apps.Summary", aggregationLabel, filtered.Count, snapshot.TotalToday, snapshot.TotalSession, snapshot.TotalAllTime);
 
         _allAppsPanel.Children.Clear();
+        if (filtered.Count == 0 && !string.IsNullOrWhiteSpace(query))
+        {
+            var clearButton = new Button
+            {
+                Content = AppStrings.Get("Main.Apps.ClearSearch"),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(16, 8, 16, 8)
+            };
+            clearButton.Click += (_, _) => _searchBox.Text = string.Empty;
+            _allAppsPanel.Children.Add(clearButton);
+            return;
+        }
+
         foreach (var stat in filtered)
         {
             var percentage = stat.TodayCount == 0 ? 0 : stat.TodayCount * 100.0 / percentageTotal;
@@ -761,6 +886,7 @@ public sealed class MainWindow : Window
         var layout = new Grid { ColumnSpacing = 12 };
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var icon = new Border
         {
@@ -815,6 +941,13 @@ public sealed class MainWindow : Window
         Grid.SetColumn(body, 1);
         layout.Children.Add(body);
 
+        var moreButton = AppQuickActionService.CreateMoreButton(layout, aggregate, BeginInteraction, EndInteraction);
+        if (moreButton is not null)
+        {
+            Grid.SetColumn(moreButton, 2);
+            layout.Children.Add(moreButton);
+        }
+
         var border = new Border
         {
             CornerRadius = new CornerRadius(6),
@@ -832,20 +965,23 @@ public sealed class MainWindow : Window
         return border;
     }
 
-    private static Border CreateAppTagBadge(string tag)
+    private Button CreateAppTagBadge(string tag)
     {
-        return new Border
+        var button = new Button
         {
+            Content = tag,
             Padding = new Thickness(8, 3, 8, 3),
-            CornerRadius = new CornerRadius(999),
+            MinWidth = 0,
             Background = ThemeBrushes.GetAccentBadgeBackgroundBrush(),
-            Child = new TextBlock
-            {
-                Text = tag,
-                FontSize = 12,
-                TextWrapping = TextWrapping.NoWrap
-            }
+            HorizontalAlignment = HorizontalAlignment.Left
         };
+        ToolTipService.SetToolTip(button, AppStrings.Format("Main.Apps.TagFilterTooltip", tag));
+        button.Click += (_, _) =>
+        {
+            _appsAggregationComboBox.SelectedValue = "tag";
+            _searchBox.Text = tag;
+        };
+        return button;
     }
 
     private static void AnimatePageIn(UIElement page)

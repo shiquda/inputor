@@ -19,7 +19,7 @@ internal static class WindowHelpers
         return AppWindow.GetFromWindowId(windowId);
     }
 
-    public static void RegisterHideOnClose(Window window, Func<bool> shouldHide)
+    public static void RegisterHideOnClose(Window window, Func<bool> shouldHide, Action? onHidden = null)
     {
         GetAppWindow(window).Closing += (_, args) =>
         {
@@ -30,6 +30,7 @@ internal static class WindowHelpers
 
             args.Cancel = true;
             HideWindow(window);
+            onHidden?.Invoke();
         };
     }
 
