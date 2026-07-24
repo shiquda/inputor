@@ -1,5 +1,6 @@
-using System.Threading;
 using System.Runtime.InteropServices;
+using System.Threading;
+using FlaUI.Core.Definitions;
 using Inputor.App.Models;
 using Inputor.App.Services;
 using Microsoft.UI.Dispatching;
@@ -101,6 +102,64 @@ internal static class Program
                 ? BuildDebugTextComparison(args[6], args[7])
                 : null;
             Console.WriteLine(BulkLoadDetectionService.LooksLikeBulkContentLoad(processName, delta, inserted, textComparison, controlTypeName, isPaste));
+            return true;
+        }
+
+        if (args.Length >= 1 && args[0] == "--simulate-attribution")
+        {
+            var scenarios = new[]
+            {
+                (Name: "edit+typing", IsEditable: true, Activity: InputAttributionService.ActivityKind.Typing, Expected: InputAttributionService.AttributionDecision.Count),
+                (Name: "document+not-editable", IsEditable: false, Activity: InputAttributionService.ActivityKind.Typing, Expected: InputAttributionService.AttributionDecision.RejectNotEditable),
+                (Name: "edit+no-activity", IsEditable: true, Activity: InputAttributionService.ActivityKind.None, Expected: InputAttributionService.AttributionDecision.RejectNoRecentTyping),
+                (Name: "edit+paste", IsEditable: true, Activity: InputAttributionService.ActivityKind.PasteShortcut, Expected: InputAttributionService.AttributionDecision.RejectPaste),
+                (Name: "edit+hook-unavailable", IsEditable: true, Activity: InputAttributionService.ActivityKind.Unavailable, Expected: InputAttributionService.AttributionDecision.CountUsingFallback)
+            };
+            var allPassed = true;
+
+            foreach (var scenario in scenarios)
+            {
+                var actual = InputAttributionService.Evaluate(scenario.IsEditable, scenario.Activity);
+                var passed = actual == scenario.Expected;
+                Console.WriteLine($"{scenario.Name} => {actual}, expected={scenario.Expected}, passed={passed}");
+                allPassed &= passed;
+            }
+
+            var targetScenarios = new[]
+            {
+                (Name: "edit+unknown-readonly", ControlType: ControlType.Edit, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)null, HasWritableValue: false, Expected: true),
+                (Name: "document+editable", ControlType: ControlType.Document, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)false, HasWritableValue: false, Expected: true),
+                (Name: "document+readonly", ControlType: ControlType.Document, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)true, HasWritableValue: false, Expected: false),
+                (Name: "combobox+writable-value", ControlType: ControlType.ComboBox, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)false, HasWritableValue: true, Expected: true),
+                (Name: "custom+writable-value", ControlType: ControlType.Custom, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)false, HasWritableValue: true, Expected: true),
+                (Name: "pane+no-writable-value", ControlType: ControlType.Pane, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)null, HasWritableValue: false, Expected: false)
+            };
+
+            foreach (var scenario in targetScenarios)
+            {
+                var actual = InputAttributionService.IsEditableTarget(
+                    scenario.ControlType,
+                    scenario.HasFocus,
+                    scenario.IsFocusable,
+                    scenario.IsReadOnly,
+                    scenario.HasWritableValue);
+                var passed = actual == scenario.Expected;
+                Console.WriteLine($"target:{scenario.Name} => {actual}, expected={scenario.Expected}, passed={passed}");
+                allPassed &= passed;
+            }
+
+            Environment.ExitCode = allPassed ? 0 : 1;
+            return true;
+        }
+
+        if (args.Length >= 1 && args[0] == "--probe-keyboard-hook")
+        {
+            using (var keyboardActivityService = new KeyboardActivityService())
+            {
+                Console.WriteLine($"available={keyboardActivityService.Start()}");
+            }
+
+            Console.WriteLine("disposed=True");
             return true;
         }
 

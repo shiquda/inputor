@@ -182,6 +182,7 @@ public sealed class DebugDiskLogService : IDisposable
         var flags = string.Join(" ",
             $"Paste:{(entry.IsPaste ? "Y" : "N")}",
             $"Bulk:{(entry.IsBulkContentLoad ? "Y" : "N")}",
+            $"Attributed:{(entry.IsUnattributedTextChange ? "N" : "Y")}",
             $"Pending:{(entry.IsPendingComposition ? "Y" : "N")}",
             $"IME:{(entry.IsNativeImeInputMode ? "Y" : "N")}",
             $"Supported:{(entry.IsCurrentTargetSupported ? "Y" : "N")}");
