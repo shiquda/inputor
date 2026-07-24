@@ -30,6 +30,16 @@ internal sealed class NotifyIconService : IDisposable
         _trayHostWindow.Dispose();
     }
 
+    public void ShowNotification(string title, string message)
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _trayHostWindow.ShowNotification(title, message);
+    }
+
     private void StatsStore_Changed(object? sender, EventArgs e)
     {
         QueueUpdateState();

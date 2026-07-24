@@ -28,6 +28,7 @@
   <data name="Statistics.Range.Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
   <data name="Statistics.Range.Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
   <data name="Statistics.Range.AllTime" xml:space="preserve"><value>All time</value></data>
+  <data name="Statistics.Range.Label" xml:space="preserve"><value>Statistics range</value></data>
   <data name="Aggregation.App" xml:space="preserve"><value>By app</value></data>
   <data name="Aggregation.Tag" xml:space="preserve"><value>By tag</value></data>
   <data name="Aggregation.Untagged" xml:space="preserve"><value>Untagged</value></data>
@@ -153,13 +154,13 @@
   <data name="Statistics.Trend.AxisDate" xml:space="preserve"><value>{0:MM-dd}</value></data>
   <data name="Statistics.Trend.Caption" xml:space="preserve"><value>Peak over the last {0} days: {1:N0} supported characters.</value></data>
   <data name="Statistics.Heatmap.Empty" xml:space="preserve"><value>No daily history yet.</value></data>
-  <data name="Statistics.Heatmap.Detail.Default" xml:space="preserve"><value>Hover a cell to inspect a day. Peak in this view: {0:yyyy-MM-dd} • {1:N0}.</value></data>
+  <data name="Statistics.Heatmap.Detail.Default" xml:space="preserve"><value>Select or hover a cell to inspect a day. Peak in this view: {0:yyyy-MM-dd} • {1:N0}.</value></data>
   <data name="Statistics.Heatmap.Detail.Entry" xml:space="preserve"><value>{0:yyyy-MM-dd} • {1:N0} characters</value></data>
   <data name="Statistics.Heatmap.Tooltip" xml:space="preserve"><value>{0:yyyy-MM-dd}: {1:N0}</value></data>
   <data name="Statistics.Heatmap.Caption" xml:space="preserve"><value>Darker cells represent stronger days. History begins on {0:yyyy-MM-dd}.</value></data>
   <data name="Statistics.Distribution.Empty" xml:space="preserve"><value>No app distribution is available yet because no supported characters have been recorded.</value></data>
   <data name="Statistics.Distribution.EmptyCaption" xml:space="preserve"><value>Once activity exists, this view will show the strongest app share.</value></data>
-  <data name="Statistics.Distribution.Detail.Default" xml:space="preserve"><value>Hover or click a slice to inspect an app share.</value></data>
+  <data name="Statistics.Distribution.Detail.Default" xml:space="preserve"><value>Select, click, or hover a legend item to inspect an app share.</value></data>
   <data name="Statistics.Distribution.Detail.Entry" xml:space="preserve"><value>{0} • {1:N0} characters • {2:P0}</value></data>
   <data name="Statistics.Distribution.Tooltip" xml:space="preserve"><value>{0}
 {1:N0} • {2:P0}</value></data>
@@ -335,4 +336,54 @@
   <data name="Status.DebugDiskLogEnabled" xml:space="preserve"><value>Disk log writing enabled.</value></data>
   <data name="Status.DebugDiskLogDisabled" xml:space="preserve"><value>Disk log writing paused.</value></data>
   <data name="Status.DebugDiskLogPathSet" xml:space="preserve"><value>Disk log path set to {0}</value></data>
+  <data name="TagPicker.Placeholder" xml:space="preserve"><value>Search existing tags or enter a new tag</value></data>
+  <data name="TagPicker.Description" xml:space="preserve"><value>Select existing tags directly. Enter a new name and select Add to create and select it.</value></data>
+  <data name="TagPicker.Button.Add" xml:space="preserve"><value>Add and select</value></data>
+  <data name="TagPicker.Feedback.Empty" xml:space="preserve"><value>Enter a tag name first.</value></data>
+  <data name="TagPicker.Feedback.Created" xml:space="preserve"><value>Created and selected "{0}".</value></data>
+  <data name="TagPicker.Feedback.Selected" xml:space="preserve"><value>Selected "{0}".</value></data>
+  <data name="QuickActions.Tooltip.More" xml:space="preserve"><value>More app actions</value></data>
+  <data name="QuickActions.Menu.ManageTags" xml:space="preserve"><value>Manage tag mappings</value></data>
+  <data name="Main.Apps.TagFilterTooltip" xml:space="preserve"><value>Filter by tag "{0}"</value></data>
+  <data name="Main.Apps.ClearSearchTooltip" xml:space="preserve"><value>Clear app search</value></data>
+  <data name="Main.Apps.ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="Feedback.Title.Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Feedback.Title.NoChanges" xml:space="preserve"><value>No changes to save</value></data>
+  <data name="Feedback.Title.CheckInput" xml:space="preserve"><value>Check your input</value></data>
+  <data name="Feedback.Title.SaveFailed" xml:space="preserve"><value>Settings could not be fully saved</value></data>
+  <data name="Feedback.Title.RestoreFailed" xml:space="preserve"><value>Backup could not be restored</value></data>
+  <data name="Feedback.Title.Restored" xml:space="preserve"><value>Backup restored</value></data>
+  <data name="Feedback.Button.Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="Feedback.Exclusion.Hidden" xml:space="preserve"><value>Hidden {0}.</value></data>
+  <data name="Feedback.Exclusion.AlreadyHidden" xml:space="preserve"><value>{0} is already hidden.</value></data>
+  <data name="Feedback.Exclusion.Restored" xml:space="preserve"><value>Restored statistics for {0} app(s).</value></data>
+  <data name="Feedback.Exclusion.Removed" xml:space="preserve"><value>Stopped hiding {0}.</value></data>
+  <data name="Feedback.Exclusion.Empty" xml:space="preserve"><value>Select an app or enter a process name.</value></data>
+  <data name="Feedback.Alias.Unchanged" xml:space="preserve"><value>The alias did not change.</value></data>
+  <data name="Feedback.Grouping.Unchanged" xml:space="preserve"><value>The tag grouping did not change.</value></data>
+  <data name="Feedback.Grouping.Cleared" xml:space="preserve"><value>Cleared tag grouping for {0}.</value></data>
+  <data name="Feedback.Grouping.Updated" xml:space="preserve"><value>Updated {0} tag(s) for {1}.</value></data>
+  <data name="Feedback.Settings.SaveFailed" xml:space="preserve"><value>Could not apply this setting: {0}</value></data>
+  <data name="Feedback.Restore.Failed" xml:space="preserve"><value>The backup did not change current data: {0}</value></data>
+  <data name="Feedback.Restore.Completed" xml:space="preserve"><value>Settings and statistics were restored to the default local source.</value></data>
+  <data name="Feedback.DebugDiskLog.PathFailed" xml:space="preserve"><value>The selected log file cannot be written: {0}</value></data>
+  <data name="Feedback.Tags.Empty" xml:space="preserve"><value>Enter a tag name first.</value></data>
+  <data name="Feedback.Tags.Duplicate" xml:space="preserve"><value>"{0}" is already assigned to this app.</value></data>
+  <data name="Feedback.Tags.Added" xml:space="preserve"><value>Added "{0}" to {1}.</value></data>
+  <data name="Feedback.Tags.Removed" xml:space="preserve"><value>Removed "{0}" from {1}.</value></data>
+  <data name="Settings.Placeholder.ExcludedAppInput" xml:space="preserve"><value>Select an existing app or enter a process name</value></data>
+  <data name="Settings.Button.AddExcludedApp" xml:space="preserve"><value>Hide app</value></data>
+  <data name="Settings.ExcludedApps.Required" xml:space="preserve"><value>{0} (built-in exclusion)</value></data>
+  <data name="Settings.ExcludedApps.RemoveTooltip" xml:space="preserve"><value>Stop hiding {0}</value></data>
+  <data name="Settings.Button.RestartNow" xml:space="preserve"><value>Restart now to apply</value></data>
+  <data name="Settings.Restore.UnknownBackupTime" xml:space="preserve"><value>Unknown time</value></data>
+  <data name="Settings.Restore.UnknownChannel" xml:space="preserve"><value>Unknown channel</value></data>
+  <data name="Settings.Restore.ConfirmationTitle" xml:space="preserve"><value>Restore and replace current data?</value></data>
+  <data name="Settings.Restore.ConfirmationBody" xml:space="preserve"><value>Backup time: {0}\nChannel: {1}\n\nContinuing replaces current settings, statistics, and debug configuration. Statistics will be restored to the default local source.</value></data>
+  <data name="Settings.Restore.ConfirmationButton" xml:space="preserve"><value>Restore and replace</value></data>
+  <data name="Debug.DiskLog.RawTextConfirmation.Title" xml:space="preserve"><value>Allow raw input text to be written to disk?</value></data>
+  <data name="Debug.DiskLog.RawTextConfirmation.Body" xml:space="preserve"><value>When enabled, characters you type may be continuously written to the selected local log file. Enable this only briefly while diagnosing a problem, then turn it off and delete the log.</value></data>
+  <data name="Debug.DiskLog.RawTextConfirmation.Enable" xml:space="preserve"><value>Allow raw-text writing</value></data>
+  <data name="Tray.Hint.Title" xml:space="preserve"><value>inputor is still running in the background</value></data>
+  <data name="Tray.Hint.Body" xml:space="preserve"><value>The window was hidden to the system tray. Right-click the tray icon to pause monitoring or exit inputor.</value></data>
 </root>

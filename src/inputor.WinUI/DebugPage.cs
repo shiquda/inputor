@@ -26,6 +26,7 @@ public sealed class DebugPage : UserControl
     private readonly TextBlock _diskLogPrivacyBody;
     private DashboardSnapshot? _pendingSnapshot;
     private int _interactionDepth;
+    private bool _isRefreshingDiskLogToggles;
     private readonly List<(Border Border, bool Subtle)> _cards = [];
 
     public DebugPage()
@@ -79,8 +80,10 @@ public sealed class DebugPage : UserControl
             var path = App.Current.PickDebugDiskLogPath();
             if (path is not null)
             {
-                App.Current.SetDebugDiskLogPath(path);
-                App.Current.StatsStore.SetStatus(StatusText.DebugDiskLogPathSet(path), App.Current.StatsStore.CurrentAppName, App.Current.StatsStore.IsCurrentTargetSupported, App.Current.StatsStore.CurrentProcessName);
+                if (App.Current.SetDebugDiskLogPath(path))
+                {
+                    App.Current.StatsStore.SetStatus(StatusText.DebugDiskLogPathSet(path), App.Current.StatsStore.CurrentAppName, App.Current.StatsStore.IsCurrentTargetSupported, App.Current.StatsStore.CurrentProcessName);
+                }
             }
         };
 
@@ -96,15 +99,27 @@ public sealed class DebugPage : UserControl
             Content = AppStrings.Get("Debug.DiskLog.Toggle.WriteEnabled"),
             IsEnabled = false
         };
-        _diskLogWriteToggle.Checked += (_, _) => App.Current.SetDebugDiskLogEnabled(true);
-        _diskLogWriteToggle.Unchecked += (_, _) => App.Current.SetDebugDiskLogEnabled(false);
+        _diskLogWriteToggle.Checked += (_, _) =>
+        {
+            if (!_isRefreshingDiskLogToggles)
+            {
+                App.Current.SetDebugDiskLogEnabled(true);
+            }
+        };
+        _diskLogWriteToggle.Unchecked += (_, _) =>
+        {
+            if (!_isRefreshingDiskLogToggles)
+            {
+                App.Current.SetDebugDiskLogEnabled(false);
+            }
+        };
 
         _diskLogRawTextToggle = new CheckBox
         {
             Content = AppStrings.Get("Debug.DiskLog.Toggle.IncludeRawText")
         };
-        _diskLogRawTextToggle.Checked += (_, _) => App.Current.SetDebugDiskLogIncludeRawText(true);
-        _diskLogRawTextToggle.Unchecked += (_, _) => App.Current.SetDebugDiskLogIncludeRawText(false);
+        _diskLogRawTextToggle.Checked += async (_, _) => await SetRawTextLoggingAsync(true);
+        _diskLogRawTextToggle.Unchecked += async (_, _) => await SetRawTextLoggingAsync(false);
 
         _diskLogPrivacyBody = new TextBlock
         {
@@ -150,6 +165,7 @@ public sealed class DebugPage : UserControl
             ? AppStrings.Format("Debug.DiskLog.Label.PathSet", snapshot.DebugDiskLogPath)
             : AppStrings.Get("Debug.DiskLog.Label.NoPathSet");
         _diskLogWriteToggle.IsEnabled = hasPath && snapshot.IsDebugCaptureEnabled;
+        _isRefreshingDiskLogToggles = true;
         if (_diskLogWriteToggle.IsChecked != snapshot.IsDebugDiskLogEnabled)
         {
             _diskLogWriteToggle.IsChecked = snapshot.IsDebugDiskLogEnabled;
@@ -159,6 +175,7 @@ public sealed class DebugPage : UserControl
         {
             _diskLogRawTextToggle.IsChecked = snapshot.DebugDiskLogIncludeRawText;
         }
+        _isRefreshingDiskLogToggles = false;
 
         _diskLogPrivacyBody.Text = snapshot.DebugDiskLogIncludeRawText
             ? AppStrings.Get("Debug.DiskLog.Card.PrivacyBodyRawText")
@@ -197,6 +214,43 @@ public sealed class DebugPage : UserControl
         }
 
         RenderEvents(snapshot);
+    }
+
+    private async Task SetRawTextLoggingAsync(bool includeRawText)
+    {
+        if (_isRefreshingDiskLogToggles)
+        {
+            return;
+        }
+
+        if (!includeRawText)
+        {
+            App.Current.SetDebugDiskLogIncludeRawText(false);
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = AppStrings.Get("Debug.DiskLog.RawTextConfirmation.Title"),
+            Content = new TextBlock
+            {
+                Text = AppStrings.Get("Debug.DiskLog.RawTextConfirmation.Body"),
+                TextWrapping = TextWrapping.Wrap
+            },
+            PrimaryButtonText = AppStrings.Get("Debug.DiskLog.RawTextConfirmation.Enable"),
+            CloseButtonText = AppStrings.Get("QuickActions.Button.Cancel"),
+            DefaultButton = ContentDialogButton.Close
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            App.Current.SetDebugDiskLogIncludeRawText(true);
+            return;
+        }
+
+        _isRefreshingDiskLogToggles = true;
+        _diskLogRawTextToggle.IsChecked = false;
+        _isRefreshingDiskLogToggles = false;
     }
 
     public void ResetInteractionState()

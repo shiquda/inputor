@@ -55,22 +55,38 @@ public sealed class DebugDiskLogService : IDisposable
         }
     }
 
-    public void SetPath(string path)
+    public bool TrySetPath(string path, out string? errorMessage)
     {
         lock (_syncRoot)
         {
             if (string.Equals(_path, path, StringComparison.OrdinalIgnoreCase))
             {
-                return;
+                errorMessage = null;
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                CloseWriterLocked();
+                _path = string.Empty;
+                errorMessage = null;
+                return true;
+            }
+
+            if (!TryValidatePathLocked(path, out errorMessage))
+            {
+                return false;
             }
 
             CloseWriterLocked();
             _path = path;
-
             if (_isEnabled && !string.IsNullOrWhiteSpace(_path))
             {
                 OpenWriterLocked();
             }
+
+            errorMessage = null;
+            return true;
         }
     }
 
@@ -156,6 +172,28 @@ public sealed class DebugDiskLogService : IDisposable
         {
             StartupDiagnostics.Log($"DebugDiskLogService.OpenWriter failed for '{_path}': {exception.Message}");
             _writer = null;
+        }
+    }
+
+    private static bool TryValidatePathLocked(string path, out string? errorMessage)
+    {
+        try
+        {
+            var directory = System.IO.Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read);
+            errorMessage = null;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Log($"DebugDiskLogService.TryValidatePath failed for '{path}': {exception.Message}");
+            errorMessage = exception.Message;
+            return false;
         }
     }
 

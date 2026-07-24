@@ -47,6 +47,36 @@ public sealed class AppSettings
         return true;
     }
 
+    public bool RemoveExcludedApp(string processName)
+    {
+        if (string.IsNullOrWhiteSpace(processName) || IsAlwaysExcluded(processName))
+        {
+            return false;
+        }
+
+        var updatedApps = GetExcludedApps()
+            .Where(app => !string.Equals(app, processName, StringComparison.OrdinalIgnoreCase))
+            .Where(app => !IsAlwaysExcluded(app))
+            .OrderBy(app => app, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var existingApps = GetExcludedApps()
+            .Where(app => !IsAlwaysExcluded(app))
+            .OrderBy(app => app, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (existingApps.SequenceEqual(updatedApps, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        ExcludedApps = string.Join(", ", updatedApps);
+        return true;
+    }
+
+    public bool IsAlwaysExcluded(string processName)
+    {
+        return AlwaysExcludedApps.Any(app => string.Equals(app, processName, StringComparison.OrdinalIgnoreCase));
+    }
+
     public IReadOnlyList<string> GetTagsForApp(string processName)
     {
         return AppTagMappings
