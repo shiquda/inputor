@@ -229,11 +229,13 @@
   <data name="Debug.Primary.CounterIncreased" xml:space="preserve"><value>Counter increased by {0} supported characters.</value></data>
   <data name="Debug.Primary.PasteFiltered" xml:space="preserve"><value>Paste-like input was detected and excluded from counting.</value></data>
   <data name="Debug.Primary.BulkFiltered" xml:space="preserve"><value>Suspicious bulk content refresh was ignored.</value></data>
+  <data name="Debug.Primary.UnattributedFiltered" xml:space="preserve"><value>The text changed without recent typing in this app, so it was not counted.</value></data>
   <data name="Debug.Primary.Pending" xml:space="preserve"><value>Waiting for composition confirmation before counting.</value></data>
   <data name="Debug.Primary.NoIncrease" xml:space="preserve"><value>No supported counter increase was recorded.</value></data>
   <data name="Debug.Flag.PendingComposition" xml:space="preserve"><value>Pending composition</value></data>
   <data name="Debug.Flag.PasteFiltered" xml:space="preserve"><value>Paste filtered</value></data>
   <data name="Debug.Flag.BulkFiltered" xml:space="preserve"><value>Bulk refresh filtered</value></data>
+  <data name="Debug.Flag.UnattributedFiltered" xml:space="preserve"><value>No recent typing</value></data>
   <data name="Debug.Flag.NativeImeMode" xml:space="preserve"><value>Native IME mode</value></data>
   <data name="Debug.Flag.SupportedTarget" xml:space="preserve"><value>Supported target</value></data>
   <data name="Debug.Flag.UnsupportedTarget" xml:space="preserve"><value>Unsupported target</value></data>
@@ -290,9 +292,11 @@
   <data name="Status.SelfWindowActive" xml:space="preserve"><value>inputor window is active; monitoring external apps only.</value></data>
   <data name="Status.NoFocusedElement" xml:space="preserve"><value>{0}: no focused element.</value></data>
   <data name="Status.PasswordFieldSkipped" xml:space="preserve"><value>{0}: password field skipped.</value></data>
+  <data name="Status.FocusedControlNotEditable" xml:space="preserve"><value>{0}: focused control is not an editable text target.</value></data>
   <data name="Status.FocusedControlUnreadable" xml:space="preserve"><value>{0}: focused control does not expose readable text.</value></data>
   <data name="Status.PasteExcluded" xml:space="preserve"><value>Monitoring {0}; pasted text excluded by default.</value></data>
   <data name="Status.BulkRefreshIgnored" xml:space="preserve"><value>Monitoring {0}; ignored suspicious bulk content refresh.</value></data>
+  <data name="Status.UnattributedTextChangeIgnored" xml:space="preserve"><value>Monitoring {0}; ignored a text change without recent typing activity.</value></data>
   <data name="Status.RecordedSupportedCharacters" xml:space="preserve"><value>Recorded +{0} supported characters in {1}.</value></data>
   <data name="Status.WaitingForComposition" xml:space="preserve"><value>Monitoring {0}; waiting for composition confirmation.</value></data>
   <data name="Status.NoPositiveDelta" xml:space="preserve"><value>Monitoring {0}; no positive delta detected.</value></data>

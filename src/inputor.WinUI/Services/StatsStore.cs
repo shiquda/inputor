@@ -302,6 +302,7 @@ public sealed class StatsStore : IDisposable
                         IsPendingComposition = item.IsPendingComposition,
                         IsPaste = item.IsPaste,
                         IsBulkContentLoad = item.IsBulkContentLoad,
+                        IsUnattributedTextChange = item.IsUnattributedTextChange,
                         IsNativeImeInputMode = item.IsNativeImeInputMode,
                         IsCurrentTargetSupported = item.IsCurrentTargetSupported,
                         TextComparison = item.TextComparison is null

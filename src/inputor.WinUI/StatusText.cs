@@ -49,9 +49,11 @@ internal static class StatusText
     public static string SelfWindowActive() => AppStrings.Get("Status.SelfWindowActive");
     public static string NoFocusedElement(string processName) => AppStrings.Format("Status.NoFocusedElement", processName);
     public static string PasswordFieldSkipped(string processName) => AppStrings.Format("Status.PasswordFieldSkipped", processName);
+    public static string FocusedControlNotEditable(string processName) => AppStrings.Format("Status.FocusedControlNotEditable", processName);
     public static string FocusedControlUnreadable(string processName) => AppStrings.Format("Status.FocusedControlUnreadable", processName);
     public static string PasteExcluded(string processName) => AppStrings.Format("Status.PasteExcluded", processName);
     public static string BulkRefreshIgnored(string processName) => AppStrings.Format("Status.BulkRefreshIgnored", processName);
+    public static string UnattributedTextChangeIgnored(string processName) => AppStrings.Format("Status.UnattributedTextChangeIgnored", processName);
     public static string RecordedSupportedCharacters(int delta, string processName) => AppStrings.Format("Status.RecordedSupportedCharacters", delta, processName);
     public static string WaitingForComposition(string processName) => AppStrings.Format("Status.WaitingForComposition", processName);
     public static string NoPositiveDelta(string processName) => AppStrings.Format("Status.NoPositiveDelta", processName);

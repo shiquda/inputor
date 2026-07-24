@@ -104,6 +104,41 @@ internal static class Program
             return true;
         }
 
+        if (args.Length >= 1 && args[0] == "--simulate-attribution")
+        {
+            var scenarios = new[]
+            {
+                (Name: "edit+typing", IsEditable: true, Activity: InputAttributionService.ActivityKind.Typing, Expected: InputAttributionService.AttributionDecision.Count),
+                (Name: "document+not-editable", IsEditable: false, Activity: InputAttributionService.ActivityKind.Typing, Expected: InputAttributionService.AttributionDecision.RejectNotEditable),
+                (Name: "edit+no-activity", IsEditable: true, Activity: InputAttributionService.ActivityKind.None, Expected: InputAttributionService.AttributionDecision.RejectNoRecentTyping),
+                (Name: "edit+paste", IsEditable: true, Activity: InputAttributionService.ActivityKind.PasteShortcut, Expected: InputAttributionService.AttributionDecision.RejectPaste),
+                (Name: "edit+hook-unavailable", IsEditable: true, Activity: InputAttributionService.ActivityKind.Unavailable, Expected: InputAttributionService.AttributionDecision.CountUsingFallback)
+            };
+            var allPassed = true;
+
+            foreach (var scenario in scenarios)
+            {
+                var actual = InputAttributionService.Evaluate(scenario.IsEditable, scenario.Activity);
+                var passed = actual == scenario.Expected;
+                Console.WriteLine($"{scenario.Name} => {actual}, expected={scenario.Expected}, passed={passed}");
+                allPassed &= passed;
+            }
+
+            Environment.ExitCode = allPassed ? 0 : 1;
+            return true;
+        }
+
+        if (args.Length >= 1 && args[0] == "--probe-keyboard-hook")
+        {
+            using (var keyboardActivityService = new KeyboardActivityService())
+            {
+                Console.WriteLine($"available={keyboardActivityService.Start()}");
+            }
+
+            Console.WriteLine("disposed=True");
+            return true;
+        }
+
         if (args.Length >= 1 && args[0] == "--print-storage-paths")
         {
             Console.WriteLine($"channel={AppVariant.ChannelName}");

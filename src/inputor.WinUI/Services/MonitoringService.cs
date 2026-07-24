@@ -14,6 +14,7 @@ public sealed class MonitoringService : IDisposable
     private readonly AppSettings _settings;
     private readonly ClipboardTextService _clipboardTextService = new();
     private readonly CompositionAwareDeltaTracker _deltaTracker = new();
+    private readonly KeyboardActivityService _keyboardActivityService = new();
     private readonly CancellationTokenSource _cts = new();
     private Thread? _workerThread;
     private bool _isPaused;
@@ -37,6 +38,8 @@ public sealed class MonitoringService : IDisposable
         }
 
         global::Inputor.WinUI.StartupDiagnostics.Log("MonitoringService.Start invoked.");
+        var isKeyboardTrackingAvailable = _keyboardActivityService.Start();
+        global::Inputor.WinUI.StartupDiagnostics.Log($"Keyboard activity tracking available: {isKeyboardTrackingAvailable}.");
         _workerThread = new Thread(WorkerLoop)
         {
             IsBackground = true,
@@ -63,6 +66,7 @@ public sealed class MonitoringService : IDisposable
     {
         _cts.Cancel();
         _workerThread?.Join(TimeSpan.FromSeconds(2));
+        _keyboardActivityService.Dispose();
         _cts.Dispose();
     }
 
@@ -174,13 +178,23 @@ public sealed class MonitoringService : IDisposable
             return;
         }
 
+        var controlTypeName = focusedElement.Properties.ControlType.ValueOrDefault.ToString();
+        if (!InputAttributionService.IsEditableTarget(focusedElement))
+        {
+            var statusMessage = StatusText.FocusedControlNotEditable(processName);
+            _statsStore.SetStatus(statusMessage, processName, false, processName);
+            RecordDebugEvent(processName, statusMessage, controlTypeName, 0, null, null, false, false, false, false);
+            _deltaTracker.Reset();
+            return;
+        }
+
         var text = TryReadText(focusedElement);
         LogFirstPoll($"TryReadText returned {(text is null ? "null" : $"length {text.Length}")}.");
         if (text is null)
         {
             var statusMessage = StatusText.FocusedControlUnreadable(processName);
             _statsStore.SetStatus(statusMessage, processName, false, processName);
-            RecordDebugEvent(processName, statusMessage, focusedElement.Properties.ControlType.ValueOrDefault.ToString(), 0, null, null, false, false, false, false);
+            RecordDebugEvent(processName, statusMessage, controlTypeName, 0, null, null, false, false, false, false);
             _deltaTracker.Reset();
             return;
         }
@@ -189,12 +203,29 @@ public sealed class MonitoringService : IDisposable
         var isNativeImeInputMode = IsNativeChineseImeInputMode(foregroundWindow);
         var result = _deltaTracker.ProcessSnapshot(snapshotKey, text, DateTime.UtcNow, isNativeImeInputMode, _settings.DebugCaptureEnabled);
         LogFirstPoll($"Delta tracker produced delta {result.Delta}, pending={result.IsPendingComposition}.");
-        var clipboardText = result.Delta > 0 ? _clipboardTextService.TryGetText() : null;
-        var controlTypeName = focusedElement.Properties.ControlType.ValueOrDefault.ToString();
         LogFirstPoll($"ControlType '{controlTypeName}'.");
 
         if (result.Delta > 0)
         {
+            var activityKind = _keyboardActivityService.GetRecentActivity(processId, InputAttributionService.RecentTypingWindow);
+            var attributionDecision = InputAttributionService.Evaluate(true, activityKind);
+            if (attributionDecision == InputAttributionService.AttributionDecision.RejectNoRecentTyping)
+            {
+                var statusMessage = StatusText.UnattributedTextChangeIgnored(processName);
+                _statsStore.SetStatus(statusMessage, processName, true, processName);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, result.IsPendingComposition, false, false, isNativeImeInputMode, true);
+                return;
+            }
+
+            if (attributionDecision == InputAttributionService.AttributionDecision.RejectPaste)
+            {
+                var statusMessage = StatusText.PasteExcluded(processName);
+                _statsStore.SetStatus(statusMessage, processName, true, processName);
+                RecordDebugEvent(processName, statusMessage, controlTypeName, result.Delta, result.InsertedTextSegment, result.TextComparison, result.IsPendingComposition, true, false, isNativeImeInputMode);
+                return;
+            }
+
+            var clipboardText = _clipboardTextService.TryGetText();
             var isPaste = PasteDetectionService.LooksLikePaste(result.InsertedTextSegment, clipboardText);
             if (isPaste)
             {
@@ -257,7 +288,8 @@ public sealed class MonitoringService : IDisposable
         bool isPendingComposition,
         bool isPaste,
         bool isBulkContentLoad,
-        bool isNativeImeInputMode)
+        bool isNativeImeInputMode,
+        bool isUnattributedTextChange = false)
     {
         if (!_settings.DebugCaptureEnabled)
         {
@@ -280,6 +312,7 @@ public sealed class MonitoringService : IDisposable
             IsPendingComposition = isPendingComposition,
             IsPaste = isPaste,
             IsBulkContentLoad = isBulkContentLoad,
+            IsUnattributedTextChange = isUnattributedTextChange,
             IsNativeImeInputMode = isNativeImeInputMode,
             IsCurrentTargetSupported = _statsStore.IsCurrentTargetSupported,
             TextComparison = textComparison
@@ -305,6 +338,12 @@ public sealed class MonitoringService : IDisposable
 
     private static string BuildSnapshotKey(string processName, AutomationElement element)
     {
+        var runtimeId = element.Properties.RuntimeId.ValueOrDefault;
+        if (runtimeId is { Length: > 0 })
+        {
+            return $"{processName}|{string.Join('.', runtimeId)}";
+        }
+
         var automationId = element.Properties.AutomationId.ValueOrDefault ?? string.Empty;
         var className = element.Properties.ClassName.ValueOrDefault ?? string.Empty;
         var name = element.Properties.Name.ValueOrDefault ?? string.Empty;

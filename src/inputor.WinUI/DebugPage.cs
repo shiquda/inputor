@@ -208,8 +208,8 @@ public sealed class DebugPage : UserControl
     private void RenderEvents(DashboardSnapshot snapshot)
     {
         var filteredEvents = ApplyFilter(snapshot.DebugEvents).ToList();
-        var increasedCount = snapshot.DebugEvents.Count(item => item.Delta > 0 && !item.IsPaste && !item.IsBulkContentLoad);
-        var filteredOutCount = snapshot.DebugEvents.Count(item => item.IsPaste || item.IsBulkContentLoad);
+        var increasedCount = snapshot.DebugEvents.Count(IsCountedEvent);
+        var filteredOutCount = snapshot.DebugEvents.Count(IsFilteredEvent);
         var pendingCount = snapshot.DebugEvents.Count(item => item.IsPendingComposition);
 
         _summaryTextBlock.Text = filteredEvents.Count == snapshot.DebugEvents.Count
@@ -309,9 +309,9 @@ public sealed class DebugPage : UserControl
     {
         return _filterComboBox.SelectedIndex switch
         {
-            1 => events.Where(item => item.Delta > 0 && !item.IsPaste && !item.IsBulkContentLoad),
+            1 => events.Where(IsCountedEvent),
             2 => events.Where(item => item.IsPendingComposition),
-            3 => events.Where(item => item.IsPaste || item.IsBulkContentLoad),
+            3 => events.Where(IsFilteredEvent),
             _ => events
         };
     }
@@ -352,7 +352,7 @@ public sealed class DebugPage : UserControl
             Background = ThemeBrushes.GetAccentBadgeBackgroundBrush(),
             Child = new TextBlock
             {
-                Text = entry.Delta > 0 && !entry.IsPaste && !entry.IsBulkContentLoad ? AppStrings.Get("Debug.Badge.Counter") : AppStrings.Get("Debug.Badge.NoCount"),
+                Text = IsCountedEvent(entry) ? AppStrings.Get("Debug.Badge.Counter") : AppStrings.Get("Debug.Badge.NoCount"),
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold
             }
@@ -449,7 +449,7 @@ public sealed class DebugPage : UserControl
 
     private static string BuildPrimarySummary(DebugEventEntry entry)
     {
-        if (entry.Delta > 0 && !entry.IsPaste && !entry.IsBulkContentLoad)
+        if (IsCountedEvent(entry))
         {
             return AppStrings.Format("Debug.Primary.CounterIncreased", entry.Delta);
         }
@@ -462,6 +462,11 @@ public sealed class DebugPage : UserControl
         if (entry.IsBulkContentLoad)
         {
             return AppStrings.Get("Debug.Primary.BulkFiltered");
+        }
+
+        if (entry.IsUnattributedTextChange)
+        {
+            return AppStrings.Get("Debug.Primary.UnattributedFiltered");
         }
 
         if (entry.IsPendingComposition)
@@ -479,6 +484,7 @@ public sealed class DebugPage : UserControl
             entry.IsPendingComposition ? AppStrings.Get("Debug.Flag.PendingComposition") : null,
             entry.IsPaste ? AppStrings.Get("Debug.Flag.PasteFiltered") : null,
             entry.IsBulkContentLoad ? AppStrings.Get("Debug.Flag.BulkFiltered") : null,
+            entry.IsUnattributedTextChange ? AppStrings.Get("Debug.Flag.UnattributedFiltered") : null,
             entry.IsNativeImeInputMode ? AppStrings.Get("Debug.Flag.NativeImeMode") : null,
             entry.IsCurrentTargetSupported ? AppStrings.Get("Debug.Flag.SupportedTarget") : AppStrings.Get("Debug.Flag.UnsupportedTarget")
         }
@@ -487,6 +493,16 @@ public sealed class DebugPage : UserControl
             .ToList();
 
         return string.Join(" • ", flags);
+    }
+
+    private static bool IsCountedEvent(DebugEventEntry entry)
+    {
+        return entry.Delta > 0 && !IsFilteredEvent(entry);
+    }
+
+    private static bool IsFilteredEvent(DebugEventEntry entry)
+    {
+        return entry.IsPaste || entry.IsBulkContentLoad || entry.IsUnattributedTextChange;
     }
 
     private static UIElement CreateMetricLine(string label, string value)
