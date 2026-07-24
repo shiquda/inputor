@@ -1,5 +1,6 @@
-using System.Threading;
 using System.Runtime.InteropServices;
+using System.Threading;
+using FlaUI.Core.Definitions;
 using Inputor.App.Models;
 using Inputor.App.Services;
 using Microsoft.UI.Dispatching;
@@ -121,6 +122,29 @@ internal static class Program
                 var actual = InputAttributionService.Evaluate(scenario.IsEditable, scenario.Activity);
                 var passed = actual == scenario.Expected;
                 Console.WriteLine($"{scenario.Name} => {actual}, expected={scenario.Expected}, passed={passed}");
+                allPassed &= passed;
+            }
+
+            var targetScenarios = new[]
+            {
+                (Name: "edit+unknown-readonly", ControlType: ControlType.Edit, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)null, HasWritableValue: false, Expected: true),
+                (Name: "document+editable", ControlType: ControlType.Document, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)false, HasWritableValue: false, Expected: true),
+                (Name: "document+readonly", ControlType: ControlType.Document, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)true, HasWritableValue: false, Expected: false),
+                (Name: "combobox+writable-value", ControlType: ControlType.ComboBox, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)false, HasWritableValue: true, Expected: true),
+                (Name: "custom+writable-value", ControlType: ControlType.Custom, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)false, HasWritableValue: true, Expected: true),
+                (Name: "pane+no-writable-value", ControlType: ControlType.Pane, HasFocus: true, IsFocusable: true, IsReadOnly: (bool?)null, HasWritableValue: false, Expected: false)
+            };
+
+            foreach (var scenario in targetScenarios)
+            {
+                var actual = InputAttributionService.IsEditableTarget(
+                    scenario.ControlType,
+                    scenario.HasFocus,
+                    scenario.IsFocusable,
+                    scenario.IsReadOnly,
+                    scenario.HasWritableValue);
+                var passed = actual == scenario.Expected;
+                Console.WriteLine($"target:{scenario.Name} => {actual}, expected={scenario.Expected}, passed={passed}");
                 allPassed &= passed;
             }
 

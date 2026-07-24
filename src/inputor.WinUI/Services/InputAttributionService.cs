@@ -29,23 +29,18 @@ public static class InputAttributionService
         try
         {
             var controlType = element.Properties.ControlType.ValueOrDefault;
-            var isReadOnly = TryGetIsReadOnly(element);
-
-            if (controlType == ControlType.Edit)
-            {
-                return isReadOnly is not true;
-            }
-
-            if (controlType != ControlType.Document)
-            {
-                return false;
-            }
-
+            var valuePatternIsReadOnly = TryGetValuePatternIsReadOnly(element);
+            var isReadOnly = valuePatternIsReadOnly ?? TryGetLegacyIsReadOnly(element);
             var hasKeyboardFocus = element.Properties.HasKeyboardFocus.TryGetValue(out var hasFocus)
                 && hasFocus;
             var isKeyboardFocusable = element.Properties.IsKeyboardFocusable.TryGetValue(out var isFocusable)
                 && isFocusable;
-            return hasKeyboardFocus && isKeyboardFocusable && isReadOnly is false;
+            return IsEditableTarget(
+                controlType,
+                hasKeyboardFocus,
+                isKeyboardFocusable,
+                isReadOnly,
+                valuePatternIsReadOnly is false);
         }
         catch
         {
@@ -53,7 +48,27 @@ public static class InputAttributionService
         }
     }
 
-    private static bool? TryGetIsReadOnly(AutomationElement element)
+    internal static bool IsEditableTarget(
+        ControlType controlType,
+        bool hasKeyboardFocus,
+        bool isKeyboardFocusable,
+        bool? isReadOnly,
+        bool hasWritableValuePattern)
+    {
+        if (controlType == ControlType.Edit)
+        {
+            return isReadOnly is not true;
+        }
+
+        if (controlType == ControlType.Document)
+        {
+            return hasKeyboardFocus && isKeyboardFocusable && isReadOnly is false;
+        }
+
+        return hasKeyboardFocus && isKeyboardFocusable && hasWritableValuePattern;
+    }
+
+    private static bool? TryGetValuePatternIsReadOnly(AutomationElement element)
     {
         if (element.Patterns.Value.IsSupported
             && element.Patterns.Value.Pattern.IsReadOnly.TryGetValue(out var valueIsReadOnly))
@@ -61,6 +76,11 @@ public static class InputAttributionService
             return valueIsReadOnly;
         }
 
+        return null;
+    }
+
+    private static bool? TryGetLegacyIsReadOnly(AutomationElement element)
+    {
         if (element.Patterns.LegacyIAccessible.IsSupported
             && element.Patterns.LegacyIAccessible.Pattern.State.TryGetValue(out var state))
         {
