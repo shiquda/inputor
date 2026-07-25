@@ -49,6 +49,7 @@ public sealed class MainWindow : Window
     private readonly Border _titleBarHost;
     private readonly Grid _titleBarDragRegion;
     private readonly InfoBar _feedbackBar;
+    private readonly DispatcherQueueTimer _feedbackDismissTimer;
     private Border? _titleBarGlyphHost;
     private readonly List<(Border Border, bool Elevated)> _trackedSurfaces = [];
     private readonly AppWindow _appWindow;
@@ -189,6 +190,13 @@ public sealed class MainWindow : Window
             Margin = new Thickness(16, 50, 16, 0),
             MaxWidth = 760
         };
+        _feedbackDismissTimer = _dispatcherQueue.CreateTimer();
+        _feedbackDismissTimer.Interval = TimeSpan.FromSeconds(5);
+        _feedbackDismissTimer.Tick += (_, _) =>
+        {
+            _feedbackDismissTimer.Stop();
+            _feedbackBar.IsOpen = false;
+        };
         _appWindow = WindowHelpers.GetAppWindow(this);
         var windowContent = new Grid();
         windowContent.Children.Add(BuildWindowShell());
@@ -269,6 +277,7 @@ public sealed class MainWindow : Window
             return;
         }
 
+        _feedbackDismissTimer.Stop();
         _feedbackBar.IsOpen = false;
         _feedbackBar.Severity = feedback.Severity;
         _feedbackBar.Title = feedback.Title;
@@ -277,6 +286,7 @@ public sealed class MainWindow : Window
             ? null
             : CreateFeedbackActionButton(feedback.ActionLabel, feedback.Action);
         _feedbackBar.IsOpen = true;
+        _feedbackDismissTimer.Start();
     }
 
     private Button CreateFeedbackActionButton(string text, Action action)
@@ -284,6 +294,7 @@ public sealed class MainWindow : Window
         var button = new Button { Content = text };
         button.Click += (_, _) =>
         {
+            _feedbackDismissTimer.Stop();
             _feedbackBar.IsOpen = false;
             action();
         };
@@ -299,6 +310,7 @@ public sealed class MainWindow : Window
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _isClosed = true;
+        _feedbackDismissTimer.Stop();
         _appWindow.Changed -= AppWindow_Changed;
         ThemeBrushes.Changed -= ThemeBrushes_Changed;
         App.Current.StatsStore.Changed -= StatsStore_Changed;
