@@ -6,6 +6,20 @@
 
 ## [Unreleased]
 
+## [0.1.2-rc.1] - 2026-07-25
+
+### 新增
+
+- **应用交互体验**：应用标签支持搜索、多选和快速创建；隐藏应用可从候选列表选择、逐项取消，并提供单次撤销。
+- **操作反馈**：应用操作、设置保存和异常输入会显示页面级反馈；提示条在 5 秒后自动关闭。
+- **统计可发现性与无障碍**：趋势、热力图和分布图共享范围预设，热力图与分布图图例支持键盘访问。
+
+### 改进
+
+- **敏感操作保护**：恢复备份与开启原始文本磁盘日志需要明确确认；日志路径会先验证可写性。
+- **应用归因**：改进键盘活动与可编辑控件场景的输入归因，降低浏览器和动态页面的误归属。
+- **窗口与搜索**：新增应用行“更多”入口、搜索候选与清空操作；关闭窗口到托盘时显示提示。
+
 ## [0.1.1] - 2026-03-23
 
 ### 新增
@@ -55,6 +69,7 @@
 - 管理员权限窗口无法被监控（UAC 限制）
 - 密码输入框自动排除
 
-[Unreleased]: https://github.com/shiquda/inputor/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/shiquda/inputor/compare/v0.1.2-rc.1...HEAD
+[0.1.2-rc.1]: https://github.com/shiquda/inputor/compare/v0.1.1...v0.1.2-rc.1
 [0.1.1]: https://github.com/shiquda/inputor/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/shiquda/inputor/releases/tag/v0.1.0
