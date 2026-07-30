@@ -56,7 +56,7 @@ public sealed class StatisticsPage : UserControl
             ItemsSource = AppStrings.GetDistributionRangeOptions(),
             DisplayMemberPath = nameof(AppRangeOption.DisplayName),
             SelectedValuePath = nameof(AppRangeOption.Value),
-            SelectedValue = 0
+            SelectedValue = 1
         };
         AutomationProperties.SetName(_distributionRangeComboBox, AppStrings.Get("Statistics.Range.Label"));
         _distributionRangeComboBox.SelectionChanged += (_, _) => Refresh(AppPresentationService.CreateVisibleSnapshot(App.Current.StatsStore.GetSnapshot(), App.Current.Settings));
