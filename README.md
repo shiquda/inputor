@@ -1,3 +1,6 @@
+> 💡 我目前不常使用 Windows，这个项目的问题很难及时修复。欢迎 fork，也欢迎提 PR 帮忙解决 issue。
+> I rarely use Windows these days, so fixes may be slow. Forks and PRs that help resolve issues are very welcome.
+
 # inputor
 
 [English](README.en.md)
